@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+/* Mapped Light — canonical from docs/tokens + SDD §4.2 */
+:root {
+  --surface-page: #f7f7f4;
+  --surface-card: #f2f1ed;
+  --surface-control: #e6e5e0;
+  --surface-points: #d9d9d9;
+  --surface-inverse: #323232;
+  --text-primary: #323232;
+  --text-secondary: #757575;
+  --text-muted: #b3b3b3;
+  --text-on-inverse: #f7f7f4;
+  --icon-primary: #323232;
+  --icon-secondary: #757575;
+  --icon-muted: #d9d9d9;
+  --border-subtle: #eaeaea;
+  --border-default: #d9d9d9;
+  --accent-primary: #f08a24;
+  --accent-primary-hover: #d87216;
+  --accent-information: #1968e5;
+
+  /* Type scale */
+  --size-largeTitle: 34px;
+  --lh-largeTitle: 40px;
+  --size-title1: 28px;
+  --lh-title1: 32px;
+  --size-title2: 22px;
+  --lh-title2: 28px;
+  --size-title3: 20px;
+  --lh-title3: 24px;
+  --size-body: 17px;
+  --lh-body: 24px;
+  --size-subheadline: 15px;
+  --lh-subheadline: 20px;
+  --size-footnote: 13px;
+  --lh-footnote: 16px;
+  --size-caption1: 12px;
+  --lh-caption1: 16px;
+  --size-caption2: 11px;
+  --lh-caption2: 16px;
+
+  --radius-button: 20px;
+  --font-display: var(--font-vollkorn), Georgia, serif;
+  --font-ui: var(--font-ubuntu-sans), "Ubuntu Sans", sans-serif;
+}
+
+[data-theme="dark"] {
+  --surface-page: #26251e;
+  --surface-card: #323232;
+  --surface-control: #323232;
+  --surface-points: #323232;
+  --surface-inverse: #f7f7f4;
+  --text-primary: #f7f7f4;
+  --text-secondary: #d9d9d9;
+  --text-muted: #757575;
+  --text-on-inverse: #26251e;
+  --icon-primary: #f2f1ed;
+  --icon-secondary: #d9d9d9;
+  --icon-muted: #757575;
+  --border-subtle: #757575;
+  --border-default: #757575;
+  --accent-primary: #f7aa55;
+  --accent-primary-hover: #ffc98f;
+  --accent-information: #79aafa;
+}
+
+@theme inline {
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-control: var(--surface-control);
+  --color-surface-points: var(--surface-points);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-on-inverse: var(--text-on-inverse);
+  --color-icon-primary: var(--icon-primary);
+  --color-icon-secondary: var(--icon-secondary);
+  --color-icon-muted: var(--icon-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-information: var(--accent-information);
+  --font-display: var(--font-vollkorn);
+  --font-ui: var(--font-ubuntu-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  letter-spacing: 0;
+}
+
+.text-largeTitle {
+  font-family: var(--font-display);
+  font-size: var(--size-largeTitle);
+  line-height: var(--lh-largeTitle);
+  letter-spacing: 0;
+}
+
+.text-title1 {
+  font-family: var(--font-display);
+  font-size: var(--size-title1);
+  line-height: var(--lh-title1);
+  letter-spacing: 0;
+}
+
+.text-title2 {
+  font-family: var(--font-display);
+  font-size: var(--size-title2);
+  line-height: var(--lh-title2);
+  letter-spacing: 0;
+}
+
+.text-title3 {
+  font-family: var(--font-display);
+  font-size: var(--size-title3);
+  line-height: var(--lh-title3);
+  letter-spacing: 0;
+}
+
+.text-body {
+  font-family: var(--font-ui);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  letter-spacing: 0;
+}
+
+.text-subheadline {
+  font-family: var(--font-ui);
+  font-size: var(--size-subheadline);
+  line-height: var(--lh-subheadline);
+  letter-spacing: 0;
+}
+
+.text-footnote {
+  font-family: var(--font-ui);
+  font-size: var(--size-footnote);
+  line-height: var(--lh-footnote);
+  letter-spacing: 0;
+}
+
+.text-caption1 {
+  font-family: var(--font-ui);
+  font-size: var(--size-caption1);
+  line-height: var(--lh-caption1);
+  letter-spacing: 0;
+}
+
+.text-caption2 {
+  font-family: var(--font-ui);
+  font-size: var(--size-caption2);
+  line-height: var(--lh-caption2);
+  letter-spacing: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+}
+
+@keyframes bloub-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes bloub-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes bloub-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+
+.bloub-idle-bob {
+  animation: bloub-bob 1.8s ease-in-out infinite;
+}
+
+.bloub-idle-pulse {
+  animation: bloub-pulse 2s ease-in-out infinite;
+}
+
+.bloub-idle-float {
+  animation: bloub-float 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloub-idle-bob,
+  .bloub-idle-pulse,
+  .bloub-idle-float {
+    animation: none;
+  }
+}
