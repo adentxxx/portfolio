@@ -11,11 +11,11 @@ type ContactCardProps = {
 
 export function ContactCard({ headline, subline, links }: ContactCardProps) {
   return (
-    <section className="mx-auto mt-20 w-full max-w-[600px] px-4 pb-28 text-center">
-      <div className="rounded-[28px] border border-border-subtle bg-surface-card px-6 py-10">
+    <section className="mx-auto mt-16 w-full max-w-[600px] px-4 pb-28 text-center md:mt-24">
+      <div className="rounded-[28px] border border-border-subtle bg-surface-card px-6 py-12">
         <h2 className="text-title2 text-text-primary">{headline}</h2>
         <p className="mt-3 text-body text-text-secondary">{subline}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           {links.map((link) => (
             <Button key={link.label} asChild mode="fill">
               <a href={link.href} target="_blank" rel="noreferrer">

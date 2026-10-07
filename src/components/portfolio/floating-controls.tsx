@@ -10,11 +10,13 @@ export function FloatingControls() {
   const { muted, setMuted, play } = useSound();
 
   return (
-    <div className="fixed bottom-6 right-4 z-50 flex flex-col gap-3 md:bottom-8 md:right-8">
+    <div className="fixed bottom-6 right-4 z-50 flex flex-col gap-3 md:bottom-10 md:right-8">
       <Button
         mode="icon"
         type="button"
-        aria-label={theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"}
+        aria-label={
+          theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"
+        }
         soundKind="theme"
         onClick={() => toggleTheme()}
       >

@@ -11,8 +11,8 @@ const buttonVariants = cva(
   {
     variants: {
       mode: {
-        fill: "rounded-[20px] bg-surface-control text-text-primary px-5 h-12 hover:bg-[color-mix(in_srgb,var(--surface-control)_85%,var(--text-primary)_15%)] active:scale-[0.98]",
-        icon: "size-14 rounded-[20px] border border-border-default bg-transparent text-icon-primary hover:border-text-secondary active:scale-[0.98]",
+        fill: "rounded-[20px] bg-surface-control text-text-primary px-5 h-12 hover:bg-[color-mix(in_srgb,var(--surface-control)_88%,var(--text-primary)_12%)] active:scale-[0.98]",
+        icon: "size-14 rounded-[20px] border border-border-default bg-surface-page/80 text-icon-primary backdrop-blur-sm hover:border-text-secondary active:scale-[0.98]",
       },
     },
     defaultVariants: {

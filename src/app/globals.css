@@ -218,6 +218,28 @@ body {
   }
 }
 
+@keyframes bloub-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .bloub-idle-bob {
   animation: bloub-bob 1.8s ease-in-out infinite;
 }
@@ -235,5 +257,23 @@ body {
   .bloub-idle-pulse,
   .bloub-idle-float {
     animation: none;
+  }
+
+  @keyframes card-reveal {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes bloub-arrive {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 }

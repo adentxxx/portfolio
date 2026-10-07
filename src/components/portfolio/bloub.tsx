@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-export type BloubPhase = "idle" | "travel" | "arrive";
+export type BloubPhase = "idle" | "arrive";
 
 type BloubProps = {
   phase: BloubPhase;
@@ -22,32 +22,21 @@ export function Bloub({
   className,
   size = 48,
 }: BloubProps) {
-  if (phase === "travel") {
-    return (
-      <span
-        className={cn(
-          "block rounded-full bg-surface-points transition-all duration-300",
-          className,
-        )}
-        style={{ width: size * 0.35, height: size * 0.35 }}
-        aria-hidden
-      />
-    );
-  }
-
   const idleClass =
     phase === "idle"
       ? idleAnimation === "pulse"
         ? "bloub-idle-pulse"
         : idleAnimation === "float"
           ? "bloub-idle-float"
-          : "bloub-idle-bob"
+          : idleAnimation
+            ? "bloub-idle-bob"
+            : ""
       : "";
 
   return (
     <span
       className={cn(
-        "relative inline-flex items-center justify-center transition-transform duration-300",
+        "relative inline-flex items-center justify-center",
         idleClass,
         className,
       )}
@@ -60,18 +49,9 @@ export function Bloub({
         alt=""
         width={size}
         height={size}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--accent-primary)_45%,transparent)]"
         unoptimized
       />
     </span>
-  );
-}
-
-export function TimelineDot({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn("size-3 rounded-full bg-surface-points", className)}
-      aria-hidden
-    />
   );
 }

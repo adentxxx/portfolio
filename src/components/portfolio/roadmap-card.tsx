@@ -33,25 +33,37 @@ type RoadmapCardProps = {
   data: RoadmapCardData;
   active: boolean;
   side: "left" | "right";
+  reducedMotion?: boolean;
 };
 
-export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
+export function RoadmapCard({
+  data,
+  active,
+  side,
+  reducedMotion = false,
+}: RoadmapCardProps) {
   const { play } = useSound();
+
+  const shell = cn(
+    "w-full max-w-[480px] rounded-[28px] border border-border-subtle bg-surface-card",
+    side === "left" ? "ml-auto" : "mr-auto",
+  );
 
   if (!active) {
     return (
       <div
-        className={cn(
-          "h-[168px] w-full max-w-[420px] rounded-[24px] border border-border-subtle bg-surface-card",
-          side === "left" ? "ml-auto" : "mr-auto",
-        )}
+        className={cn(shell, "h-[176px]")}
         aria-hidden
+        data-state="default"
       >
-        <div className="flex h-full flex-col gap-3 p-5">
-          <div className="h-10 w-10 animate-pulse rounded-xl bg-surface-control" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-surface-control" />
-          <div className="h-3 w-full animate-pulse rounded bg-surface-control" />
-          <div className="h-3 w-4/5 animate-pulse rounded bg-surface-control" />
+        <div className="flex h-full flex-col gap-3.5 p-6">
+          <div className="flex items-start justify-between">
+            <div className="size-11 rounded-2xl bg-surface-control" />
+            <div className="h-3 w-16 rounded bg-surface-control" />
+          </div>
+          <div className="h-4 w-3/5 rounded bg-surface-control" />
+          <div className="h-3 w-full rounded bg-surface-control" />
+          <div className="h-3 w-4/5 rounded bg-surface-control" />
         </div>
       </div>
     );
@@ -65,9 +77,9 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
         <Image
           src={data.logoSrc}
           alt=""
-          width={40}
-          height={40}
-          className="rounded-xl"
+          width={44}
+          height={44}
+          className="rounded-2xl"
           unoptimized
         />
         <span className="text-caption1 text-text-muted">{data.dateLabel}</span>
@@ -76,7 +88,7 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
       {data.kind === "company" ? (
         <p className="mt-1 text-body text-text-secondary">{data.role}</p>
       ) : (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {data.tags.map((tag) => (
             <span
               key={tag}
@@ -87,18 +99,20 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
           ))}
         </div>
       )}
-      <p className="mt-2 text-subheadline text-text-secondary">
+      <p className="mt-2.5 text-subheadline text-text-secondary">
         {data.description}
       </p>
     </>
   );
 
   const className = cn(
-    "block w-full max-w-[420px] rounded-[24px] border border-border-subtle bg-surface-card p-5 text-left transition-all duration-500",
-    "opacity-100 translate-y-0",
-    side === "left" ? "ml-auto" : "mr-auto",
+    shell,
+    "block p-6 text-left",
+    !reducedMotion &&
+      "animate-[card-reveal_480ms_cubic-bezier(0.22,1,0.36,1)_both]",
+    reducedMotion && "opacity-100",
     data.kind === "project" &&
-      "cursor-pointer hover:border-accent-primary focus-visible:border-accent-primary",
+      "cursor-pointer transition-colors hover:border-accent-primary focus-visible:border-accent-primary",
   );
 
   if (data.kind === "project") {
@@ -106,6 +120,7 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
       <Link
         href={`/projects/${data.slug}`}
         className={className}
+        data-state="active-project"
         prefetch
         onClick={() => play("card")}
       >
@@ -121,6 +136,7 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
         target="_blank"
         rel="noreferrer"
         className={className}
+        data-state="active-work"
         onClick={() => play("card")}
       >
         {inner}
@@ -129,12 +145,8 @@ export function RoadmapCard({ data, active, side }: RoadmapCardProps) {
   }
 
   return (
-    <button
-      type="button"
-      className={className}
-      onClick={() => play("card")}
-    >
+    <div className={className} data-state="active-work">
       {inner}
-    </button>
+    </div>
   );
 }
