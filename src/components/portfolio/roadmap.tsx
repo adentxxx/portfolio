@@ -30,7 +30,7 @@ type Row = {
   emotion: Emotion;
 };
 
-const SNAP_PX = 28;
+const SNAP_PX = 36;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -44,6 +44,30 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
+function ColumnLabel({
+  label,
+  align,
+}: {
+  label: string;
+  align: "left" | "right";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-1",
+        align === "left" ? "items-start" : "items-end",
+      )}
+    >
+      <span className="text-subheadline text-text-muted">{label}</span>
+      <ChevronDown
+        className="size-4 text-icon-muted"
+        strokeWidth={2}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export function Roadmap({
   companies,
   projects,
@@ -51,11 +75,11 @@ export function Roadmap({
   defaultEmotionId = "wave",
 }: RoadmapProps) {
   const reducedMotion = usePrefersReducedMotion();
-  const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const pointRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const revealedRef = useRef(-1);
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [passedIndex, setPassedIndex] = useState(-1);
+  const [revealedIndex, setRevealedIndex] = useState(-1);
   const [atPointIndex, setAtPointIndex] = useState(-1);
   const [fillPx, setFillPx] = useState(0);
   const rafRef = useRef(0);
@@ -125,7 +149,7 @@ export function Roadmap({
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const pointCenter = rect.top + rect.height / 2;
-        if (pointCenter <= triggerY + 4) nextPassed = index;
+        if (pointCenter <= triggerY) nextPassed = index;
         const dist = Math.abs(pointCenter - triggerY);
         if (dist < bestDist) {
           bestDist = dist;
@@ -133,11 +157,16 @@ export function Roadmap({
         }
       });
 
-      // Bloub only when the trigger is tightly on a card point — not between points.
       if (bestDist > SNAP_PX) nextAt = -1;
 
-      setPassedIndex(nextPassed);
+      // Reveal the card at the same moment bloub snaps onto its point.
+      const candidate = Math.max(nextPassed, nextAt);
+      if (candidate > revealedRef.current) {
+        revealedRef.current = candidate;
+      }
+
       setAtPointIndex(nextAt);
+      setRevealedIndex(revealedRef.current);
     };
 
     const onScrollOrResize = () => {
@@ -155,7 +184,7 @@ export function Roadmap({
     };
   }, [rows.length]);
 
-  const showIdleBloub = !hasScrolled || (passedIndex < 0 && atPointIndex < 0);
+  const showIdleBloub = !hasScrolled || (revealedIndex < 0 && atPointIndex < 0);
   const currentEmotion =
     atPointIndex >= 0
       ? (rows[atPointIndex]?.emotion ?? fallback)
@@ -163,17 +192,16 @@ export function Roadmap({
 
   return (
     <section
-      ref={sectionRef}
       className="relative mx-auto mt-14 w-full max-w-[1160px] px-4 md:mt-20"
       aria-label="Roadmap"
     >
-      <header className="mb-8 grid grid-cols-[1fr_auto_1fr] items-start gap-3 md:mb-12">
-        <p className="pt-8 text-left text-subheadline text-text-secondary md:pt-16">
-          опыт работы
-        </p>
+      {/* Header: experience label + idle bloub; cases label lives at first project row */}
+      <header className="mb-6 grid grid-cols-[1fr_auto_1fr] items-start gap-3 md:mb-8">
+        <div className="pt-10 md:pt-14">
+          <ColumnLabel label="опыт работы" align="left" />
+        </div>
 
         <div className="flex w-[140px] flex-col items-center md:w-[160px]">
-          {/* Idle bloub — own slot so it never covers the hint */}
           <div className="relative flex h-[88px] w-[88px] items-center justify-center md:h-[96px] md:w-[96px]">
             {showIdleBloub ? (
               <>
@@ -219,18 +247,14 @@ export function Roadmap({
           </div>
         </div>
 
-        <p className="pt-8 text-right text-subheadline text-text-secondary md:pt-16">
-          кейсы
-        </p>
+        <div aria-hidden className="pt-10 md:pt-14" />
       </header>
 
       <div ref={trackRef} className="relative">
-        {/* decor/connector — base */}
         <div
           className="pointer-events-none absolute left-4 top-0 bottom-10 w-[2px] -translate-x-1/2 rounded-full bg-border-default md:left-1/2"
           aria-hidden
         />
-        {/* decor/connector — accent fill grows with scroll */}
         <div
           className="pointer-events-none absolute left-4 top-0 w-[2px] -translate-x-1/2 origin-top rounded-full bg-accent-primary md:left-1/2"
           style={{
@@ -240,10 +264,19 @@ export function Roadmap({
           aria-hidden
         />
 
+        {/*
+          Cases label sits at the first content band on the right —
+          below experience + scroll hint, not in the header row with «опыт работы».
+        */}
+        <div className="pointer-events-none absolute right-0 top-2 z-[2] hidden md:block">
+          <ColumnLabel label="кейсы" align="right" />
+        </div>
+
         <div className="flex flex-col">
           {rows.map((row, index) => {
-            const active = index <= passedIndex;
+            const active = index <= revealedIndex;
             const showBloubHere = atPointIndex === index;
+
             return (
               <div
                 key={row.id}
@@ -277,7 +310,7 @@ export function Roadmap({
                       <span
                         className={cn(
                           "size-3 rounded-full transition-colors duration-300",
-                          index <= passedIndex
+                          index <= revealedIndex
                             ? "bg-accent-primary"
                             : "bg-surface-points",
                         )}
@@ -294,7 +327,7 @@ export function Roadmap({
                   )}
                 >
                   <p className="mb-2 text-caption2 text-text-muted md:hidden">
-                    {row.side === "left" ? "опыт работы" : "кейс"}
+                    {row.side === "left" ? "опыт работы" : "кейсы"}
                   </p>
                   <RoadmapCard
                     data={row.card}
