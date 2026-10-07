@@ -97,7 +97,7 @@ export function Roadmap({
 
   useEffect(() => {
     const onScroll = () => {
-      if (window.scrollY > 24) setHasScrolled(true);
+      if (window.scrollY > 16) setHasScrolled(true);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -108,8 +108,9 @@ export function Roadmap({
     const update = () => {
       const section = sectionRef.current;
       if (!section) return;
-      const sectionTop = section.getBoundingClientRect().top + window.scrollY;
-      const viewportCenter = window.scrollY + window.innerHeight * 0.45;
+
+      const sectionRect = section.getBoundingClientRect();
+      const triggerY = window.innerHeight * 0.62;
 
       let nextActive = -1;
       let nextTop = 72;
@@ -117,25 +118,25 @@ export function Roadmap({
       rowRefs.current.forEach((el, index) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        const center = rect.top + window.scrollY + rect.height / 2 - sectionTop;
-        const absCenter = rect.top + window.scrollY + rect.height / 2;
-        if (absCenter <= viewportCenter + 40) {
+        const rowMid = rect.top + rect.height * 0.35;
+        if (rowMid <= triggerY) {
           nextActive = index;
-          nextTop = center;
+          nextTop = rect.top + rect.height / 2 - sectionRect.top;
         }
       });
 
       setActiveIndex(nextActive);
-      if (nextActive >= 0) setMarkerTop(nextTop);
-      else setMarkerTop(72);
+      setMarkerTop(Math.max(56, nextTop));
     };
 
     update();
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
+    const id = window.setInterval(update, 250);
     return () => {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      window.clearInterval(id);
     };
   }, [rows.length]);
 
@@ -196,7 +197,7 @@ export function Roadmap({
 
         <div
           className={cn(
-            "pointer-events-none absolute left-4 z-10 -translate-x-1/2 transition-[top] duration-300 ease-out md:left-1/2",
+            "pointer-events-none absolute left-4 z-10 flex -translate-x-1/2 items-center justify-center transition-[top] duration-300 ease-out md:left-1/2",
             reducedMotion && "duration-0",
           )}
           style={{ top: markerTop }}
@@ -222,6 +223,7 @@ export function Roadmap({
                 ref={(el) => {
                   rowRefs.current[index] = el;
                 }}
+                data-active={active ? "true" : "false"}
                 className="relative grid min-h-[200px] grid-cols-[24px_1fr] items-center gap-3 md:min-h-[240px] md:grid-cols-[1fr_80px_1fr] md:gap-0"
               >
                 <div className="relative flex h-full items-center justify-center md:col-start-2 md:row-start-1">
@@ -237,9 +239,7 @@ export function Roadmap({
                 <div
                   className={cn(
                     "md:row-start-1",
-                    row.side === "left"
-                      ? "md:col-start-1"
-                      : "md:col-start-3",
+                    row.side === "left" ? "md:col-start-1" : "md:col-start-3",
                   )}
                 >
                   <p className="mb-2 text-caption2 text-text-muted md:hidden">
@@ -256,7 +256,7 @@ export function Roadmap({
           })}
         </div>
 
-        <footer className="relative mt-4 flex h-[100px] items-end justify-center pb-2 md:justify-center">
+        <footer className="relative mt-4 flex h-[100px] items-end justify-center pb-2">
           <span
             className="absolute left-4 size-3 -translate-x-1/2 rounded-full bg-surface-points md:left-1/2"
             aria-hidden
