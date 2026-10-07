@@ -1,5 +1,7 @@
 # Portfolio Roadmap (demo)
 
+Репозиторий: [github.com/adentxxx/portfolio](https://github.com/adentxxx/portfolio)
+
 Портфолио продуктового дизайнера в метафоре **roadmap**: компании слева, проекты справа, scroll-reveal, lifecycle **bloub**, light/dark через Mapped tokens, звук по жесту + mute.
 
 Контент компаний/проектов — **случайные placeholder’ы** (не реальная биография). Править через `/admin` или `npm run db:seed`.
