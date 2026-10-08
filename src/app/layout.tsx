@@ -1,5 +1,4 @@
 import { Providers } from "@/components/providers";
-import { GradualBlur } from "@/components/ui/gradual-blur";
 import type { Metadata } from "next";
 import { Ubuntu_Sans, Vollkorn } from "next/font/google";
 import "./globals.css";
@@ -38,7 +37,6 @@ export default function RootLayout({
     >
       <body className="antialiased">
         <Providers>{children}</Providers>
-        <GradualBlur divCount={3} strength={2} height="6rem" />
       </body>
     </html>
   );

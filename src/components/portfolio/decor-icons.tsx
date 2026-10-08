@@ -51,8 +51,14 @@ export function ScrollArrow({ className }: IconProps) {
   );
 }
 
-/** Figma `decor/timeline-dot`: 24×24 container, circle r=10, `surface/points`. */
-export function TimelineDot({ className }: IconProps) {
+/**
+ * Figma `decor/timeline-dot`: 24×24 container, circle in `surface/points`.
+ * Diameter depends on the card type (SDD §5.1): work → 20px, project → 10px.
+ */
+export function TimelineDot({
+  className,
+  size = 20,
+}: IconProps & { size?: 20 | 10 }) {
   return (
     <svg
       width="24"
@@ -63,7 +69,7 @@ export function TimelineDot({ className }: IconProps) {
       aria-hidden
       className={cn("block shrink-0", className)}
     >
-      <circle cx="12" cy="12" r="10" fill="currentColor" />
+      <circle cx="12" cy="12" r={size / 2} fill="currentColor" />
     </svg>
   );
 }

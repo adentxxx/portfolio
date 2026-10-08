@@ -223,6 +223,8 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
 6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: пройденные точки — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается.
+7. **Размер `decor/timeline-dot` зависит от типа карточки** (контейнер 24×24 неизменен): у **компании / работы — 20px**, у **проекта — 10px**. Точки header/footer roadmap — 20px.
+8. `decor/connector` — пунктир 1px: **dash 8px / gap 8px**, цвет `border/default`. Travel-точка (8px, accent) имеет мягкую accent-подсветку (box-shadow из `accent/primary` через color-mix).
 
 **MUST:** реализовать morph A→B→C→D; не оставлять вечный animated bloub после начала скролла.  
 **MUST:** при `prefers-reduced-motion` — без непрерывной анимации idle-bloub; morph можно заменить кроссфейдом/мгновенной сменой.
@@ -278,7 +280,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | `Button` | State: Default / Hover / Pressed; Mode: Fill / Only Icon | `Button` |
 | `Cards` | Default / Active (Work) / Active (Project) | `RoadmapCard` |
 | `bloub` | emotion из БД; states: idle / travel-as-dot / arrived | `Bloub` + `TimelineMarker` |
-| `decor/timeline-dot` | travel/rest | часть `TimelineMarker` |
+| `decor/timeline-dot` | travel/rest; size: work 20px / project 10px | `TimelineDot` (часть маркера) |
 | `BTNs` | группа Fill | `ButtonGroup` |
 | `Button Bar` | 2× Only Icon | `FloatingControls` |
 | `card/introduction` | — | `IntroCard` |
@@ -295,7 +297,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 ### 7.3 Button
 
 - Fill: label ± iconLeft; `surface/control`; radius ~20px.
-- Only Icon: 56×56; `border/default`.
+- Only Icon: 56×56; `border/default`; иконка 24px `icon/primary`, на hover — `accent/primary`.
 - Label: Ubuntu Sans / `subheadline` (Default/Pressed), `body` на Hover (по макету).
 
 ### 7.4 Naming

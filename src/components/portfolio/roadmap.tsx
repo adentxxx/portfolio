@@ -220,7 +220,7 @@ export function Roadmap({
       aria-label="Roadmap"
     >
       {/* Header RoadMap: 480 | 80 | 480, gap 48 (desktop); stacked on mobile */}
-      <header className="flex flex-col items-center md:grid md:grid-cols-[1fr_80px_1fr] md:items-start md:gap-6">
+      <header className="flex flex-col items-center md:grid md:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] md:items-start md:gap-6">
         <div className="hidden md:block">
           <ColumnLabel label="опыт работы" align="left" />
         </div>
@@ -299,7 +299,14 @@ export function Roadmap({
           className="pointer-events-none absolute bottom-8 left-[14px] top-[52px] w-0 -translate-x-1/2 md:left-1/2"
           aria-hidden
         >
-          <div className="absolute inset-y-0 left-0 w-0 border-l border-dashed border-border-default" />
+          {/* dash 8px / gap 8px — border-dashed can't set dash length, so a repeating gradient */}
+          <div
+            className="absolute inset-y-0 left-0 w-px -translate-x-1/2"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to bottom, var(--border-default) 0 8px, transparent 8px 16px)",
+            }}
+          />
           <div
             className="absolute left-0 top-0 max-h-full w-[2px] -translate-x-1/2 rounded-full bg-accent-primary"
             style={{
@@ -307,9 +314,9 @@ export function Roadmap({
               transition: reducedMotion ? "none" : "height 80ms linear",
             }}
           />
-          {/* Phase B (Travel): 8px dot riding the end of the progress line */}
+          {/* Phase B (Travel): 8px dot with a soft accent glow riding the end of the progress line */}
           <span
-            className="absolute left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary"
+            className="absolute left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-primary)_22%,transparent),0_0_12px_2px_color-mix(in_srgb,var(--accent-primary)_55%,transparent)]"
             style={{
               top: `min(${Math.max(0, fillPx - POINT_CENTER_PX)}px, 100%)`,
               opacity: hasScrolled ? 1 : 0,
@@ -332,7 +339,8 @@ export function Roadmap({
                 key={row.id}
                 data-active={active ? "true" : "false"}
                 data-bloub={showBloubHere ? "true" : "false"}
-                className="relative grid min-h-[240px] grid-cols-[28px_1fr] items-start gap-3 md:grid-cols-[1fr_80px_1fr] md:gap-6"
+                // minmax(0,1fr): a skeleton's min-content must never push the center column off-axis
+                className="relative grid min-h-[240px] grid-cols-[28px_minmax(0,1fr)] items-start gap-3 md:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] md:gap-6"
               >
                 {/* Point Container: pt-40, 24px dot (or bloub on Arrive) */}
                 <div className="relative z-[1] flex justify-center pt-10 md:col-start-2 md:row-start-1">
@@ -357,6 +365,8 @@ export function Roadmap({
                       />
                     ) : (
                       <TimelineDot
+                        // SDD §5.1: work → 20px, project → 10px
+                        size={row.side === "left" ? 20 : 10}
                         className={cn(
                           "transition-colors duration-300",
                           // Follows the current scroll position (not sticky):
