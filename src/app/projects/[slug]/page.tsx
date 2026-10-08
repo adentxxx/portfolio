@@ -29,7 +29,7 @@ export default async function ProjectPage({ params }: PageProps) {
             alt=""
             width={40}
             height={40}
-            className="rounded-full"
+            className="size-10 rounded-xl object-cover object-top"
             unoptimized
           />
           <span className="text-subheadline text-text-secondary">На главную</span>

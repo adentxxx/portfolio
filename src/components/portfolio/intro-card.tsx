@@ -13,21 +13,26 @@ type IntroCardProps = {
 
 export function IntroCard({ headline, bio, avatarSrc, links }: IntroCardProps) {
   return (
-    <section className="mx-auto flex w-full max-w-[600px] flex-col items-center px-4 pt-12 text-center md:pt-20">
-      <div className="mb-7 rounded-full p-[3px] ring-2 ring-accent-primary">
+    <section className="mx-auto flex w-full max-w-[600px] flex-col items-center px-4 pt-12 text-center md:px-0 md:pt-20">
+      {/* Figma img/content: 110×110, radius 32, inner shadow */}
+      <div className="relative size-[110px] shrink-0 overflow-hidden rounded-[32px] bg-surface-control">
         <Image
           src={avatarSrc}
           alt=""
-          width={104}
-          height={104}
-          className="rounded-full bg-surface-control"
+          fill
+          sizes="110px"
+          className="object-cover object-top"
           priority
           unoptimized
         />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_4px_4px_0_rgba(0,0,0,0.25)]"
+        />
       </div>
-      <h1 className="text-title1 text-text-primary">{headline}</h1>
-      <p className="mt-4 max-w-[520px] text-body text-text-secondary">{bio}</p>
-      <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+      <h1 className="mt-6 text-largeTitle text-text-primary">{headline}</h1>
+      <p className="mt-2 w-full text-body text-text-secondary">{bio}</p>
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         {links.map((link) => (
           <Button key={link.label} asChild mode="fill">
             <a href={link.href} target="_blank" rel="noreferrer">

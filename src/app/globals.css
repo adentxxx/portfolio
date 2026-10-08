@@ -83,8 +83,8 @@
   --color-accent-primary: var(--accent-primary);
   --color-accent-primary-hover: var(--accent-primary-hover);
   --color-accent-information: var(--accent-information);
-  --font-display: var(--font-vollkorn);
-  --font-ui: var(--font-ubuntu-sans);
+  --font-display: var(--font-vollkorn), Georgia, serif;
+  --font-ui: var(--font-ubuntu-sans), "Ubuntu Sans", sans-serif;
 }
 
 * {
@@ -117,13 +117,20 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-body);
   line-height: var(--lh-body);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
+/*
+  Text styles 1:1 with Figma UI Kit "Type scale".
+  Titles: Vollkorn Regular (400). Body: Ubuntu Sans Regular (400).
+  caption1: Ubuntu Sans Medium (500) — dates, tags, column labels.
+*/
 .text-largeTitle {
   font-family: var(--font-display);
   font-size: var(--size-largeTitle);
   line-height: var(--lh-largeTitle);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -131,6 +138,7 @@ body {
   font-family: var(--font-display);
   font-size: var(--size-title1);
   line-height: var(--lh-title1);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -138,6 +146,7 @@ body {
   font-family: var(--font-display);
   font-size: var(--size-title2);
   line-height: var(--lh-title2);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -145,6 +154,7 @@ body {
   font-family: var(--font-display);
   font-size: var(--size-title3);
   line-height: var(--lh-title3);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -152,6 +162,7 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-body);
   line-height: var(--lh-body);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -159,6 +170,7 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-subheadline);
   line-height: var(--lh-subheadline);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -166,6 +178,7 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-footnote);
   line-height: var(--lh-footnote);
+  font-weight: 400;
   letter-spacing: 0;
 }
 
@@ -173,6 +186,7 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-caption1);
   line-height: var(--lh-caption1);
+  font-weight: 500;
   letter-spacing: 0;
 }
 
@@ -180,6 +194,7 @@ body {
   font-family: var(--font-ui);
   font-size: var(--size-caption2);
   line-height: var(--lh-caption2);
+  font-weight: 400;
   letter-spacing: 0;
 }
 

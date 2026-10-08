@@ -45,7 +45,7 @@ async function main() {
       introHeadline: "Привет! Я Demo Designer.",
       introBio:
         "Это демо-портфолио (placeholder). Имена компаний и проектов случайные — не реальная биография. Замените через /admin.",
-      avatarSrc: "/avatars/demo.svg",
+      avatarSrc: "/avatars/avatar.png",
       introLinksJson: JSON.stringify([
         { label: "Telegram", href: "https://t.me/", icon: "send" },
         { label: "CV", href: "#", icon: "file" },

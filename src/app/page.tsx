@@ -11,11 +11,7 @@ export default async function HomePage() {
     await getHomeContent();
 
   return (
-    <main className="min-h-screen bg-surface-page pb-8">
-      <p className="mx-auto max-w-[600px] px-4 pt-4 text-center text-caption1 text-text-muted">
-        Демо-данные: имена компаний и проектов — случайные placeholder’ы, не
-        реальная биография.
-      </p>
+    <main className="min-h-screen bg-surface-page pb-20">
       <IntroCard
         headline={intro.headline}
         bio={intro.bio}

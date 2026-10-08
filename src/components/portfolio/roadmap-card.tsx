@@ -44,26 +44,33 @@ export function RoadmapCard({
 }: RoadmapCardProps) {
   const { play } = useSound();
 
+  // Figma `Cards`: 440 wide, radius 32, padding 24, gap 16, surface/card + border/subtle
   const shell = cn(
-    "w-full max-w-[480px] rounded-[28px] border border-border-subtle bg-surface-card",
+    "flex w-full max-w-[440px] flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
     side === "left" ? "ml-auto" : "mr-auto",
   );
 
+  // Skeleton plates share the Active card's geometry so Default == Active height.
+  const plate = "rounded-lg bg-surface-page ring-1 ring-inset ring-border-subtle";
+
   if (!active) {
     return (
-      <div
-        className={cn(shell, "h-[176px]")}
-        aria-hidden
-        data-state="default"
-      >
-        <div className="flex h-full flex-col gap-3.5 p-6">
-          <div className="flex items-start justify-between">
-            <div className="size-11 rounded-2xl bg-surface-control" />
-            <div className="h-3 w-16 rounded bg-surface-control" />
+      <div className={shell} aria-hidden data-state="default">
+        <div className="flex w-full items-center gap-3">
+          <div className={cn(plate, "size-[52px] shrink-0 rounded-2xl")} />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className={cn(plate, "h-[15px] w-[101px]")} />
+            <div className={cn(plate, "h-6 w-[215px] max-w-full")} />
           </div>
-          <div className="h-4 w-3/5 rounded bg-surface-control" />
-          <div className="h-3 w-full rounded bg-surface-control" />
-          <div className="h-3 w-4/5 rounded bg-surface-control" />
+        </div>
+        <div className="flex w-full flex-col gap-2">
+          <div className={cn(plate, "h-6 w-[101px]")} />
+          {/* Real description, invisible: plate grows to the exact text height */}
+          <div className={cn(plate, "flex w-full flex-col")}>
+            <p className="w-full text-subheadline text-text-primary opacity-0">
+              {data.description}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -73,41 +80,56 @@ export function RoadmapCard({
 
   const inner = (
     <>
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <Image
-          src={data.logoSrc}
-          alt=""
-          width={44}
-          height={44}
-          className="rounded-2xl"
-          unoptimized
-        />
-        <span className="text-caption1 text-text-muted">{data.dateLabel}</span>
-      </div>
-      <h3 className="text-title3 text-text-primary">{title}</h3>
-      {data.kind === "company" ? (
-        <p className="mt-1 text-body text-text-secondary">{data.role}</p>
-      ) : (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {data.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-surface-inverse px-2.5 py-0.5 text-caption1 text-text-on-inverse"
-            >
-              {tag}
-            </span>
-          ))}
+      <div className="flex w-full items-center gap-3">
+        {data.kind === "company" ? (
+          <span className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page">
+            <Image
+              src={data.logoSrc}
+              alt=""
+              width={32}
+              height={32}
+              className="size-8"
+              unoptimized
+            />
+          </span>
+        ) : (
+          <Image
+            src={data.logoSrc}
+            alt=""
+            width={52}
+            height={52}
+            className="size-[52px] shrink-0 rounded-2xl"
+            unoptimized
+          />
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="text-caption1 text-text-muted">{data.dateLabel}</span>
+          <h3 className="text-title3 text-text-primary">{title}</h3>
         </div>
-      )}
-      <p className="mt-2.5 text-subheadline text-text-secondary">
-        {data.description}
-      </p>
+      </div>
+      <div className="flex w-full flex-col gap-2">
+        {data.kind === "company" ? (
+          <p className="text-body text-text-primary">{data.role}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2 text-caption1">
+            {data.tags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 rounded-lg bg-surface-inverse px-2 py-1"
+              >
+                <span className="text-accent-primary">#</span>
+                <span className="text-text-on-inverse">{tag}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        <p className="text-subheadline text-text-secondary">{data.description}</p>
+      </div>
     </>
   );
 
   const className = cn(
     shell,
-    "block p-6 text-left",
     !reducedMotion &&
       "animate-[card-reveal_480ms_cubic-bezier(0.22,1,0.36,1)_both]",
     reducedMotion && "opacity-100",

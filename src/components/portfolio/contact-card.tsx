@@ -11,11 +11,14 @@ type ContactCardProps = {
 
 export function ContactCard({ headline, subline, links }: ContactCardProps) {
   return (
-    <section className="mx-auto mt-16 w-full max-w-[600px] px-4 pb-28 text-center md:mt-24">
-      <div className="rounded-[28px] border border-border-subtle bg-surface-card px-6 py-12">
-        <h2 className="text-title2 text-text-primary">{headline}</h2>
-        <p className="mt-3 text-body text-text-secondary">{subline}</p>
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+    // Figma card/telegram: 680 wide, px 32 / py 40, radius 32, no fill or stroke
+    <section className="mx-auto mt-20 w-full max-w-[680px] px-4 text-center md:px-0">
+      <div className="flex flex-col items-center gap-6 rounded-[32px] px-8 py-10">
+        <div className="flex w-full flex-col items-center gap-3">
+          <h2 className="text-largeTitle text-text-primary">{headline}</h2>
+          <p className="text-body text-text-secondary">{subline}</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-3">
           {links.map((link) => (
             <Button key={link.label} asChild mode="fill">
               <a href={link.href} target="_blank" rel="noreferrer">

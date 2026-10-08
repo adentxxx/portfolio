@@ -49,7 +49,7 @@ export function Bloub({
         alt=""
         width={size}
         height={size}
-        className="h-full w-full object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--accent-primary)_45%,transparent)]"
+        className="h-full w-full object-contain"
         unoptimized
       />
     </span>

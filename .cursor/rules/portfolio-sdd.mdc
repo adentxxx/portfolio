@@ -1,0 +1,8 @@
+---
+description: Правила Portfolio Roadmap — читай SDD перед правками UI
+alwaysApply: true
+---
+
+Перед изменениями UI, roadmap, bloub, темы и звука читай `docs/sdd.md` и следуй MUST/MUST NOT.
+Визуал сверяй с Figma; контент компаний/проектов не выдумывай как реальную биографию, если это placeholder.
+Токены: `docs/tokens/`.

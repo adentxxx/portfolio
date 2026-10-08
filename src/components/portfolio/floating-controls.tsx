@@ -10,7 +10,8 @@ export function FloatingControls() {
   const { muted, setMuted, play } = useSound();
 
   return (
-    <div className="fixed bottom-6 right-4 z-50 flex flex-col gap-3 md:bottom-10 md:right-8">
+    // Figma Button Bar: padding 40, gap 12, 56px icon buttons with 24px glyphs
+    <div className="fixed bottom-6 right-4 z-50 flex flex-col gap-3 md:bottom-10 md:right-10">
       <Button
         mode="icon"
         type="button"
@@ -21,9 +22,9 @@ export function FloatingControls() {
         onClick={() => toggleTheme()}
       >
         {theme === "light" ? (
-          <Moon className="size-5" aria-hidden />
+          <Moon className="size-6" strokeWidth={1.5} aria-hidden />
         ) : (
-          <Sun className="size-5" aria-hidden />
+          <Sun className="size-6" strokeWidth={1.5} aria-hidden />
         )}
       </Button>
       <Button
@@ -38,9 +39,9 @@ export function FloatingControls() {
         }}
       >
         {muted ? (
-          <VolumeX className="size-5" aria-hidden />
+          <VolumeX className="size-6" strokeWidth={1.5} aria-hidden />
         ) : (
-          <Volume2 className="size-5" aria-hidden />
+          <Volume2 className="size-6" strokeWidth={1.5} aria-hidden />
         )}
       </Button>
     </div>

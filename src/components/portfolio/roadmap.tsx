@@ -2,11 +2,15 @@
 
 import { Bloub } from "@/components/portfolio/bloub";
 import {
+  CurvedArrow,
+  ScrollArrow,
+  TimelineDot,
+} from "@/components/portfolio/decor-icons";
+import {
   RoadmapCard,
   type RoadmapCardData,
 } from "@/components/portfolio/roadmap-card";
 import { cn } from "@/lib/utils";
-import { ChevronDown } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Emotion = {
@@ -31,6 +35,8 @@ type Row = {
 };
 
 const SNAP_PX = 36;
+/** Figma Point Container: dot (24px) sits at pt-40 of each 240px row → center at 52px. */
+const POINT_CENTER_PX = 52;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -51,19 +57,17 @@ function ColumnLabel({
   label: string;
   align: "left" | "right";
 }) {
+  // Figma card/content: label + curved arrow (mirrored on the right), py 24, gap 12
   return (
     <div
       className={cn(
-        "flex flex-col gap-1",
-        align === "left" ? "items-start" : "items-end",
+        "flex items-start gap-3 py-6",
+        align === "right" && "justify-end",
       )}
     >
-      <span className="text-subheadline text-text-muted">{label}</span>
-      <ChevronDown
-        className="size-4 text-icon-muted"
-        strokeWidth={2}
-        aria-hidden
-      />
+      {align === "right" ? <CurvedArrow flip className="text-icon-muted" /> : null}
+      <span className="text-caption1 text-text-muted">{label}</span>
+      {align === "left" ? <CurvedArrow className="text-icon-muted" /> : null}
     </div>
   );
 }
@@ -190,86 +194,75 @@ export function Roadmap({
       ? (rows[atPointIndex]?.emotion ?? fallback)
       : fallback;
 
+  // Figma: «кейсы» sits in the right cell of the first content row
+  // (next to the first company card). Fall back to the header if row 0 is a project.
+  const casesLabelInHeader = rows.length === 0 || rows[0].side !== "left";
+
   return (
     <section
-      className="relative mx-auto mt-14 w-full max-w-[1160px] px-4 md:mt-20"
+      className="relative mx-auto mt-20 w-full max-w-[1160px] px-4"
       aria-label="Roadmap"
     >
-      {/* Header: experience label + idle bloub; cases label lives at first project row */}
-      <header className="mb-6 grid grid-cols-[1fr_auto_1fr] items-start gap-3 md:mb-8">
-        <div className="pt-10 md:pt-14">
+      {/* Header RoadMap: 480 | 80 | 480, gap 48 (desktop); stacked on mobile */}
+      <header className="flex flex-col items-center md:grid md:grid-cols-[1fr_80px_1fr] md:items-start md:gap-6">
+        <div className="hidden md:block">
           <ColumnLabel label="опыт работы" align="left" />
         </div>
 
-        <div className="flex w-[140px] flex-col items-center md:w-[160px]">
-          <div className="relative flex h-[88px] w-[88px] items-center justify-center md:h-[96px] md:w-[96px]">
+        <div className="flex w-20 flex-col items-center gap-3">
+          <div className="relative flex size-11 items-center justify-center">
             {showIdleBloub ? (
-              <>
-                <span
-                  className="pointer-events-none absolute inset-[-12%] rounded-full bg-accent-primary/20 blur-xl"
-                  aria-hidden
-                />
-                <Bloub
-                  phase={reducedMotion ? "arrive" : "idle"}
-                  emotionSrc={fallback.assetSrc}
-                  emotionLabel={fallback.label}
-                  idleAnimation={
-                    reducedMotion ? null : fallback.idleAnimation
-                  }
-                  size={80}
-                />
-              </>
-            ) : (
-              <span
-                className="size-3 rounded-full bg-surface-points"
-                aria-hidden
+              <Bloub
+                phase={reducedMotion ? "arrive" : "idle"}
+                emotionSrc={fallback.assetSrc}
+                emotionLabel={fallback.label}
+                idleAnimation={reducedMotion ? null : fallback.idleAnimation}
+                size={44}
               />
+            ) : (
+              <TimelineDot className="text-surface-points" />
             )}
           </div>
 
           <div
             className={cn(
-              "mt-3 flex flex-col items-center gap-1 transition-opacity duration-500",
+              "flex flex-col items-center gap-3 transition-opacity duration-500",
               hasScrolled && "opacity-40",
             )}
           >
-            <p className="text-center text-caption1 text-accent-primary">
+            <p className="whitespace-nowrap text-center text-caption1 text-accent-primary">
               начинай скроллить
             </p>
-            <ChevronDown
+            <ScrollArrow
               className={cn(
-                "size-5 text-accent-primary",
+                "text-accent-primary",
                 !hasScrolled && !reducedMotion && "bloub-idle-bob",
               )}
-              strokeWidth={2.25}
-              aria-hidden
             />
           </div>
         </div>
 
-        <div aria-hidden className="pt-10 md:pt-14" />
+        <div className="hidden md:block">
+          {casesLabelInHeader ? (
+            <ColumnLabel label="кейсы" align="right" />
+          ) : null}
+        </div>
       </header>
 
-      <div ref={trackRef} className="relative">
+      <div ref={trackRef} className="relative mt-6 md:mt-8">
+        {/* decor/connector: 1px dashed line from the first point to the footer dot */}
         <div
-          className="pointer-events-none absolute left-4 top-0 bottom-10 w-[2px] -translate-x-1/2 rounded-full bg-border-default md:left-1/2"
+          className="pointer-events-none absolute bottom-8 left-[14px] top-[52px] w-0 -translate-x-1/2 md:left-1/2"
           aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute left-4 top-0 w-[2px] -translate-x-1/2 origin-top rounded-full bg-accent-primary md:left-1/2"
-          style={{
-            height: fillPx,
-            transition: reducedMotion ? "none" : "height 80ms linear",
-          }}
-          aria-hidden
-        />
-
-        {/*
-          Cases label sits at the first content band on the right —
-          below experience + scroll hint, not in the header row with «опыт работы».
-        */}
-        <div className="pointer-events-none absolute right-0 top-2 z-[2] hidden md:block">
-          <ColumnLabel label="кейсы" align="right" />
+        >
+          <div className="absolute inset-y-0 left-0 w-0 border-l border-dashed border-border-default" />
+          <div
+            className="absolute left-0 top-0 max-h-full w-[2px] -translate-x-1/2 rounded-full bg-accent-primary"
+            style={{
+              height: Math.max(0, fillPx - POINT_CENTER_PX),
+              transition: reducedMotion ? "none" : "height 80ms linear",
+            }}
+          />
         </div>
 
         <div className="flex flex-col">
@@ -282,17 +275,15 @@ export function Roadmap({
                 key={row.id}
                 data-active={active ? "true" : "false"}
                 data-bloub={showBloubHere ? "true" : "false"}
-                className="relative grid min-h-[220px] grid-cols-[28px_1fr] items-center gap-3 py-3 md:min-h-[240px] md:grid-cols-[1fr_80px_1fr] md:gap-0 md:py-0"
+                className="relative grid min-h-[240px] grid-cols-[28px_1fr] items-start gap-3 md:grid-cols-[1fr_80px_1fr] md:gap-6"
               >
-                <div className="relative z-[1] flex h-full items-center justify-center md:col-start-2 md:row-start-1">
+                {/* Point Container: pt-40, 24px dot (or bloub on Arrive) */}
+                <div className="relative z-[1] flex justify-center pt-10 md:col-start-2 md:row-start-1">
                   <span
                     ref={(el) => {
                       pointRefs.current[index] = el;
                     }}
-                    className={cn(
-                      "relative flex items-center justify-center",
-                      showBloubHere ? "size-14" : "size-4",
-                    )}
+                    className="relative flex size-6 items-center justify-center"
                   >
                     {showBloubHere ? (
                       <Bloub
@@ -300,21 +291,21 @@ export function Roadmap({
                         emotionSrc={currentEmotion.assetSrc}
                         emotionLabel={currentEmotion.label}
                         idleAnimation={null}
-                        size={52}
+                        size={44}
                         className={cn(
+                          "absolute",
                           !reducedMotion &&
                             "animate-[bloub-arrive_420ms_ease-out]",
                         )}
                       />
                     ) : (
-                      <span
+                      <TimelineDot
                         className={cn(
-                          "size-3 rounded-full transition-colors duration-300",
+                          "transition-colors duration-300",
                           index <= revealedIndex
-                            ? "bg-accent-primary"
-                            : "bg-surface-points",
+                            ? "text-accent-primary"
+                            : "text-surface-points",
                         )}
-                        aria-hidden
                       />
                     )}
                   </span>
@@ -322,11 +313,11 @@ export function Roadmap({
 
                 <div
                   className={cn(
-                    "md:row-start-1",
+                    "py-4 md:row-start-1",
                     row.side === "left" ? "md:col-start-1" : "md:col-start-3",
                   )}
                 >
-                  <p className="mb-2 text-caption2 text-text-muted md:hidden">
+                  <p className="mb-2 text-caption1 text-text-muted md:hidden">
                     {row.side === "left" ? "опыт работы" : "кейсы"}
                   </p>
                   <RoadmapCard
@@ -336,16 +327,20 @@ export function Roadmap({
                     reducedMotion={reducedMotion}
                   />
                 </div>
+
+                {index === 0 && !casesLabelInHeader ? (
+                  <div className="hidden md:col-start-3 md:row-start-1 md:block">
+                    <ColumnLabel label="кейсы" align="right" />
+                  </div>
+                ) : null}
               </div>
             );
           })}
         </div>
 
-        <footer className="relative flex h-24 items-end justify-center pb-2">
-          <span
-            className="absolute left-4 size-3 -translate-x-1/2 rounded-full bg-surface-points md:left-1/2"
-            aria-hidden
-          />
+        {/* Footer RoadMap: 140px, connector ends in a dot, pb 8 */}
+        <footer className="relative h-[140px]">
+          <TimelineDot className="absolute bottom-2 left-[14px] -translate-x-1/2 text-surface-points md:left-1/2" />
           <p className="sr-only">Конец roadmap</p>
         </footer>
       </div>
