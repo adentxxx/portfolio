@@ -42,7 +42,12 @@ async function main() {
   await prisma.siteSettings.create({
     data: {
       id: "default",
-      introHeadline: "Привет! Я Demo Designer.",
+      // Typewriter headline: one phrase per line (see IntroCard / Typewriter)
+      introHeadline: [
+        "Привет, давай знакомиться",
+        "Меня кстати зовут Саня",
+        "Ты можешь скроллить и смотреть проекты",
+      ].join("\n"),
       introBio:
         "Это демо-портфолио (placeholder). Имена компаний и проектов случайные — не реальная биография. Замените через /admin.",
       avatarSrc: "/avatars/avatar.png",

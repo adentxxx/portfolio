@@ -34,12 +34,13 @@ type Row = {
   emotion: Emotion;
 };
 
-const SNAP_PX = 36;
 /** Figma Point Container: dot (24px) sits at pt-40 of each 240px row → center at 52px. */
 const POINT_CENTER_PX = 52;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
 const TRAVEL_DOT_PX = 8;
 const MORPH_MS = 600;
+/** Within this many px of the document bottom the footer point counts as reached. */
+const BOTTOM_REACH_PX = 48;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -84,12 +85,15 @@ export function Roadmap({
   const reducedMotion = usePrefersReducedMotion();
   const trackRef = useRef<HTMLDivElement>(null);
   const headerMarkerRef = useRef<HTMLDivElement>(null);
+  // Points 0..rows.length-1 are card rows, index rows.length is the footer dot.
   const pointRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const revealedRef = useRef(-1);
   const [hasScrolled, setHasScrolled] = useState(false);
+  // Phase A → B morph has finished: bloub may now sit on a point.
+  const [morphDone, setMorphDone] = useState(false);
+  // Sticky: once a card is revealed it stays revealed.
   const [revealedIndex, setRevealedIndex] = useState(-1);
+  // Last point whose center crossed the trigger line (follows scroll, not sticky).
   const [passedIndex, setPassedIndex] = useState(-1);
-  const [atPointIndex, setAtPointIndex] = useState(-1);
   const [fillPx, setFillPx] = useState(0);
   // Distance from the idle bloub (header) to the first point: the morph target.
   const [travelOffset, setTravelOffset] = useState(0);
@@ -148,7 +152,13 @@ export function Roadmap({
       const scrolledPastTop = triggerY - trackRect.top;
       const height = trackRect.height;
 
-      setFillPx(Math.max(0, Math.min(height, scrolledPastTop)));
+      // The footer point may never reach the trigger line on short pages, so the
+      // document bottom also counts as "reached" (Phase C).
+      const atBottom =
+        window.scrollY + window.innerHeight >=
+        document.documentElement.scrollHeight - BOTTOM_REACH_PX;
+
+      setFillPx(atBottom ? height : Math.max(0, Math.min(height, scrolledPastTop)));
 
       // Reversible: back at the top → bloub morphs back into the header (Phase A).
       setHasScrolled(window.scrollY > 20);
@@ -162,32 +172,15 @@ export function Roadmap({
       }
 
       let nextPassed = -1;
-      let nextAt = -1;
-      let bestDist = Number.POSITIVE_INFINITY;
-
       pointRefs.current.forEach((el, index) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const pointCenter = rect.top + rect.height / 2;
         if (pointCenter <= triggerY) nextPassed = index;
-        const dist = Math.abs(pointCenter - triggerY);
-        if (dist < bestDist) {
-          bestDist = dist;
-          nextAt = index;
-        }
       });
+      if (atBottom) nextPassed = pointRefs.current.length - 1;
 
-      if (bestDist > SNAP_PX) nextAt = -1;
-
-      // Reveal the card at the same moment bloub snaps onto its point.
-      const candidate = Math.max(nextPassed, nextAt);
-      if (candidate > revealedRef.current) {
-        revealedRef.current = candidate;
-      }
-
-      setAtPointIndex(nextAt);
       setPassedIndex(nextPassed);
-      setRevealedIndex(revealedRef.current);
     };
 
     const onScrollOrResize = () => {
@@ -205,10 +198,35 @@ export function Roadmap({
     };
   }, [rows.length]);
 
-  const currentEmotion =
-    atPointIndex >= 0
-      ? (rows[atPointIndex]?.emotion ?? fallback)
-      : fallback;
+  // Phase A → B: the bloub needs MORPH_MS to reach the first point. Reversible.
+  useEffect(() => {
+    if (!hasScrolled) {
+      setMorphDone(false);
+      return;
+    }
+    if (reducedMotion) {
+      setMorphDone(true);
+      return;
+    }
+    const t = window.setTimeout(() => setMorphDone(true), MORPH_MS);
+    return () => window.clearTimeout(t);
+  }, [hasScrolled, reducedMotion]);
+
+  // Phase C (Arrive): bloub sits on the last passed point (first point right after
+  // the morph) and stays there until the next point is reached. Index rows.length
+  // is the footer dot next to the contacts block.
+  const arrivedIndex =
+    hasScrolled && morphDone ? Math.max(0, passedIndex) : -1;
+
+  // The card appears the moment bloub arrives on its point, and stays revealed.
+  useEffect(() => {
+    if (arrivedIndex < 0) return;
+    const cardIndex = Math.min(arrivedIndex, rows.length - 1);
+    setRevealedIndex((prev) => Math.max(prev, cardIndex));
+  }, [arrivedIndex, rows.length]);
+
+  const currentEmotion = rows[arrivedIndex]?.emotion ?? fallback;
+  const bloubAtFooter = arrivedIndex === rows.length;
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
@@ -332,7 +350,7 @@ export function Roadmap({
         <div className="flex flex-col">
           {rows.map((row, index) => {
             const active = index <= revealedIndex;
-            const showBloubHere = atPointIndex === index;
+            const showBloubHere = arrivedIndex === index;
 
             return (
               <div
@@ -409,7 +427,36 @@ export function Roadmap({
 
         {/* Footer RoadMap: 140px, connector ends in a dot, pb 8 */}
         <footer className="relative h-[140px]">
-          <TimelineDot className="absolute bottom-2 left-[14px] -translate-x-1/2 text-surface-points md:left-1/2" />
+          <span
+            ref={(el) => {
+              pointRefs.current[rows.length] = el;
+            }}
+            data-bloub={bloubAtFooter ? "true" : "false"}
+            className="absolute bottom-2 left-[14px] z-[1] flex size-6 -translate-x-1/2 items-center justify-center md:left-1/2"
+          >
+            {bloubAtFooter ? (
+              <Bloub
+                phase="arrive"
+                emotionSrc={fallback.assetSrc}
+                emotionLabel={fallback.label}
+                idleAnimation={null}
+                size={44}
+                className={cn(
+                  "absolute",
+                  !reducedMotion && "animate-[bloub-arrive_420ms_ease-out]",
+                )}
+              />
+            ) : (
+              <TimelineDot
+                className={cn(
+                  "transition-colors duration-300",
+                  passedIndex >= rows.length
+                    ? "text-accent-primary"
+                    : "text-surface-points",
+                )}
+              />
+            )}
+          </span>
           <p className="sr-only">Конец roadmap</p>
         </footer>
       </div>

@@ -255,6 +255,24 @@ body {
   }
 }
 
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.typewriter-caret {
+  animation: caret-blink 1s steps(1) infinite;
+}
+
 .bloub-idle-bob {
   animation: bloub-bob 1.8s ease-in-out infinite;
 }

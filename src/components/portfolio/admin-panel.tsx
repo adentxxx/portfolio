@@ -159,7 +159,7 @@ export function AdminPanel({
           <h2 className="text-title3">Site settings</h2>
           {(
             [
-              ["introHeadline", "Intro headline"],
+              ["introHeadline", "Intro headline (печатная машинка: одна фраза на строку)"],
               ["introBio", "Intro bio"],
               ["contactHeadline", "Contact headline"],
               ["contactSubline", "Contact subline"],
@@ -172,7 +172,13 @@ export function AdminPanel({
                 onChange={(e) =>
                   setSettings({ ...settings, [key]: e.target.value })
                 }
-                rows={key.includes("Bio") || key.includes("Subline") ? 3 : 1}
+                rows={
+                  key === "introHeadline"
+                    ? 4
+                    : key.includes("Bio") || key.includes("Subline")
+                      ? 3
+                      : 1
+                }
                 className="mt-1 w-full rounded-[12px] border border-border-default bg-surface-page px-3 py-2 text-subheadline"
               />
             </label>
