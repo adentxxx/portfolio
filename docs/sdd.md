@@ -198,7 +198,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 - Reveal карточек: opacity + лёгкий translate; без bounce-спама.
 - Hover/Pressed кнопок — variants Figma.
 - **Bloub lifecycle** — обязательно по §5.1 (не декоративный «вечный» blob).
-- Точные easing/ms для morph bloub↔dot: <!-- TODO:user --> или снять из Figma motion.
+- Morph bloub↔dot (реализовано): 600ms `cubic-bezier(0.22, 1, 0.36, 1)`; bloub 44px сжимается в точку **8px** и переезжает к первому Point Container; подсказка «начинай скроллить» + стрелка гаснут за 300ms. Travel-точка 8px едет на конце оранжевой линии прогресса. Обратим: у верха страницы bloub возвращается в header.
 
 ---
 
@@ -211,7 +211,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | Фаза | Когда | Визуал маркера |
 |---|---|---|
 | **A. Idle (вход)** | Пользователь только зашёл, скролла ещё не было | `bloub` **анимированный** в Header RoadMap (вместе с «начинай скроллить») |
-| **B. Travel** | Пользователь начал скроллить, ещё не у активной карточки | `bloub` **переходит** в `decor/timeline-dot` и «ездит»/следует по линии к следующей точке |
+| **B. Travel** | Пользователь начал скроллить, ещё не у активной карточки | `bloub` **сжимается в точку 8px** и «ездит» по `decor/connector` на конце линии прогресса к следующей точке |
 | **C. Arrive** | Viewport / progress дошёл до работы или проекта | `decor/timeline-dot` **снова превращается** в `bloub` у этой точки; карточка → Active |
 | **D. Leave → next** | Уход с точки к следующей | Снова morph в `timeline-dot` до следующего Arrive |
 
@@ -222,6 +222,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
+6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: пройденные точки — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается.
 
 **MUST:** реализовать morph A→B→C→D; не оставлять вечный animated bloub после начала скролла.  
 **MUST:** при `prefers-reduced-motion` — без непрерывной анимации idle-bloub; morph можно заменить кроссфейдом/мгновенной сменой.
@@ -463,7 +464,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 | 1 | Выбор стека + конкретной БД + админки | Реализация §8–§9 | §9.1 |
 | 2 | Утвердить контент intro/companies/projects в БД | Прод-данные | §8 |
 | 3 | Набор эмоций bloub (ассеты + ключи) | Маркер timeline | §5.1, §8.4 |
-| 4 | Easing/ms morph bloub↔dot | Полировка | §4.5 |
+| 4 | ~~Easing/ms morph bloub↔dot~~ — закрыто, см. §4.5 | Полировка | §4.5 |
 | 5 | Клик по company-карточке | UX | §5.2 |
 | 6 | Назначение кнопок Button Bar (подтвердить theme/mute) | UI | §5.2 |
 | 7 | Default mute on/off | Звук | §6.2 |

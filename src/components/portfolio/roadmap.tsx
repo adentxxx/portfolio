@@ -37,6 +37,9 @@ type Row = {
 const SNAP_PX = 36;
 /** Figma Point Container: dot (24px) sits at pt-40 of each 240px row → center at 52px. */
 const POINT_CENTER_PX = 52;
+/** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
+const TRAVEL_DOT_PX = 8;
+const MORPH_MS = 600;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -80,12 +83,16 @@ export function Roadmap({
 }: RoadmapProps) {
   const reducedMotion = usePrefersReducedMotion();
   const trackRef = useRef<HTMLDivElement>(null);
+  const headerMarkerRef = useRef<HTMLDivElement>(null);
   const pointRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const revealedRef = useRef(-1);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [revealedIndex, setRevealedIndex] = useState(-1);
+  const [passedIndex, setPassedIndex] = useState(-1);
   const [atPointIndex, setAtPointIndex] = useState(-1);
   const [fillPx, setFillPx] = useState(0);
+  // Distance from the idle bloub (header) to the first point: the morph target.
+  const [travelOffset, setTravelOffset] = useState(0);
   const rafRef = useRef(0);
 
   const emotionMap = useMemo(
@@ -143,7 +150,16 @@ export function Roadmap({
 
       setFillPx(Math.max(0, Math.min(height, scrolledPastTop)));
 
-      if (window.scrollY > 20) setHasScrolled(true);
+      // Reversible: back at the top → bloub morphs back into the header (Phase A).
+      setHasScrolled(window.scrollY > 20);
+
+      const marker = headerMarkerRef.current;
+      const firstPoint = pointRefs.current[0];
+      if (marker && firstPoint) {
+        const m = marker.getBoundingClientRect();
+        const p = firstPoint.getBoundingClientRect();
+        setTravelOffset(p.top + p.height / 2 - (m.top + m.height / 2));
+      }
 
       let nextPassed = -1;
       let nextAt = -1;
@@ -170,6 +186,7 @@ export function Roadmap({
       }
 
       setAtPointIndex(nextAt);
+      setPassedIndex(nextPassed);
       setRevealedIndex(revealedRef.current);
     };
 
@@ -188,7 +205,6 @@ export function Roadmap({
     };
   }, [rows.length]);
 
-  const showIdleBloub = !hasScrolled || (revealedIndex < 0 && atPointIndex < 0);
   const currentEmotion =
     atPointIndex >= 0
       ? (rows[atPointIndex]?.emotion ?? fallback)
@@ -210,25 +226,53 @@ export function Roadmap({
         </div>
 
         <div className="flex w-20 flex-col items-center gap-3">
-          <div className="relative flex size-11 items-center justify-center">
-            {showIdleBloub ? (
+          {/*
+            Phase A → B: on first scroll the idle bloub shrinks into an 8px dot
+            (44 × 8/44) and slides down to the first Point Container, then the
+            travel dot on the connector takes over. Reversible when back at top.
+          */}
+          <div ref={headerMarkerRef} className="relative size-11">
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: hasScrolled
+                  ? `translateY(${travelOffset}px) scale(${TRAVEL_DOT_PX / 44})`
+                  : "none",
+                opacity: hasScrolled ? 0 : 1,
+                transition: hasScrolled
+                  ? `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease ${MORPH_MS}ms`
+                  : `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease`,
+              }}
+            >
               <Bloub
                 phase={reducedMotion ? "arrive" : "idle"}
                 emotionSrc={fallback.assetSrc}
                 emotionLabel={fallback.label}
-                idleAnimation={reducedMotion ? null : fallback.idleAnimation}
+                idleAnimation={
+                  reducedMotion || hasScrolled ? null : fallback.idleAnimation
+                }
                 size={44}
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-300",
+                  hasScrolled && "opacity-0",
+                )}
               />
-            ) : (
-              <TimelineDot className="text-surface-points" />
-            )}
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-0 rounded-full bg-accent-primary transition-opacity duration-300",
+                  hasScrolled ? "opacity-100" : "opacity-0",
+                )}
+              />
+            </div>
           </div>
 
           <div
             className={cn(
-              "flex flex-col items-center gap-3 transition-opacity duration-500",
-              hasScrolled && "opacity-40",
+              "flex flex-col items-center gap-3 transition-opacity duration-300",
+              hasScrolled && "pointer-events-none opacity-0",
             )}
+            aria-hidden={hasScrolled}
           >
             <p className="whitespace-nowrap text-center text-caption1 text-accent-primary">
               начинай скроллить
@@ -261,6 +305,19 @@ export function Roadmap({
             style={{
               height: Math.max(0, fillPx - POINT_CENTER_PX),
               transition: reducedMotion ? "none" : "height 80ms linear",
+            }}
+          />
+          {/* Phase B (Travel): 8px dot riding the end of the progress line */}
+          <span
+            className="absolute left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary"
+            style={{
+              top: `min(${Math.max(0, fillPx - POINT_CENTER_PX)}px, 100%)`,
+              opacity: hasScrolled ? 1 : 0,
+              transition: reducedMotion
+                ? "none"
+                : hasScrolled
+                  ? `top 80ms linear, opacity 150ms ease ${MORPH_MS}ms`
+                  : "top 80ms linear, opacity 150ms ease",
             }}
           />
         </div>
@@ -302,7 +359,9 @@ export function Roadmap({
                       <TimelineDot
                         className={cn(
                           "transition-colors duration-300",
-                          index <= revealedIndex
+                          // Follows the current scroll position (not sticky):
+                          // scrolling back up turns passed dots grey again.
+                          index <= passedIndex
                             ? "text-accent-primary"
                             : "text-surface-points",
                         )}
