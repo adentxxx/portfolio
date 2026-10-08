@@ -10,32 +10,26 @@ async function main() {
   await prisma.bloubEmotion.deleteMany();
   await prisma.siteSettings.deleteMany();
 
+  // Emotions = states of the bloub engine (src/lib/bloub-engine/states.ts).
+  // `expression` only applies to the `idle` state (rest face).
   await prisma.bloubEmotion.createMany({
     data: [
-      {
-        id: "wave",
-        label: "Wave (demo)",
-        assetSrc: "/bloub/wave.svg",
-        idleAnimation: "bob",
-      },
-      {
-        id: "focus",
-        label: "Focus (demo)",
-        assetSrc: "/bloub/focus.svg",
-        idleAnimation: "pulse",
-      },
-      {
-        id: "spark",
-        label: "Spark (demo)",
-        assetSrc: "/bloub/spark.svg",
-        idleAnimation: "bob",
-      },
-      {
-        id: "calm",
-        label: "Calm (demo)",
-        assetSrc: "/bloub/calm.svg",
-        idleAnimation: "float",
-      },
+      { id: "wave", label: "Привет — wink", state: "wink" },
+      { id: "focus", label: "Думает — thinking", state: "thinking" },
+      { id: "spark", label: "Орбита — orbit", state: "orbit" },
+      { id: "calm", label: "Спокоен — idle · heureux", state: "idle", expression: "heureux" },
+      { id: "curious", label: "Любопытен — idle · curieux", state: "idle", expression: "curieux" },
+      { id: "proud", label: "Горд — idle · fier", state: "idle", expression: "fier" },
+      { id: "wide", label: "Удивлён — wide", state: "wide" },
+      { id: "alert", label: "Внимание — alert", state: "alert" },
+      { id: "notify", label: "Уведомление — notify", state: "notify" },
+      { id: "exclaim", label: "Восклицание — exclaim", state: "exclaim" },
+      { id: "sleep", label: "Спит — sleep", state: "sleep" },
+      { id: "egg", label: "Яйцо — egg", state: "egg" },
+      { id: "hexagon", label: "Шестиугольник — hexagon", state: "hexagon" },
+      { id: "play", label: "Играет — play", state: "play" },
+      { id: "burst", label: "Взрыв — burst", state: "burst" },
+      { id: "comet", label: "Комета — comet", state: "comet" },
     ],
   });
 

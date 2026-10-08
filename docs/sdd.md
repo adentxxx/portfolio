@@ -281,7 +281,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 |---|---|---|
 | `Button` | State: Default / Hover / Pressed; Mode: Fill / Only Icon | `Button` |
 | `Cards` | Default / Active (Work) / Active (Project) | `RoadmapCard` |
-| `bloub` | emotion из БД; states: idle / travel-as-dot / arrived | `Bloub` + `TimelineMarker` |
+| `bloub` | emotion из БД; states: idle / travel-as-dot / arrived | `Bloub` → `BloubBot` (SVG-рендер движка `src/lib/bloub-engine`) |
 | `decor/timeline-dot` | travel/rest; size: work 20px / project 10px | `TimelineDot` (часть маркера) |
 | `BTNs` | группа Fill | `ButtonGroup` |
 | `Button Bar` | 2× Only Icon | `FloatingControls` |
@@ -363,12 +363,28 @@ type Project = {
 
 ```ts
 type BloubEmotion = {
-  id: string;          // ключ, напр. "wave" | "focus"
+  id: string;          // ключ, напр. "wave" | "focus" — на него ссылаются Company/Project
   label: string;       // для админки
-  assetSrc: string;    // svg/lottie/webp
-  idleAnimation?: string; // ключ анимации idle
+  state: string;       // StateId движка: idle | thinking | wink | wide | alert | notify |
+                       // exclaim | sleep | egg | hexagon | play | orbit | burst | comet
+  expression?: string; // ExpressionId для `idle` (neutre, heureux, curieux, fier, …); null = измеренное лицо
 };
 ```
+
+**Движок bloub.** Анимация — не ассеты (svg/gif), а процедурный движок, вендоренный из
+[jeremy-prt/bloub](https://github.com/jeremy-prt/bloub) (MIT, `src/lib/bloub-engine/LICENSE`):
+`BotEngine.sample(t)` — чистая функция времени, выдаёт path тела, глаза-дырки в маске и декор
+(кольца, частицы). React-рендер — `BloubBot` (`src/components/portfolio/bloub-bot.tsx`).
+
+- **MUST:** цвета только из токенов, `skins.ts`/`NOTIF_BLUE` движка не используются: тело — `accent/primary`,
+  глаза — `surface/page` (подложка под дырками маски, поэтому меняются с темой), кольца/частицы —
+  `accent/primary` → `accent/primary-hover`, пастилька notify — `accent/information`.
+- Форма тела — круг (как в Figma); состояния `swirl` (служебное) в справочнике нет.
+- Arrive: bloub монтируется как `idle` и морфит в `state` эмоции (ease-out движка), поверх — `bloub-arrive` 420ms.
+  Нарративные состояния (`orbit`, `burst`, `alert`…) проигрываются один раз и держат финальную позу — это
+  поведение движка, не баг.
+- `prefers-reduced-motion`: один кадр `POSES[state]`, без rAF-цикла.
+- Справочник редактируется в БД (`BloubEmotion`), сид — `prisma/seed.ts`; карточка выбирает эмоцию по `id`.
 
 ### 8.5 Site meta
 
@@ -467,7 +483,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 |---|---|---|---|
 | 1 | Выбор стека + конкретной БД + админки | Реализация §8–§9 | §9.1 |
 | 2 | Утвердить контент intro/companies/projects в БД | Прод-данные | §8 |
-| 3 | Набор эмоций bloub (ассеты + ключи) | Маркер timeline | §5.1, §8.4 |
+| 3 | ~~Набор эмоций bloub (ассеты + ключи)~~ — закрыто: эмоции = состояния движка, см. §8.4 | Маркер timeline | §5.1, §8.4 |
 | 4 | ~~Easing/ms morph bloub↔dot~~ — закрыто, см. §4.5 | Полировка | §4.5 |
 | 5 | Клик по company-карточке | UX | §5.2 |
 | 6 | Назначение кнопок Button Bar (подтвердить theme/mute) | UI | §5.2 |

@@ -7,13 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Bloub emotion = a state of the vendored bloub engine (src/lib/bloub-engine),
+/// optionally with a rest expression for the `idle` state. SDD §8.4.
 model BloubEmotion {
-  id            String    @id
-  label         String
-  assetSrc      String
-  idleAnimation String?
-  companies     Company[]
-  projects      Project[]
+  id         String    @id
+  label      String
+  /// engine StateId: idle | thinking | wink | wide | alert | notify | exclaim |
+  /// sleep | egg | hexagon | play | orbit | burst | comet
+  state      String    @default("idle")
+  /// engine ExpressionId for `idle` (neutre, heureux, curieux, …); null = measured
+  expression String?
+  companies  Company[]
+  projects   Project[]
 }
 
 model Company {

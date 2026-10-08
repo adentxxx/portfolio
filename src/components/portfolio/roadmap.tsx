@@ -16,8 +16,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type Emotion = {
   id: string;
   label: string;
-  assetSrc: string;
-  idleAnimation?: string | null;
+  state: string;
+  expression?: string | null;
 };
 
 type RoadmapProps = {
@@ -110,8 +110,7 @@ export function Roadmap({
       emotions[0] ?? {
         id: "wave",
         label: "Wave",
-        assetSrc: "/bloub/wave.svg",
-        idleAnimation: "bob",
+        state: "wink",
       },
     [emotionMap, defaultEmotionId, emotions],
   );
@@ -263,12 +262,10 @@ export function Roadmap({
               }}
             >
               <Bloub
-                phase={reducedMotion ? "arrive" : "idle"}
-                emotionSrc={fallback.assetSrc}
-                emotionLabel={fallback.label}
-                idleAnimation={
-                  reducedMotion || hasScrolled ? null : fallback.idleAnimation
-                }
+                phase="idle"
+                // Header mascot: a living idle face; the emotion itself is shown on Arrive.
+                emotion={{ label: fallback.label, state: "idle" }}
+                reducedMotion={reducedMotion}
                 size={44}
                 className={cn(
                   "absolute inset-0 transition-opacity duration-300",
@@ -371,9 +368,8 @@ export function Roadmap({
                     {showBloubHere ? (
                       <Bloub
                         phase="arrive"
-                        emotionSrc={currentEmotion.assetSrc}
-                        emotionLabel={currentEmotion.label}
-                        idleAnimation={null}
+                        emotion={currentEmotion}
+                        reducedMotion={reducedMotion}
                         size={44}
                         className={cn(
                           "absolute",
@@ -437,9 +433,8 @@ export function Roadmap({
             {bloubAtFooter ? (
               <Bloub
                 phase="arrive"
-                emotionSrc={fallback.assetSrc}
-                emotionLabel={fallback.label}
-                idleAnimation={null}
+                emotion={fallback}
+                reducedMotion={reducedMotion}
                 size={44}
                 className={cn(
                   "absolute",
