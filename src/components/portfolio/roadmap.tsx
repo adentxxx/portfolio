@@ -94,10 +94,17 @@ export function Roadmap({
   const [revealedIndex, setRevealedIndex] = useState(-1);
   // Last point whose center crossed the trigger line (follows scroll, not sticky).
   const [passedIndex, setPassedIndex] = useState(-1);
-  const [fillPx, setFillPx] = useState(0);
   // Distance from the idle bloub (header) to the first point: the morph target.
   const [travelOffset, setTravelOffset] = useState(0);
   const rafRef = useRef(0);
+
+  // Progress line + travel dot are driven outside React: `transform` written
+  // straight to the DOM from a small smoothing loop. Re-rendering the whole
+  // roadmap per scroll frame (and transitioning `height`/`top`) was the jank.
+  const connectorRef = useRef<HTMLDivElement>(null);
+  const fillLineRef = useRef<HTMLDivElement>(null);
+  const travelDotRef = useRef<HTMLSpanElement>(null);
+  const progressRef = useRef({ target: 0, current: 0, raf: 0, last: 0 });
 
   const emotionMap = useMemo(
     () => new Map(emotions.map((e) => [e.id, e])),
@@ -142,6 +149,41 @@ export function Roadmap({
   }, [companies, projects, emotionMap, fallback]);
 
   useEffect(() => {
+    const paint = (px: number) => {
+      const connector = connectorRef.current;
+      const line = fillLineRef.current;
+      const dot = travelDotRef.current;
+      if (!connector || !line || !dot) return;
+      const lineHeight = connector.clientHeight || 1;
+      // Compositor-only properties: no layout, no paint of the whole column.
+      line.style.transform = `scaleY(${px / lineHeight})`;
+      dot.style.transform = `translateY(${px}px)`;
+    };
+
+    // Critically-damped follow: the line glides to the scroll position instead of
+    // jumping with each wheel notch. τ = 70ms → settles in ~5 frames.
+    const step = (ms: number) => {
+      const p = progressRef.current;
+      const dt = p.last ? Math.min((ms - p.last) / 1000, 0.064) : 1 / 60;
+      p.last = ms;
+      const k = reducedMotion ? 1 : 1 - Math.exp(-dt / 0.07);
+      p.current += (p.target - p.current) * k;
+      if (Math.abs(p.target - p.current) < 0.25) p.current = p.target;
+      paint(p.current);
+      if (p.current !== p.target) {
+        p.raf = requestAnimationFrame(step);
+      } else {
+        p.raf = 0;
+        p.last = 0;
+      }
+    };
+
+    const setTarget = (px: number) => {
+      const p = progressRef.current;
+      p.target = px;
+      if (!p.raf) p.raf = requestAnimationFrame(step);
+    };
+
     const update = () => {
       const track = trackRef.current;
       if (!track) return;
@@ -157,7 +199,11 @@ export function Roadmap({
         window.scrollY + window.innerHeight >=
         document.documentElement.scrollHeight - BOTTOM_REACH_PX;
 
-      setFillPx(atBottom ? height : Math.max(0, Math.min(height, scrolledPastTop)));
+      const fillPx = atBottom
+        ? height
+        : Math.max(0, Math.min(height, scrolledPastTop));
+      const lineHeight = connectorRef.current?.clientHeight ?? 0;
+      setTarget(Math.max(0, Math.min(lineHeight, fillPx - POINT_CENTER_PX)));
 
       // Reversible: back at the top → bloub morphs back into the header (Phase A).
       setHasScrolled(window.scrollY > 20);
@@ -167,7 +213,8 @@ export function Roadmap({
       if (marker && firstPoint) {
         const m = marker.getBoundingClientRect();
         const p = firstPoint.getBoundingClientRect();
-        setTravelOffset(p.top + p.height / 2 - (m.top + m.height / 2));
+        // Rounded so React can bail out: this only really changes on resize.
+        setTravelOffset(Math.round(p.top + p.height / 2 - (m.top + m.height / 2)));
       }
 
       let nextPassed = -1;
@@ -192,10 +239,13 @@ export function Roadmap({
     window.addEventListener("resize", onScrollOrResize);
     return () => {
       cancelAnimationFrame(rafRef.current);
+      cancelAnimationFrame(progressRef.current.raf);
+      progressRef.current.raf = 0;
+      progressRef.current.last = 0;
       window.removeEventListener("scroll", onScrollOrResize);
       window.removeEventListener("resize", onScrollOrResize);
     };
-  }, [rows.length]);
+  }, [rows.length, reducedMotion]);
 
   // Phase A → B: the bloub needs MORPH_MS to reach the first point. Reversible.
   useEffect(() => {
@@ -224,8 +274,26 @@ export function Roadmap({
     setRevealedIndex((prev) => Math.max(prev, cardIndex));
   }, [arrivedIndex, rows.length]);
 
+  // The point bloub just left: its dot shrinks back in instead of popping.
+  const prevArrivedRef = useRef(-1);
+  const [leftIndex, setLeftIndex] = useState(-1);
+  useEffect(() => {
+    const prev = prevArrivedRef.current;
+    if (prev >= 0 && prev !== arrivedIndex) setLeftIndex(prev);
+    prevArrivedRef.current = arrivedIndex;
+  }, [arrivedIndex]);
+
   const currentEmotion = rows[arrivedIndex]?.emotion ?? fallback;
   const bloubAtFooter = arrivedIndex === rows.length;
+
+  // Arrive: the dot grows into the bloub (scale .45 ≈ 20px dot → 44px bloub).
+  const arriveClass = !reducedMotion
+    ? "animate-[bloub-arrive_520ms_cubic-bezier(0.22,1,0.36,1)_both]"
+    : undefined;
+  const dotBackClass = (index: number) =>
+    !reducedMotion && index === leftIndex
+      ? "animate-[dot-back_360ms_cubic-bezier(0.22,1,0.36,1)_both]"
+      : undefined;
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
@@ -266,6 +334,8 @@ export function Roadmap({
                 // Header mascot: a living idle face; the emotion itself is shown on Arrive.
                 emotion={{ label: fallback.label, state: "idle" }}
                 reducedMotion={reducedMotion}
+                // Invisible after the morph: don't burn a rAF loop on it.
+                paused={hasScrolled}
                 size={44}
                 className={cn(
                   "absolute inset-0 transition-opacity duration-300",
@@ -311,6 +381,7 @@ export function Roadmap({
       <div ref={trackRef} className="relative mt-6 md:mt-8">
         {/* decor/connector: 1px dashed line from the first point to the footer dot */}
         <div
+          ref={connectorRef}
           className="pointer-events-none absolute bottom-8 left-[14px] top-[52px] w-0 -translate-x-1/2 md:left-1/2"
           aria-hidden
         >
@@ -322,24 +393,24 @@ export function Roadmap({
                 "repeating-linear-gradient(to bottom, var(--border-default) 0 8px, transparent 8px 16px)",
             }}
           />
+          {/* Progress: full-height line scaled from the top (transform only, see effect) */}
           <div
-            className="absolute left-0 top-0 max-h-full w-[2px] -translate-x-1/2 rounded-full bg-accent-primary"
-            style={{
-              height: Math.max(0, fillPx - POINT_CENTER_PX),
-              transition: reducedMotion ? "none" : "height 80ms linear",
-            }}
+            ref={fillLineRef}
+            className="absolute inset-y-0 left-0 w-[2px] origin-top -translate-x-1/2 rounded-full bg-accent-primary will-change-transform"
+            style={{ transform: "scaleY(0)" }}
           />
           {/* Phase B (Travel): 8px dot with a soft accent glow riding the end of the progress line */}
           <span
-            className="absolute left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-primary)_22%,transparent),0_0_12px_2px_color-mix(in_srgb,var(--accent-primary)_55%,transparent)]"
+            ref={travelDotRef}
+            className="absolute left-0 top-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-primary)_22%,transparent),0_0_12px_2px_color-mix(in_srgb,var(--accent-primary)_55%,transparent)] will-change-transform"
             style={{
-              top: `min(${Math.max(0, fillPx - POINT_CENTER_PX)}px, 100%)`,
+              transform: "translateY(0px)",
               opacity: hasScrolled ? 1 : 0,
               transition: reducedMotion
                 ? "none"
                 : hasScrolled
-                  ? `top 80ms linear, opacity 150ms ease ${MORPH_MS}ms`
-                  : "top 80ms linear, opacity 150ms ease",
+                  ? `opacity 150ms ease ${MORPH_MS}ms`
+                  : "opacity 150ms ease",
             }}
           />
         </div>
@@ -371,11 +442,7 @@ export function Roadmap({
                         emotion={currentEmotion}
                         reducedMotion={reducedMotion}
                         size={44}
-                        className={cn(
-                          "absolute",
-                          !reducedMotion &&
-                            "animate-[bloub-arrive_420ms_ease-out]",
-                        )}
+                        className={cn("absolute", arriveClass)}
                       />
                     ) : (
                       <TimelineDot
@@ -383,6 +450,7 @@ export function Roadmap({
                         size={row.side === "left" ? 20 : 10}
                         className={cn(
                           "transition-colors duration-300",
+                          dotBackClass(index),
                           // Follows the current scroll position (not sticky):
                           // scrolling back up turns passed dots grey again.
                           index <= passedIndex
@@ -436,15 +504,13 @@ export function Roadmap({
                 emotion={fallback}
                 reducedMotion={reducedMotion}
                 size={44}
-                className={cn(
-                  "absolute",
-                  !reducedMotion && "animate-[bloub-arrive_420ms_ease-out]",
-                )}
+                className={cn("absolute", arriveClass)}
               />
             ) : (
               <TimelineDot
                 className={cn(
                   "transition-colors duration-300",
+                  dotBackClass(rows.length),
                   passedIndex >= rows.length
                     ? "text-accent-primary"
                     : "text-surface-points",

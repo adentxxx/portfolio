@@ -26,6 +26,8 @@ type BloubBotProps = {
   entryFrom?: StateId | null;
   /** No animation loop: a single readable frame (`prefers-reduced-motion`). */
   frozen?: boolean;
+  /** Keep the current frame but stop the loop (e.g. while hidden off-screen). */
+  paused?: boolean;
   className?: string;
   label?: string;
 };
@@ -49,6 +51,7 @@ export function BloubBot({
   size = 44,
   entryFrom = null,
   frozen = false,
+  paused = false,
   className,
   label = "bloub",
 }: BloubBotProps) {
@@ -98,7 +101,7 @@ export function BloubBot({
   }, [expression, frozen]);
 
   useEffect(() => {
-    if (frozen) return;
+    if (frozen || paused) return;
     const engine = engineRef.current;
     if (!engine) return;
 
@@ -116,7 +119,7 @@ export function BloubBot({
       cancelAnimationFrame(rafRef.current);
       lastRef.current = 0;
     };
-  }, [frozen]);
+  }, [frozen, paused]);
 
   const VB = DEMI_VIEWBOX;
   const R = RAYON;

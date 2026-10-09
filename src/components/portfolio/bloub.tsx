@@ -20,6 +20,8 @@ type BloubProps = {
   emotion: BloubEmotionLike;
   /** `prefers-reduced-motion`: one static frame, no loop */
   reducedMotion?: boolean;
+  /** Hidden (e.g. header bloub after the morph): stop the loop, keep the frame */
+  paused?: boolean;
   className?: string;
   size?: number;
 };
@@ -35,6 +37,7 @@ export function Bloub({
   phase,
   emotion,
   reducedMotion = false,
+  paused = false,
   className,
   size = 48,
 }: BloubProps) {
@@ -51,6 +54,7 @@ export function Bloub({
         size={size}
         entryFrom={phase === "arrive" && !reducedMotion ? "idle" : null}
         frozen={reducedMotion}
+        paused={paused}
         label={emotion.label}
       />
     </span>
