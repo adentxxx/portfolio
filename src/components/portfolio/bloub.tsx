@@ -30,8 +30,8 @@ type BloubProps = {
  * The roadmap mascot. Body `accent/primary`, eyes `surface/page` (theme-aware),
  * animated by the vendored bloub engine (`@/lib/bloub-engine`).
  *
- * - idle   → lives on its own (breath, gaze drift, blinks); state from the emotion
- * - arrive → mounts as a plain ball and morphs into the emotion's state
+ * - idle   → lives on its own (breath, gaze drift, blinks)
+ * - arrive → the emotion's readable pose, right away (the scale-in is CSS)
  */
 export function Bloub({
   phase,
@@ -52,7 +52,6 @@ export function Bloub({
         state={state}
         expression={toExpressionId(emotion.expression)}
         size={size}
-        entryFrom={phase === "arrive" && !reducedMotion ? "idle" : null}
         frozen={reducedMotion}
         paused={paused}
         label={emotion.label}

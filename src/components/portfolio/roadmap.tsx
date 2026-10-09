@@ -37,8 +37,9 @@ type Row = {
 /** Figma Point Container: dot (24px) sits at pt-40 of each 240px row → center at 52px. */
 const POINT_CENTER_PX = 52;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
-const TRAVEL_DOT_PX = 8;
-const MORPH_MS = 600;
+const TRAVEL_DOT_PX = 4;
+/** Header → first point. Short on purpose: the bloub should be on the dot almost at once. */
+const MORPH_MS = 220;
 /** Within this many px of the document bottom the footer point counts as reached. */
 const BOTTOM_REACH_PX = 48;
 
@@ -288,7 +289,7 @@ export function Roadmap({
 
   // Arrive: the dot grows into the bloub (scale .45 ≈ 20px dot → 44px bloub).
   const arriveClass = !reducedMotion
-    ? "animate-[bloub-arrive_520ms_cubic-bezier(0.22,1,0.36,1)_both]"
+    ? "animate-[bloub-arrive_180ms_cubic-bezier(0.22,1,0.36,1)_both]"
     : undefined;
   const dotBackClass = (index: number) =>
     !reducedMotion && index === leftIndex
@@ -312,9 +313,9 @@ export function Roadmap({
 
         <div className="flex w-20 flex-col items-center gap-3">
           {/*
-            Phase A → B: on first scroll the idle bloub shrinks into an 8px dot
-            (44 × 8/44) and slides down to the first Point Container, then the
-            travel dot on the connector takes over. Reversible when back at top.
+            Phase A → B: on first scroll the idle bloub shrinks into a 4px dot
+            and slides down to the first Point Container, then the travel dot
+            on the connector takes over. Reversible when back at top.
           */}
           <div ref={headerMarkerRef} className="relative size-11">
             <div
@@ -356,18 +357,14 @@ export function Roadmap({
             className={cn(
               "flex flex-col items-center gap-3 transition-opacity duration-300",
               hasScrolled && "pointer-events-none opacity-0",
+              !hasScrolled && !reducedMotion && "bloub-idle-bob",
             )}
             aria-hidden={hasScrolled}
           >
             <p className="whitespace-nowrap text-center text-caption1 text-accent-primary">
               начинай скроллить
             </p>
-            <ScrollArrow
-              className={cn(
-                "text-accent-primary",
-                !hasScrolled && !reducedMotion && "bloub-idle-bob",
-              )}
-            />
+            <ScrollArrow className="text-accent-primary" />
           </div>
         </div>
 
@@ -399,10 +396,10 @@ export function Roadmap({
             className="absolute inset-y-0 left-0 w-[2px] origin-top -translate-x-1/2 rounded-full bg-accent-primary will-change-transform"
             style={{ transform: "scaleY(0)" }}
           />
-          {/* Phase B (Travel): 8px dot with a soft accent glow riding the end of the progress line */}
+          {/* Phase B (Travel): 4px dot, glow only — no ring — riding the end of the progress line */}
           <span
             ref={travelDotRef}
-            className="absolute left-0 top-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent-primary)_22%,transparent),0_0_12px_2px_color-mix(in_srgb,var(--accent-primary)_55%,transparent)] will-change-transform"
+            className="absolute left-0 top-0 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary shadow-[0_0_10px_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] will-change-transform"
             style={{
               transform: "translateY(0px)",
               opacity: hasScrolled ? 1 : 0,

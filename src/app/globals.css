@@ -233,11 +233,11 @@ body {
   }
 }
 
-/* Arrive: the 20px timeline dot grows into the 44px bloub (0.45 ≈ 20/44) */
+/* Arrive: a short pop so the bloub reads as already on the point */
 @keyframes bloub-arrive {
   from {
-    opacity: 0.6;
-    transform: scale(0.45);
+    opacity: 0.85;
+    transform: scale(0.8);
   }
   to {
     opacity: 1;

@@ -198,7 +198,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 - Reveal карточек: opacity + лёгкий translate; без bounce-спама.
 - Hover/Pressed кнопок — variants Figma.
 - **Bloub lifecycle** — обязательно по §5.1 (не декоративный «вечный» blob).
-- Morph bloub↔dot (реализовано): 600ms `cubic-bezier(0.22, 1, 0.36, 1)`; bloub 44px сжимается в точку **8px** и переезжает к первому Point Container; подсказка «начинай скроллить» + стрелка гаснут за 300ms. Travel-точка 8px едет на конце оранжевой линии прогресса. Обратим: у верха страницы bloub возвращается в header. Arrive-bloub «вырастает» из точки (`bloub-arrive` 520ms, scale 0.45→1) и **держится** на ней до следующей точки (§5.1); покинутая точка сжимается обратно (`dot-back` 360ms).
+- Morph bloub↔dot (реализовано): 220ms `cubic-bezier(0.22, 1, 0.36, 1)`; bloub 44px сжимается в точку **4px** и переезжает к первому Point Container; подсказка «начинай скроллить» + стрелка гаснут за 300ms. Travel-точка **4px** (без обводки, только свечение) едет на конце оранжевой линии прогресса. Обратим: у верха страницы bloub возвращается в header. Arrive-bloub появляется на точке сразу в позе эмоции (`bloub-arrive` 180ms, scale 0.8→1) и **держится** на ней до следующей точки (§5.1); покинутая точка сжимается обратно (`dot-back` 360ms).
 - **Производительность скролла (MUST):** линия прогресса и travel-точка двигаются только через `transform` (`scaleY` / `translateY`), записываемый в DOM напрямую из rAF-цикла с догоняющим сглаживанием (τ ≈ 70ms), — без React-state на кадр и без transition на `height`/`top`. Невидимые bloub'ы (header после morph) ставят свой rAF-цикл на паузу.
 
 ---
@@ -212,7 +212,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | Фаза | Когда | Визуал маркера |
 |---|---|---|
 | **A. Idle (вход)** | Пользователь только зашёл, скролла ещё не было | `bloub` **анимированный** в Header RoadMap (вместе с «начинай скроллить») |
-| **B. Travel** | Пользователь начал скроллить (morph 600ms) | header-`bloub` **сжимается в точку 8px** и переезжает к первому Point Container; дальше travel-точка 8px «ездит» по `decor/connector` на конце линии прогресса |
+| **B. Travel** | Пользователь начал скроллить (morph 220ms) | header-`bloub` **сжимается в точку 4px** и переезжает к первому Point Container; дальше travel-точка 4px «ездит» по `decor/connector` на конце линии прогресса |
 | **C. Arrive** | Morph завершён → bloub на первой точке; далее — каждая точка, центр которой пересёк trigger-линию (48% viewport) | `decor/timeline-dot` **превращается** в `bloub` с эмоцией этой карточки; карточка → Active. **Bloub остаётся на точке**, пока пользователь не дойдёт до следующей (не исчезает при продолжении скролла) |
 | **D. Next point** | Следующая точка пересекла trigger-линию | Bloub переезжает на новую точку (новая эмоция), предыдущая точка снова `timeline-dot` (accent). При обратном скролле — назад к предыдущей точке |
 | **E. Finish** | Низ страницы / footer-точка roadmap у блока контактов | Footer-`decor/timeline-dot` тоже становится `bloub` (fallback-эмоция); линия прогресса доходит до неё |
@@ -226,7 +226,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
 6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: пройденные точки — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается.
 7. **Размер `decor/timeline-dot` зависит от типа карточки** (контейнер 24×24 неизменен): у **компании / работы — 20px**, у **проекта — 10px**. Точки header/footer roadmap — 20px.
-8. `decor/connector` — пунктир 1px: **dash 8px / gap 8px**, цвет `border/default`. Travel-точка (8px, accent) имеет мягкую accent-подсветку (box-shadow из `accent/primary` через color-mix).
+8. `decor/connector` — пунктир 1px: **dash 8px / gap 8px**, цвет `border/default`. Travel-точка — **4px**, accent, **без обводки**, только мягкое свечение (box-shadow blur из `accent/primary` через color-mix, без spread-кольца).
 9. **Headline intro-карточки — «печатная машинка»**: фразы берутся из `SiteSettings.introHeadline` (одна фраза на строку; редактируется в `/admin`), сменяются **каждые 7 секунд** (стирание → набор), каретка `accent/primary`. SSR отдаёт первую фразу целиком; при `prefers-reduced-motion` — мгновенная смена без посимвольного набора. Полная фраза дублируется для screen reader (`sr-only`).
 
 **MUST:** реализовать morph A→B→C→D→E; не оставлять вечный animated bloub после начала скролла.  
