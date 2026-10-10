@@ -174,6 +174,21 @@ body {
   letter-spacing: 0;
 }
 
+/* Fill hover matches UI Kit 105:62 (44 → 48) without changing layout. */
+.btn-fill {
+  transform-origin: center;
+  transition: transform 200ms ease-out;
+}
+
+.btn-fill:hover {
+  z-index: 1;
+  transform: scale(1.0909);
+}
+
+.btn-fill:active {
+  transform: scale(1);
+}
+
 .text-footnote {
   font-family: var(--font-ui);
   font-size: var(--size-footnote);

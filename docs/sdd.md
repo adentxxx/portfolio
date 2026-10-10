@@ -100,10 +100,13 @@
 
 ### 3.4 Блоки Project Full Page
 
-1. `Header` — мини-аватар + `BTNs`.
-2. `Title` — название + краткое описание.
-3. Чередование `Image` + `Text Block`.
-4. `Button Bar` + компактный `card/telegram`.
+Колонка контента **1160** (на холсте 1440 — поля по 140). Между блоками **40px**.
+
+1. `Header` — аватар **80**, radius 32, inset-тень; ссылка на `/`. Справа `BTNs` Fill, gap 12 (ссылки intro из БД).
+2. `Title` по центру: название `largeTitle`, описание `body` / `text/secondary`, теги как на карточке (`#` в `accent/primary`, `caption1`, radius 8).
+3. `Image` на всю колонку, пропорция 1160×500, radius **24**, фон `surface/control`.
+4. `Text Container` — колонка **800** по центру, gap 24 между блоками. `Text Block`: заголовок `title3`, текст `subheadline` / `text/secondary`, gap 12. Картинка секции идёт после её текста.
+5. Внизу компактный `card/telegram`: outline-кнопки «предыдущий кейс» 80×56, «на главную» 56×56, «следующий кейс» 80×56, radius 20, иконки из макета. `Button Bar` — тот же, что на главной.
 
 ---
 
@@ -211,7 +214,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 | Фаза | Когда | Визуал маркера |
 |---|---|---|
-| **A. Idle (вход)** | Пользователь только зашёл, скролла ещё не было | `bloub` **анимированный** в Header RoadMap (вместе с «начинай скроллить») |
+| **A. Idle (вход)** | Пользователь только зашёл, скролла ещё не было | `bloub` **анимированный** в Header RoadMap (вместе с «начинай скроллить»). Цикл: attentive 5s → shy 5s → scared 5s → sleep 2.5s. Первые три — лица на `idle` (`attentif` / `timide` / `effraye`); sleep — состояние `sleep`, маленькая прыгающая точка без глаз |
 | **B. Travel** | Пользователь начал скроллить (morph 220ms) | header-`bloub` **сжимается в точку 4px** и переезжает к первому Point Container; дальше travel-точка 4px «ездит» по `decor/connector` на конце линии прогресса |
 | **C. Arrive** | Morph завершён → bloub на первой точке; далее — каждая точка, центр которой пересёк trigger-линию (48% viewport) | `decor/timeline-dot` **превращается** в `bloub` с эмоцией этой карточки; карточка → Active. **Bloub остаётся на точке**, пока пользователь не дойдёт до следующей (не исчезает при продолжении скролла) |
 | **D. Next point** | Следующая точка пересекла trigger-линию | Bloub переезжает на новую точку (новая эмоция), предыдущая точка снова `timeline-dot` (accent). При обратном скролле — назад к предыдущей точке |
@@ -295,13 +298,15 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 **Default:** skeleton.  
 **Active (Work):** logo, date, title, role, description, **bloubEmotion**.  
-**Active (Project):** logo, date, title, tags, description, **bloubEmotion**, link → project page.
+**Active (Project):** logo, date, title, tags, description, **bloubEmotion**, link → project page.  
+**Hover (Active):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.
 
 ### 7.3 Button
 
-- Fill: label ± iconLeft; `surface/control`; radius ~20px.
-- Only Icon: 56×56; `border/default`; иконка 24px `icon/primary`, на hover — `accent/primary`.
-- Label: Ubuntu Sans / `subheadline` (Default/Pressed), `body` на Hover (по макету).
+- Fill: label ± iconLeft; `surface/control`; radius 20; padding 20×12. Фон на hover не меняется.
+- Default и Pressed: label `subheadline`, высота 44. Pressed сбрасывает скейл.
+- Hover (Fill): `transform: scale(1.0909)` — визуально 44→48, как UI Kit `105:62`. Место в потоке не меняется, страница не сдвигается.
+- Only Icon: 56×56; `border/default`; иконка 24px `icon/primary`, на hover — `accent/primary`. Размер не меняется.
 
 ### 7.4 Naming
 

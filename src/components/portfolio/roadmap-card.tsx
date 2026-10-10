@@ -1,5 +1,6 @@
 "use client";
 
+import { TiltedSurface } from "@/components/portfolio/tilted-surface";
 import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -43,6 +44,7 @@ export function RoadmapCard({
   reducedMotion = false,
 }: RoadmapCardProps) {
   const { play } = useSound();
+  const tiltEnabled = active && !reducedMotion;
 
   // Figma `Cards`: 440 wide, radius 32, padding 24, gap 16, surface/card + border/subtle
   const shell = cn(
@@ -128,13 +130,65 @@ export function RoadmapCard({
     </>
   );
 
+  const face = cn(
+    "flex w-full flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
+    data.kind === "project" &&
+      "cursor-pointer",
+  );
+  // Reveal stays on the outer box. `card-reveal` sets transform, and a
+  // fill of `both` would keep translateY(0) and hide the tilt.
+  const reveal = reducedMotion
+    ? "opacity-100"
+    : "animate-[card-reveal_480ms_cubic-bezier(0.22,1,0.36,1)_backwards]";
+  const align = side === "left" ? "ml-auto" : "mr-auto";
+
+  const card = <div className={face}>{inner}</div>;
+
+  if (tiltEnabled && data.kind === "project") {
+    return (
+      <Link
+        href={`/projects/${data.slug}`}
+        className={cn("block w-full max-w-[440px]", align, reveal)}
+        data-state="active-project"
+        prefetch
+        onClick={() => play("card")}
+      >
+        <TiltedSurface>{card}</TiltedSurface>
+      </Link>
+    );
+  }
+
+  if (tiltEnabled && data.url) {
+    return (
+      <a
+        href={data.url}
+        target="_blank"
+        rel="noreferrer"
+        className={cn("block w-full max-w-[440px]", align, reveal)}
+        data-state="active-work"
+        onClick={() => play("card")}
+      >
+        <TiltedSurface>{card}</TiltedSurface>
+      </a>
+    );
+  }
+
+  if (tiltEnabled) {
+    return (
+      <div
+        className={cn("w-full max-w-[440px]", align, reveal)}
+        data-state="active-work"
+      >
+        <TiltedSurface>{card}</TiltedSurface>
+      </div>
+    );
+  }
+
   const className = cn(
     shell,
-    !reducedMotion &&
-      "animate-[card-reveal_480ms_cubic-bezier(0.22,1,0.36,1)_both]",
-    reducedMotion && "opacity-100",
+    reveal,
     data.kind === "project" &&
-      "cursor-pointer transition-colors hover:border-accent-primary focus-visible:border-accent-primary",
+      "cursor-pointer",
   );
 
   if (data.kind === "project") {

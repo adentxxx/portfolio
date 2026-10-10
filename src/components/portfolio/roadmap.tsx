@@ -1,6 +1,6 @@
 "use client";
 
-import { Bloub } from "@/components/portfolio/bloub";
+import { Bloub, useHeaderMood } from "@/components/portfolio/bloub";
 import {
   CurvedArrow,
   ScrollArrow,
@@ -84,6 +84,7 @@ export function Roadmap({
   defaultEmotionId = "wave",
 }: RoadmapProps) {
   const reducedMotion = usePrefersReducedMotion();
+  const headerMood = useHeaderMood();
   const trackRef = useRef<HTMLDivElement>(null);
   const headerMarkerRef = useRef<HTMLDivElement>(null);
   // Points 0..rows.length-1 are card rows, index rows.length is the footer dot.
@@ -332,8 +333,12 @@ export function Roadmap({
             >
               <Bloub
                 phase="idle"
-                // Header mascot: a living idle face; the emotion itself is shown on Arrive.
-                emotion={{ label: fallback.label, state: "idle" }}
+                // Header mascot cycles rest faces; card emotions are shown on Arrive.
+                emotion={{
+                  label: headerMood.label,
+                  state: headerMood.state,
+                  expression: headerMood.expression,
+                }}
                 reducedMotion={reducedMotion}
                 // Invisible after the morph: don't burn a rAF loop on it.
                 paused={hasScrolled}
