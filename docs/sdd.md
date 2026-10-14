@@ -106,7 +106,7 @@
 2. `Title` по центру: название `largeTitle`, описание `body` / `text/secondary`, теги как на карточке (`#` в `accent/primary`, `caption1`, radius 8).
 3. `Image` на всю колонку, пропорция 1160×500, radius **24**, фон `surface/control`.
 4. `Text Container` — колонка **800** по центру, gap 24 между блоками. `Text Block`: заголовок `title3`, текст `subheadline` / `text/secondary`, gap 12. Картинка секции идёт после её текста.
-5. Внизу компактный `card/telegram`: outline-кнопки «предыдущий кейс» 80×56, «на главную» 56×56, «следующий кейс» 80×56, radius 20, иконки из макета. `Button Bar` — тот же, что на главной.
+5. Внизу экрана, зафиксированы по центру: кнопки «предыдущий кейс» 80×56, «на главную» 56×56, «следующий кейс» 80×56. Стиль Only Icon (`surface/overlay`, blur 12, `border/default`). `Button Bar` — тот же, что на главной.
 
 ---
 
@@ -134,6 +134,7 @@
 
 - **MUST:** light и dark через Mapped variables.
 - Переключение — UI в `Button Bar`; `prefers-color-scheme` — **SHOULD**.
+- Клик по кнопке темы раскрывает новую тему кругом от центра кнопки на весь экран (View Transition, ~700ms). При `prefers-reduced-motion` — мгновенно, без круга.
 - Dark-макеты в Figma — визуальная сверка; числовые значения — из Mapped Dark.
 
 ### 4.2 Mapped: цвета Light / Dark
@@ -147,6 +148,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | `surface/control` | `#E6E5E0` | `#323232` | Фон кнопки Fill |
 | `surface/points` | `#D9D9D9` | `#323232` | Точки timeline / points |
 | `surface/inverse` | `#323232` | `#F7F7F4` | Инверсия (теги) |
+| `surface/overlay` | `#F7F7F41F` | `#26251E73` | Фон Only Icon (light alpha 1F ~12%, dark alpha 73 ~45%, blur 12) |
 | `text/primary` | `#323232` | `#F7F7F4` | Основной текст |
 | `text/secondary` | `#757575` | `#D9D9D9` | Вторичный |
 | `text/muted` | `#B3B3B3` | `#757575` | Даты / приглушённый |
@@ -222,7 +224,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 Дополнительно:
 
-1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)`.
+1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)` через bounce-scale (`card-reveal`: 0.88 → 1.04 → 0.985 → 1, 640ms). Не сдвиг снизу. После анимации `transform` не остаётся, чтобы не глушить tilt.
 2. У **каждой** карточки (company/project) может быть **свой bloub со своей эмоцией**, настраиваемый **через БД** (`bloubEmotion` / asset id) — см. §8.
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
@@ -306,7 +308,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 - Fill: label ± iconLeft; `surface/control`; radius 20; padding 20×12. Фон на hover не меняется.
 - Default и Pressed: label `subheadline`, высота 44. Pressed сбрасывает скейл.
 - Hover (Fill): `transform: scale(1.0909)` — визуально 44→48, как UI Kit `105:62`. Место в потоке не меняется, страница не сдвигается.
-- Only Icon: 56×56; `border/default`; иконка 24px `icon/primary`, на hover — `accent/primary`. Размер не меняется.
+- Only Icon: 56×56, radius 20, padding 16; фон `surface/overlay`, `backdrop-blur` 12px, `border/default`. Иконка 24px `icon/primary`, на hover — `accent/primary`. Размер не меняется.
 
 ### 7.4 Naming
 

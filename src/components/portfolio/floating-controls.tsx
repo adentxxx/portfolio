@@ -19,7 +19,13 @@ export function FloatingControls() {
           theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"
         }
         soundKind="theme"
-        onClick={() => toggleTheme()}
+        onClick={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          toggleTheme({
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          });
+        }}
       >
         {theme === "light" ? (
           <Moon className="size-6" strokeWidth={1.5} aria-hidden />

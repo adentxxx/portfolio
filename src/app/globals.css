@@ -7,6 +7,8 @@
   --surface-control: #e6e5e0;
   --surface-points: #d9d9d9;
   --surface-inverse: #323232;
+  /* Figma surface/overlay on Only Icon: page color at alpha 1F (~12%). */
+  --surface-overlay: #f7f7f41f;
   --text-primary: #323232;
   --text-secondary: #757575;
   --text-muted: #b3b3b3;
@@ -51,6 +53,7 @@
   --surface-control: #323232;
   --surface-points: #323232;
   --surface-inverse: #f7f7f4;
+  --surface-overlay: #26251e73;
   --text-primary: #f7f7f4;
   --text-secondary: #d9d9d9;
   --text-muted: #757575;
@@ -71,6 +74,7 @@
   --color-surface-control: var(--surface-control);
   --color-surface-points: var(--surface-points);
   --color-surface-inverse: var(--surface-inverse);
+  --color-surface-overlay: var(--surface-overlay);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
@@ -93,6 +97,21 @@
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Theme toggle: the new theme is revealed by a circle from the button. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -189,6 +208,11 @@ body {
   transform: scale(1);
 }
 
+/* Opacity on the button itself drops backdrop-filter. Fade only the icon. */
+.btn-icon:disabled > * {
+  opacity: 0.5;
+}
+
 .text-footnote {
   font-family: var(--font-ui);
   font-size: var(--size-footnote);
@@ -271,13 +295,20 @@ body {
 }
 
 @keyframes card-reveal {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(14px);
+    transform: scale(0.88);
   }
-  to {
+  55% {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1.04);
+  }
+  78% {
+    transform: scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

@@ -135,11 +135,11 @@ export function RoadmapCard({
     data.kind === "project" &&
       "cursor-pointer",
   );
-  // Reveal stays on the outer box. `card-reveal` sets transform, and a
-  // fill of `both` would keep translateY(0) and hide the tilt.
+  // Bounce scale on the outer box when the pointer arrives.
+  // Fill stays `backwards` so the finished transform does not flatten the tilt.
   const reveal = reducedMotion
     ? "opacity-100"
-    : "animate-[card-reveal_480ms_cubic-bezier(0.22,1,0.36,1)_backwards]";
+    : "origin-center animate-[card-reveal_640ms_ease_backwards]";
   const align = side === "left" ? "ml-auto" : "mr-auto";
 
   const card = <div className={face}>{inner}</div>;

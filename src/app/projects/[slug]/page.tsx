@@ -6,7 +6,6 @@ import {
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -94,10 +93,7 @@ function CaseNavLink({
   wide?: boolean;
   children: ReactNode;
 }) {
-  const className = cn(
-    "bg-transparent text-icon-secondary shadow-none backdrop-blur-none",
-    wide && "w-20",
-  );
+  const className = wide ? "w-20" : undefined;
   if (!href) {
     return (
       <Button mode="icon" disabled aria-label={label} className={className}>
@@ -203,7 +199,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
         <nav
           aria-label="Другие кейсы"
-          className="flex items-center justify-center gap-3"
+          className="fixed inset-x-0 bottom-6 z-40 flex items-center justify-center gap-3 md:bottom-10"
         >
           <CaseNavLink
             href={prev ? `/projects/${prev.slug}` : null}
