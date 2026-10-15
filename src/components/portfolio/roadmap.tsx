@@ -115,10 +115,8 @@ export function Roadmap({
   // Sticky: once a card is revealed it stays revealed.
   const [revealedIndex, setRevealedIndex] = useState(-1);
   // Last point whose center crossed the 48% trigger (bloub arrive; follows scroll).
+  // Dot color uses this too: accent only once the user has scrolled to the card.
   const [passedIndex, setPassedIndex] = useState(-1);
-  // Last point the accent stroke has reached. On mobile that is the bottom of
-  // the viewport, so the bar beside an already-visible card is filled at rest.
-  const [litIndex, setLitIndex] = useState(-1);
   // Distance from the idle bloub (header) to the first point: the morph target.
   // On mobile the first point is left of the centered bloub, so X is not zero.
   const [travelOffset, setTravelOffset] = useState({ x: 0, y: 0 });
@@ -237,6 +235,9 @@ export function Roadmap({
       if (!connector || !line || !dot) return;
       const lineHeight = connector.clientHeight || 1;
       // Compositor-only properties: no layout, no paint of the whole column.
+      // `scale-y-0` is the CSS `scale` property (Tailwind 4), which multiplies
+      // with `transform` and would keep the stroke at height 0. Clear it here.
+      line.style.scale = "none";
       line.style.transform = `scaleY(${linePx / lineHeight})`;
       dot.style.transform = `translateY(${dotPx}px)`;
 
@@ -419,23 +420,19 @@ export function Roadmap({
       }
 
       let nextPassed = -1;
-      let nextLit = -1;
-      // Mobile accent follows the visible rail (viewport bottom). Arrive stays at 48%.
-      const litY = narrowNow ? window.innerHeight : triggerY;
+      // Dot color follows the journey (48% trigger), not mere visibility.
+      // A point stays surface/points until its center crosses that line.
       pointRefs.current.forEach((el, index) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
         const pointCenter = rect.top + rect.height / 2;
         if (pointCenter <= triggerY) nextPassed = index;
-        if (pointCenter <= litY) nextLit = index;
       });
       if (atBottom) {
         nextPassed = pointRefs.current.length - 1;
-        nextLit = nextPassed;
       }
 
       setPassedIndex(nextPassed);
-      setLitIndex(nextLit);
     };
 
     const onScrollOrResize = () => {
@@ -710,8 +707,9 @@ export function Roadmap({
                           "transition-colors duration-300",
                           dotBackClass(index),
                           // Follows the current scroll position (not sticky):
+                          // surface/points until the 48% line reaches this card,
                           // scrolling back up turns passed dots grey again.
-                          index <= litIndex
+                          index <= passedIndex
                             ? "text-accent-primary"
                             : "text-surface-points",
                         )}
@@ -796,7 +794,7 @@ export function Roadmap({
                 className={cn(
                   "transition-colors duration-300",
                   dotBackClass(rows.length),
-                  litIndex >= rows.length
+                  passedIndex >= rows.length
                     ? "text-accent-primary"
                     : "text-surface-points",
                 )}
