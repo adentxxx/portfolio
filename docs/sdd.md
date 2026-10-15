@@ -85,11 +85,24 @@
 3. **Footer RoadMap** — завершение линии.
 4. Декор: `decor/connector`, `Point Container` / `decor/timeline-dot`, `bloub`.
 
-**Правило раскладки:**
+**Правило раскладки (desktop):**
 
 - **Слева** → компании (опыт работы).
 - **Справа** → проекты (кейсы).
 - Карточки изначально `Cards` State=`Default`, при reveal → `Active (Work)` / `Active (Project)`.
+
+**Mobile и tablet** (`< 1160px`, макеты `161:559` и `TABLET Home Full Page` `170:1068`):
+
+- Подписей «опыт работы» и «кейсы» нет. Стрелка под «начинай скроллить» только на desktop.
+- Карточки компаний и проектов в одну колонку, все по **левому** краю, ширина до **440**. Блок «линия + карточки» по центру экрана. `decor/connector` — вертикальный пунктир слева от карточек.
+- Широкий экран (`≥ 1160`): roadmap по центру, колонка до **1160**. Карточка не шире **440**: работа прижата к центру слева, кейс — справа.
+- Стартовый bloub и конечная точка остаются по центру. Верхний и нижний connector изогнуты в двух местах, каждый поворот — дуга радиусом **56**. Пунктир dash 8 / gap 8.
+
+**Скролл на mobile и tablet** (`< 1160px`):
+
+1. **До первого скролла.** Верхний connector — только пунктир. Вертикальная полоса `decor/connector` рядом с карточками, которые уже попали в viewport, **уже залита** accent: полоса возле видимой карточки заполнена без жеста скролла. `decor/timeline-dot` этих точек — accent. Стартовый bloub остаётся в Header в фазе Idle («начинай скроллить»).
+2. **Жест скролла.** Стартовый bloub сжимается и перетекает в `decor/timeline-dot` в **начале** верхнего connector (под bloub, до первого изгиба) — не сразу к точке карточки.
+3. **Дальше как на desktop.** Travel-точка едет по connector. Когда она доходит до `decor/timeline-dot` карточки (центр точки пересёк trigger 48% viewport), на этом месте появляется bloub с эмоцией карточки; карточка → Active. Нижний connector доливается так же и доезжает до конечной точки.
 
 ### 3.3 Блоки Home (сверху вниз)
 
@@ -217,8 +230,8 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | Фаза | Когда | Визуал маркера |
 |---|---|---|
 | **A. Idle (вход)** | Пользователь только зашёл, скролла ещё не было | `bloub` **анимированный** в Header RoadMap (вместе с «начинай скроллить»). Цикл: attentive 5s → shy 5s → scared 5s → sleep 2.5s. Первые три — лица на `idle` (`attentif` / `timide` / `effraye`); sleep — состояние `sleep`, маленькая прыгающая точка без глаз |
-| **B. Travel** | Пользователь начал скроллить (morph 220ms) | header-`bloub` **сжимается в точку 4px** и переезжает к первому Point Container; дальше travel-точка 4px «ездит» по `decor/connector` на конце линии прогресса |
-| **C. Arrive** | Morph завершён → bloub на первой точке; далее — каждая точка, центр которой пересёк trigger-линию (48% viewport) | `decor/timeline-dot` **превращается** в `bloub` с эмоцией этой карточки; карточка → Active. **Bloub остаётся на точке**, пока пользователь не дойдёт до следующей (не исчезает при продолжении скролла) |
+| **B. Travel** | Пользователь начал скроллить (morph 220ms) | header-`bloub` **сжимается в точку 4px**. Desktop: переезжает к первому Point Container. Mobile/tablet: перетекает в `decor/timeline-dot` в **начале** верхнего connector (§3.2). Дальше travel-точка 4px «ездит» по `decor/connector` |
+| **C. Arrive** | Desktop: morph завершён → bloub на первой точке. Mobile: travel-точка доехала до точки карточки. Далее — каждая точка, центр которой пересёк trigger-линию (48% viewport) | `decor/timeline-dot` **превращается** в `bloub` с эмоцией этой карточки; карточка → Active. **Bloub остаётся на точке**, пока пользователь не дойдёт до следующей (не исчезает при продолжении скролла) |
 | **D. Next point** | Следующая точка пересекла trigger-линию | Bloub переезжает на новую точку (новая эмоция), предыдущая точка снова `timeline-dot` (accent). При обратном скролле — назад к предыдущей точке |
 | **E. Finish** | Низ страницы / footer-точка roadmap у блока контактов | Footer-`decor/timeline-dot` тоже становится `bloub` (fallback-эмоция); линия прогресса доходит до неё |
 
@@ -229,7 +242,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
-6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: пройденные точки — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается.
+6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: пройденные точки — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается. На mobile/tablet точка accent, как только её центр вошёл в viewport (полоса рядом с карточкой уже залита, §3.2); bloub на ней — только после Arrive по trigger 48%.
 7. **Размер `decor/timeline-dot` зависит от типа карточки** (контейнер 24×24 неизменен): у **компании / работы — 20px**, у **проекта — 10px**. Точки header/footer roadmap — 20px.
 8. `decor/connector` — пунктир 1px: **dash 8px / gap 8px**, цвет `border/default`. Travel-точка — **4px**, accent, **без обводки**, только мягкое свечение (box-shadow blur из `accent/primary` через color-mix, без spread-кольца).
 9. **Headline intro-карточки — «печатная машинка»**: фразы берутся из `SiteSettings.introHeadline` (одна фраза на строку; редактируется в `/admin`), сменяются **каждые 7 секунд** (стирание → набор), каретка `accent/primary`. SSR отдаёт первую фразу целиком; при `prefers-reduced-motion` — мгновенная смена без посимвольного набора. Полная фраза дублируется для screen reader (`sr-only`).
@@ -439,7 +452,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 
 - **a11y:** семантика, контраст Light/Dark, focus, reduced-motion, aria на icon-кнопках.
 - **performance:** lazy images; звук без автоplay; LCP — intro.
-- **responsive:** desktop 1440 — Figma; mobile — roadmap читаем. Точный mobile: <!-- TODO:user / Figma -->.
+- **responsive:** desktop 1440 — Figma; mobile — `MOB Home Full Page` (`161:559`), см. §3.2.
 - **i18n:** сейчас RU (+ EN в CTA макета). Язык: <!-- TODO:user -->.
 
 ### 9.3 Секреты и данные
@@ -455,8 +468,8 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 ### MUST
 
 1. Следовать Figma + `docs/tokens/` + этому SDD.
-2. Roadmap: компании слева, проекты справа, reveal по скроллу.
-3. Реализовать lifecycle bloub: idle animated → timeline-dot при скролле → bloub на точке карточки; эмоции из БД.
+2. Roadmap: на desktop компании слева, проекты справа; на mobile обе колонки справа от connector (§3.2). Reveal по скроллу.
+3. Реализовать lifecycle bloub: idle animated → timeline-dot при скролле → bloub на точке карточки; эмоции из БД. На mobile/tablet morph садится в начало верхнего connector; вертикальная полоса у уже видимой карточки залита до первого скролла (§3.2).
 4. Темы только через Mapped Light/Dark variables.
 5. Type scale только из `size/*` + `line-height/*`.
 6. Звук — по gesture; mute; на MVP — стоковые тестовые SFX.
@@ -497,7 +510,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 | 6 | Назначение кнопок Button Bar (подтвердить theme/mute) | UI | §5.2 |
 | 7 | Default mute on/off | Звук | §6.2 |
 | 8 | Финальная замена сток-SFX | Прод-аудио | §6.3 |
-| 9 | Mobile-макет roadmap | Responsive | §9.2 |
+| 9 | ~~Mobile-макет roadmap~~ — закрыто: `161:559`, см. §3.2 | Responsive | §9.2 |
 | 10 | Язык(и) сайта | i18n | §9.2 |
 | 11 | URL соцкнопок | Intro/Contact | §8.5 |
 | 12 | Подтвердить/отклонить демо из Figma | Контент | §8.1 |
@@ -527,4 +540,4 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 
 ---
 
-*Обновлено: БД, lifecycle bloub, полный разбор Variables/Type scale, стоковые звуки для MVP.*
+*Обновлено: mobile-скролл — полоса у видимой карточки залита до жеста, bloub перетекает в точку в начале connector (§3.2, §5.1).*

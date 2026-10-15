@@ -49,7 +49,9 @@ export function RoadmapCard({
   // Figma `Cards`: 440 wide, radius 32, padding 24, gap 16, surface/card + border/subtle
   const shell = cn(
     "flex w-full max-w-[440px] flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
-    side === "left" ? "ml-auto" : "mr-auto",
+    // Stacked layout: every card shares the left edge. Wide layout: work hugs
+    // the center from the left, cases from the right.
+    side === "left" ? "min-[1160px]:ml-auto" : "mr-auto",
   );
 
   // Skeleton plates share the Active card's geometry so Default == Active height.
