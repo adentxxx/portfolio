@@ -40,9 +40,6 @@ const POINT_CENTER_PX = 52;
 const TRAVEL_DOT_PX = 4;
 /** Header → first point. Short on purpose: the bloub should be on the dot almost at once. */
 const MORPH_MS = 220;
-/** Within this many px of the document bottom the footer point counts as reached. */
-const BOTTOM_REACH_PX = 48;
-
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -137,14 +134,15 @@ export function Roadmap({
   const exitFillRef = useRef<SVGPathElement>(null);
   const exitDotRef = useRef<HTMLSpanElement>(null);
   const progressRef = useRef({
+    // Unclamped head, px from the top of the vertical rail. The tail is the
+    // part past `lineHeight`, so both pieces share one smoothed value.
     target: 0,
     current: 0,
-    // Journey head (48% trigger). The stroke may run ahead of it on mobile.
-    dotTarget: 0,
+    lineHeight: 1,
+    exitSpan: 0,
     dotCurrent: 0,
     entryTarget: 0,
     entryCurrent: 0,
-    exitTarget: 0,
     exitCurrent: 0,
     raf: 0,
     last: 0,
@@ -205,6 +203,7 @@ export function Roadmap({
       tip: HTMLSpanElement | null,
       t: number,
       pinStart = false,
+      edge = 0.02,
     ) => {
       if (!svg || !track || !fill || !tip || svg.getClientRects().length === 0) {
         if (tip) tip.style.opacity = "0";
@@ -220,7 +219,7 @@ export function Roadmap({
       );
       const box = svg.getBoundingClientRect();
       tip.style.transform = `translate(${screen.x - box.left}px, ${screen.y - box.top}px) translate(-50%, -50%)`;
-      const onCurve = t > 0.02 && t < 0.98;
+      const onCurve = t > edge && t < 0.98;
       // Mobile: once scrolling starts, the tip sits at the curve origin
       // before the stroke has moved (bloub lands there).
       const atStart = pinStart && t <= 0.02;
@@ -255,10 +254,17 @@ export function Roadmap({
         exitFillRef.current,
         exitDotRef.current,
         exitT,
+        false,
+        0,
       );
       // The tip rides a curve while it is filling, otherwise the vertical line.
-      // Hidden until the 48% line has actually entered the rail (dotPx > 0).
-      dot.style.opacity = !onEntry && !onExit && dotPx > 0 && window.scrollY > 20 ? "1" : "0";
+      // `exitT` is cut from the same smoothed head as the rail, so the tail
+      // dot appears at the joint in the same frame the rail dot arrives.
+      // After the curve finishes, the rail dot must stay hidden.
+      dot.style.opacity =
+        !onEntry && !onExit && exitT <= 0 && dotPx > 0 && window.scrollY > 20
+          ? "1"
+          : "0";
     };
     paintRef.current = paint;
 
@@ -270,23 +276,23 @@ export function Roadmap({
       p.last = ms;
       const k = reducedMotion ? 1 : 1 - Math.exp(-dt / 0.07);
       p.current += (p.target - p.current) * k;
-      p.dotCurrent += (p.dotTarget - p.dotCurrent) * k;
       p.entryCurrent += (p.entryTarget - p.entryCurrent) * k;
-      p.exitCurrent += (p.exitTarget - p.exitCurrent) * k;
       if (Math.abs(p.target - p.current) < 0.25) p.current = p.target;
-      if (Math.abs(p.dotTarget - p.dotCurrent) < 0.25) p.dotCurrent = p.dotTarget;
       if (Math.abs(p.entryTarget - p.entryCurrent) < 0.004) {
         p.entryCurrent = p.entryTarget;
       }
-      if (Math.abs(p.exitTarget - p.exitCurrent) < 0.004) {
-        p.exitCurrent = p.exitTarget;
-      }
-      paint(p.current, p.dotCurrent, p.entryCurrent, p.exitCurrent);
+      const rail = p.lineHeight || 1;
+      const linePx = Math.max(0, Math.min(rail, p.current));
+      const exitT =
+        p.exitSpan > 0
+          ? Math.max(0, Math.min(1, (p.current - rail) / p.exitSpan))
+          : 0;
+      p.dotCurrent = linePx;
+      p.exitCurrent = exitT;
+      paint(linePx, linePx, p.entryCurrent, exitT);
       if (
         p.current !== p.target ||
-        p.dotCurrent !== p.dotTarget ||
-        p.entryCurrent !== p.entryTarget ||
-        p.exitCurrent !== p.exitTarget
+        p.entryCurrent !== p.entryTarget
       ) {
         p.raf = requestAnimationFrame(step);
       } else {
@@ -295,10 +301,9 @@ export function Roadmap({
       }
     };
 
-    const setTargets = (linePx: number, dotPx: number) => {
+    const setTargets = (journeyPx: number) => {
       const p = progressRef.current;
-      p.target = linePx;
-      p.dotTarget = dotPx;
+      p.target = journeyPx;
       if (!p.raf) p.raf = requestAnimationFrame(step);
     };
 
@@ -307,25 +312,41 @@ export function Roadmap({
       if (!track) return;
 
       const triggerY = window.innerHeight * 0.48;
-
-      // The footer point may never reach the trigger line on short pages, so the
-      // document bottom also counts as "reached" (Phase C).
-      const atBottom =
-        window.scrollY + window.innerHeight >=
-        document.documentElement.scrollHeight - BOTTOM_REACH_PX;
+      const maxScroll = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
 
       const connectorBox = connectorRef.current?.getBoundingClientRect();
       const lineHeight = connectorRef.current?.clientHeight ?? 0;
       const narrowNow = window.matchMedia("(max-width: 1159px)").matches;
-      // Journey head: where the 48% line sits on the vertical rail.
-      // Mobile uses the same head. The stroke must not run ahead of the travel
-      // dot to the bottom of the viewport just because a card is already visible.
-      const triggerFill = Math.max(
-        0,
-        Math.min(lineHeight, triggerY - (connectorBox?.top ?? triggerY)),
-      );
-      const linePx = atBottom ? lineHeight : triggerFill;
-      const dotPx = linePx;
+
+      // Journey head, in document px. Normally the 48% line. On a short page the
+      // footer dot never reaches that line, and snapping to it at the bottom
+      // jumps the stroke and the bloub. From the last card onward, stretch the
+      // remaining distance across the scroll that is actually left.
+      let headDoc = window.scrollY + triggerY;
+      const footerEl = pointRefs.current[rows.length];
+      const lastEl = rows.length > 0 ? pointRefs.current[rows.length - 1] : null;
+      if (footerEl && lastEl) {
+        const centerDoc = (el: HTMLElement) => {
+          const rect = el.getBoundingClientRect();
+          return rect.top + rect.height / 2 + window.scrollY;
+        };
+        const footerDoc = centerDoc(footerEl);
+        const lastDoc = centerDoc(lastEl);
+        const yLast = lastDoc - triggerY;
+        const yFooter = footerDoc - triggerY;
+        if (yFooter > maxScroll && maxScroll > yLast + 1 && window.scrollY >= yLast) {
+          const t = Math.min(1, (window.scrollY - yLast) / (maxScroll - yLast));
+          headDoc = lastDoc + t * (footerDoc - lastDoc);
+        }
+      }
+
+      const connectorTopDoc = (connectorBox?.top ?? 0) + window.scrollY;
+      // Unclamped: pixels past the rail belong to the tail and are smoothed
+      // together with the rail, so the handoff cannot lead or lag.
+      const journeyPx = headDoc - connectorTopDoc;
       const entry = entrySvgRef.current;
       const entryTrack = entryTrackRef.current;
       const entryFill = entryFillRef.current;
@@ -351,7 +372,7 @@ export function Roadmap({
         let entryT = 0;
         if (window.scrollY > 0) {
           entryT =
-            atBottom || resting >= 1
+            resting >= 1
               ? 1
               : Math.max(0, Math.min(1, (along - resting) / (1 - resting)));
         }
@@ -371,20 +392,14 @@ export function Roadmap({
           exitFill.setAttribute("d", d);
         }
         const box = exit.getBoundingClientRect();
-        const topDoc = box.top + window.scrollY;
-        const endDoc = box.bottom + window.scrollY;
-        const span = Math.max(1, endDoc - topDoc);
-        const along = Math.max(
-          0,
-          Math.min(1, (window.scrollY + triggerY - topDoc) / span),
-        );
-        progressRef.current.exitTarget = atBottom ? 1 : along;
+        progressRef.current.exitSpan = Math.max(1, box.height);
       } else {
-        progressRef.current.exitTarget = 0;
+        progressRef.current.exitSpan = 0;
       }
-      document.documentElement.dataset.linePx = String(Math.round(linePx));
+      progressRef.current.lineHeight = lineHeight || 1;
+      document.documentElement.dataset.linePx = String(Math.round(Math.max(0, journeyPx)));
       document.documentElement.dataset.narrow = narrowNow ? "1" : "0";
-      setTargets(linePx, dotPx);
+      setTargets(journeyPx);
       setNarrow((prev) => (prev === narrowNow ? prev : narrowNow));
 
       // Reversible: back at the top → bloub morphs back into the header (Phase A).
@@ -414,17 +429,14 @@ export function Roadmap({
       }
 
       let nextPassed = -1;
-      // Dot color follows the journey (48% trigger), not mere visibility.
-      // A point stays surface/points until its center crosses that line.
+      // Dot color follows the journey head, not mere visibility.
+      // A point stays surface/points until the head reaches its center.
       pointRefs.current.forEach((el, index) => {
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        const pointCenter = rect.top + rect.height / 2;
-        if (pointCenter <= triggerY) nextPassed = index;
+        const pointDoc = rect.top + rect.height / 2 + window.scrollY;
+        if (pointDoc <= headDoc + 0.5) nextPassed = index;
       });
-      if (atBottom) {
-        nextPassed = pointRefs.current.length - 1;
-      }
 
       setPassedIndex(nextPassed);
     };
