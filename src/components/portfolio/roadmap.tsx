@@ -318,20 +318,14 @@ export function Roadmap({
       const lineHeight = connectorRef.current?.clientHeight ?? 0;
       const narrowNow = window.matchMedia("(max-width: 1159px)").matches;
       // Journey head: where the 48% line sits on the vertical rail.
+      // Mobile uses the same head. The stroke must not run ahead of the travel
+      // dot to the bottom of the viewport just because a card is already visible.
       const triggerFill = Math.max(
         0,
         Math.min(lineHeight, triggerY - (connectorBox?.top ?? triggerY)),
       );
-      // Mobile: the rail beside a card already in the viewport is filled
-      // before any scroll. The journey dot still follows the 48% line.
-      const viewportFill = narrowNow
-        ? Math.max(
-            0,
-            Math.min(lineHeight, window.innerHeight - (connectorBox?.top ?? window.innerHeight)),
-          )
-        : 0;
-      const linePx = atBottom ? lineHeight : Math.max(triggerFill, viewportFill);
-      const dotPx = atBottom ? lineHeight : triggerFill;
+      const linePx = atBottom ? lineHeight : triggerFill;
+      const dotPx = linePx;
       const entry = entrySvgRef.current;
       const entryTrack = entryTrackRef.current;
       const entryFill = entryFillRef.current;

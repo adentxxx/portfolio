@@ -100,7 +100,7 @@
 
 **Скролл на mobile и tablet** (`< 1160px`):
 
-1. **До первого скролла.** Верхний connector — только пунктир. Вертикальная полоса `decor/connector` рядом с карточками, которые уже попали в viewport, **уже залита** accent: полоса возле видимой карточки заполнена без жеста скролла. `decor/timeline-dot` при этом остаётся `surface/points`, пока центр точки не пересёк trigger 48%. Стартовый bloub остаётся в Header в фазе Idle («начинай скроллить»).
+1. **До первого скролла.** Верхний connector и вертикальная полоса `decor/connector` рядом с карточками — только пунктир. Accent заливается **по скроллу**: голова заливки совпадает с travel-точкой (trigger 48%), а не с низом viewport. `decor/timeline-dot` остаётся `surface/points`, пока центр точки не пересёк этот trigger. Стартовый bloub остаётся в Header в фазе Idle («начинай скроллить»).
 2. **Жест скролла.** Стартовый bloub сжимается и перетекает в `decor/timeline-dot` в **начале** верхнего connector (под bloub, до первого изгиба) — не сразу к точке карточки.
 3. **Дальше как на desktop.** Travel-точка едет по connector. Когда она доходит до `decor/timeline-dot` карточки (центр точки пересёк trigger 48% viewport), на этом месте появляется bloub с эмоцией карточки; карточка → Active. Нижний connector доливается так же и доезжает до конечной точки.
 
@@ -242,7 +242,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
-6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: точка `surface/points`, пока её центр не пересёк trigger 48%; пройденные — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается. На mobile/tablet полоса рядом с карточкой залита, как только центр точки вошёл в viewport (§3.2), но сама точка не становится accent раньше trigger 48%. Bloub на ней — только после Arrive по этому trigger.
+6. Цвет `decor/timeline-dot` следует **текущей** позиции скролла: точка `surface/points`, пока её центр не пересёк trigger 48%; пройденные — accent, при обратном скролле снова `surface/points`. Reveal карточек при этом не откатывается. На mobile/tablet вертикальный `decor/connector` заливается тем же ходом скролла, что и travel-точка (до trigger 48%), и не залит заранее только потому, что карточка уже в viewport. Bloub на точке — только после Arrive по этому trigger.
 7. **Размер `decor/timeline-dot` зависит от типа карточки** (контейнер 24×24 неизменен): у **компании / работы — 20px**, у **проекта — 10px**. Точки header/footer roadmap — 20px.
 8. `decor/connector` — пунктир 1px: **dash 8px / gap 8px**, цвет `border/default`. Travel-точка — **4px**, accent, **без обводки**, только мягкое свечение (box-shadow blur из `accent/primary` через color-mix, без spread-кольца).
 9. **Headline intro-карточки — «печатная машинка»**: фразы берутся из `SiteSettings.introHeadline` (одна фраза на строку; редактируется в `/admin`), сменяются **каждые 7 секунд** (стирание → набор), каретка `accent/primary`. SSR отдаёт первую фразу целиком; при `prefers-reduced-motion` — мгновенная смена без посимвольного набора. Полная фраза дублируется для screen reader (`sr-only`).
@@ -469,7 +469,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 
 1. Следовать Figma + `docs/tokens/` + этому SDD.
 2. Roadmap: на desktop компании слева, проекты справа; на mobile обе колонки справа от connector (§3.2). Reveal по скроллу.
-3. Реализовать lifecycle bloub: idle animated → timeline-dot при скролле → bloub на точке карточки; эмоции из БД. На mobile/tablet morph садится в начало верхнего connector; вертикальная полоса у уже видимой карточки залита до первого скролла (§3.2).
+3. Реализовать lifecycle bloub: idle animated → timeline-dot при скролле → bloub на точке карточки; эмоции из БД. На mobile/tablet morph садится в начало верхнего connector; вертикальная полоса заливается accent по скроллу, вместе с travel-точкой (§3.2).
 4. Темы только через Mapped Light/Dark variables.
 5. Type scale только из `size/*` + `line-height/*`.
 6. Звук — по gesture; mute; на MVP — стоковые тестовые SFX.
@@ -540,4 +540,4 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 
 ---
 
-*Обновлено: mobile-скролл — полоса у видимой карточки залита до жеста; `decor/timeline-dot` остаётся `surface/points`, пока центр не пересёк trigger 48% (§3.2, §5.1).*
+*Обновлено: mobile — вертикальный `decor/connector` заливается по скроллу вместе с travel-точкой, не до низа viewport (§3.2, §5.1).*
