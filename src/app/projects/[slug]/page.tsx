@@ -6,6 +6,7 @@ import {
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
+import { publicPath } from "@/lib/public-path";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -71,7 +72,7 @@ function CaseImage({ src }: { src: string }) {
   return (
     <div className="relative aspect-[116/50] w-full overflow-hidden rounded-[24px] bg-surface-control">
       <Image
-        src={src}
+        src={publicPath(src)}
         alt=""
         fill
         className="object-cover"
@@ -137,7 +138,7 @@ export default async function ProjectPage({ params }: PageProps) {
             className="relative block size-20 shrink-0 overflow-hidden rounded-[32px] bg-surface-control"
           >
             <Image
-              src={home.intro.avatarSrc}
+              src={publicPath(home.intro.avatarSrc)}
               alt=""
               fill
               className="object-cover object-top"

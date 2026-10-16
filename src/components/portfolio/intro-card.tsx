@@ -3,6 +3,7 @@
 import { Typewriter, parsePhrases } from "@/components/portfolio/typewriter";
 import { Button } from "@/components/ui/button";
 import type { IntroLink } from "@/lib/content";
+import { publicPath } from "@/lib/public-path";
 import Image from "next/image";
 
 type IntroCardProps = {
@@ -22,7 +23,7 @@ export function IntroCard({ headline, bio, avatarSrc, links }: IntroCardProps) {
       {/* Figma img/content: 110×110, radius 32, inner shadow */}
       <div className="relative size-[110px] shrink-0 overflow-hidden rounded-[32px] bg-surface-control">
         <Image
-          src={avatarSrc}
+          src={publicPath(avatarSrc)}
           alt=""
           fill
           sizes="110px"

@@ -2,6 +2,7 @@
 
 import { TiltedSurface } from "@/components/portfolio/tilted-surface";
 import { useSound } from "@/hooks/use-sound";
+import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -88,7 +89,7 @@ export function RoadmapCard({
         {data.kind === "company" ? (
           <span className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page">
             <Image
-              src={data.logoSrc}
+              src={publicPath(data.logoSrc)}
               alt=""
               width={32}
               height={32}
@@ -98,7 +99,7 @@ export function RoadmapCard({
           </span>
         ) : (
           <Image
-            src={data.logoSrc}
+            src={publicPath(data.logoSrc)}
             alt=""
             width={52}
             height={52}
@@ -160,7 +161,7 @@ export function RoadmapCard({
     );
   }
 
-  if (tiltEnabled && data.url) {
+  if (tiltEnabled && data.kind === "company" && data.url) {
     return (
       <a
         href={data.url}

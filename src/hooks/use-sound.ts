@@ -1,5 +1,6 @@
 "use client";
 
+import { publicPath } from "@/lib/public-path";
 import {
   createContext,
   createElement,
@@ -22,9 +23,9 @@ type SoundContextValue = {
 const SoundContext = createContext<SoundContextValue | null>(null);
 
 const SOUND_SRC: Record<SoundKind, string> = {
-  button: "/sounds/click-button.wav",
-  card: "/sounds/click-card.wav",
-  theme: "/sounds/click-theme.wav",
+  button: publicPath("/sounds/click-button.wav"),
+  card: publicPath("/sounds/click-card.wav"),
+  theme: publicPath("/sounds/click-theme.wav"),
 };
 
 export function SoundProvider({ children }: { children: ReactNode }) {
