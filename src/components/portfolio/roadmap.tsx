@@ -38,6 +38,8 @@ type Row = {
 const POINT_CENTER_PX = 52;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
 const TRAVEL_DOT_PX = 4;
+/** Header decor/timeline-dot. Mobile morph lands here and stays (SDD §5.1). */
+const ORIGIN_DOT_PX = 20;
 /** Header → first point. Short on purpose: the bloub should be on the dot almost at once. */
 const MORPH_MS = 220;
 function usePrefersReducedMotion() {
@@ -117,6 +119,9 @@ export function Roadmap({
   // Distance from the idle bloub (header) to the first point: the morph target.
   // On mobile the first point is left of the centered bloub, so X is not zero.
   const [travelOffset, setTravelOffset] = useState({ x: 0, y: 0 });
+  // Mobile: the timeline-dot born at the connector origin is accent once the
+  // 48% trigger has passed its center, grey again on the way back up.
+  const [entryOriginLit, setEntryOriginLit] = useState(false);
   const rafRef = useRef(0);
 
   // Progress line + travel dot are driven outside React: `transform` written
@@ -247,7 +252,9 @@ export function Roadmap({
         entryFillRef.current,
         entryDotRef.current,
         entryT,
-        window.scrollY > 20,
+        // The origin keeps its own timeline-dot. The travel tip only shows
+        // once it has moved off that dot.
+        false,
       );
       paintCurve(
         exitSvgRef.current,
@@ -418,11 +425,14 @@ export function Roadmap({
       const marker = headerMarkerRef.current;
       const firstPoint = pointRefs.current[0];
       // Mobile morph lands on the start of the entry curve, not the first card.
+      // That dot stays there; the 4px tip keeps riding the connector.
+      let originLit = false;
       if (marker && narrowNow && entryTrack && entry && entry.getClientRects().length > 0) {
         const start = entryTrack.getPointAtLength(0);
         const screen = new DOMPoint(start.x, start.y).matrixTransform(
           entryTrack.getScreenCTM() ?? new DOMMatrix(),
         );
+        originLit = screen.y + window.scrollY <= headDoc + 0.5;
         const m = marker.getBoundingClientRect();
         setTravelOffset({
           x: Math.round(screen.x - (m.left + m.width / 2)),
@@ -437,6 +447,7 @@ export function Roadmap({
           y: Math.round(p.top + p.height / 2 - (m.top + m.height / 2)),
         });
       }
+      setEntryOriginLit((prev) => (prev === originLit ? prev : originLit));
 
       let nextPassed = -1;
       // Dot color follows the journey head, not mere visibility.
@@ -553,22 +564,28 @@ export function Roadmap({
 
         <div className="flex w-20 flex-col items-center gap-3">
           {/*
-            Phase A → B: on first scroll the idle bloub shrinks into a 4px dot.
-            Desktop: it slides to the first Point Container. Mobile: it lands
-            at the start of the entry curve. The travel dot then takes over.
-            Reversible when back at top.
+            Phase A → B: on first scroll the idle bloub shrinks into a dot.
+            Desktop: 4px, slides to the first Point Container, then the travel
+            tip takes over. Mobile: 20px timeline-dot, stays at the start of
+            the entry curve while the tip keeps riding. Back at the top, the
+            dot grows into the bloub again.
           */}
-          <div ref={headerMarkerRef} className="relative size-11">
+          <div
+            ref={headerMarkerRef}
+            className={cn("relative size-11", hasScrolled && narrow && "z-10")}
+          >
             <div
               className="absolute inset-0"
               style={{
                 transform: hasScrolled
-                  ? `translate(${travelOffset.x}px, ${travelOffset.y}px) scale(${TRAVEL_DOT_PX / 44})`
+                  ? `translate(${travelOffset.x}px, ${travelOffset.y}px) scale(${(narrow ? ORIGIN_DOT_PX : TRAVEL_DOT_PX) / 44})`
                   : "none",
-                opacity: hasScrolled ? 0 : 1,
-                transition: hasScrolled
-                  ? `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease ${MORPH_MS}ms`
-                  : `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease`,
+                opacity: hasScrolled && !narrow ? 0 : 1,
+                transition: reducedMotion
+                  ? "none"
+                  : hasScrolled
+                    ? `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease ${narrow ? "0ms" : `${MORPH_MS}ms`}`
+                    : `transform ${MORPH_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease`,
               }}
             >
               <Bloub
@@ -591,8 +608,11 @@ export function Roadmap({
               <span
                 aria-hidden
                 className={cn(
-                  "absolute inset-0 rounded-full bg-accent-primary transition-opacity duration-300",
+                  "absolute inset-0 rounded-full transition-[opacity,background-color] duration-300",
                   hasScrolled ? "opacity-100" : "opacity-0",
+                  narrow && !entryOriginLit
+                    ? "bg-surface-points"
+                    : "bg-accent-primary",
                 )}
               />
             </div>
