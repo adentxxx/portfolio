@@ -140,6 +140,7 @@ export function Roadmap({
     current: 0,
     lineHeight: 1,
     exitSpan: 0,
+    exitLength: 0,
     dotCurrent: 0,
     entryTarget: 0,
     entryCurrent: 0,
@@ -248,7 +249,7 @@ export function Roadmap({
         entryT,
         window.scrollY > 20,
       );
-      const onExit = paintCurve(
+      paintCurve(
         exitSvgRef.current,
         exitTrackRef.current,
         exitFillRef.current,
@@ -257,14 +258,13 @@ export function Roadmap({
         false,
         0,
       );
-      // The tip rides a curve while it is filling, otherwise the vertical line.
-      // `exitT` is cut from the same smoothed head as the rail, so the tail
-      // dot appears at the joint in the same frame the rail dot arrives.
-      // After the curve finishes, the rail dot must stay hidden.
+      // One head feeds both pieces, and the marker swaps in the same frame:
+      // the rail dot has a 150ms opacity fade for the header morph, which would
+      // leave it on the joint while the tail tip is already moving.
+      const onTail = exitT > 0;
+      if (onTail) dot.style.transition = "none";
       dot.style.opacity =
-        !onEntry && !onExit && exitT <= 0 && dotPx > 0 && window.scrollY > 20
-          ? "1"
-          : "0";
+        !onEntry && !onTail && dotPx > 0 && window.scrollY > 20 ? "1" : "0";
     };
     paintRef.current = paint;
 
@@ -283,10 +283,18 @@ export function Roadmap({
       }
       const rail = p.lineHeight || 1;
       const linePx = Math.max(0, Math.min(rail, p.current));
-      const exitT =
-        p.exitSpan > 0
-          ? Math.max(0, Math.min(1, (p.current - rail) / p.exitSpan))
-          : 0;
+      // Path length is longer than the tail's height, so a linear fraction
+      // launches the tip at ~2× the rail speed. Ease it so the first pixel
+      // of the curve moves 1:1 with the rail, and still finishes at the end.
+      const overflow = Math.max(0, p.current - rail);
+      const span = p.exitSpan;
+      const length = p.exitLength || span;
+      let exitT = 0;
+      if (span > 0 && length > 0 && overflow > 0) {
+        const x = Math.min(span, overflow);
+        const shown = x + (length / span - 1) * ((x * x) / span);
+        exitT = Math.min(1, shown / length);
+      }
       p.dotCurrent = linePx;
       p.exitCurrent = exitT;
       paint(linePx, linePx, p.entryCurrent, exitT);
@@ -393,8 +401,10 @@ export function Roadmap({
         }
         const box = exit.getBoundingClientRect();
         progressRef.current.exitSpan = Math.max(1, box.height);
+        progressRef.current.exitLength = exitTrack.getTotalLength() || box.height;
       } else {
         progressRef.current.exitSpan = 0;
+        progressRef.current.exitLength = 0;
       }
       progressRef.current.lineHeight = lineHeight || 1;
       document.documentElement.dataset.linePx = String(Math.round(Math.max(0, journeyPx)));
@@ -468,7 +478,9 @@ export function Roadmap({
   // offsets this loop writes straight to the DOM.
   useLayoutEffect(() => {
     const p = progressRef.current;
-    paintRef.current(p.current, p.dotCurrent, p.entryCurrent, p.exitCurrent);
+    // `current` is the unclamped journey. The rail stroke must stay clamped;
+    // passing `current` through would scale it past the joint for a frame.
+    paintRef.current(p.dotCurrent, p.dotCurrent, p.entryCurrent, p.exitCurrent);
   });
 
   // Phase A → B: the bloub needs MORPH_MS to reach the first point. Reversible.
