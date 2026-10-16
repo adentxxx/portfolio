@@ -1,12 +1,23 @@
-name: Export static site
+name: Deploy GitHub Pages
 
-# GitHub Pages is unavailable on the free plan while this repository is private.
-# The public test site is the separate repository adentxxx/adentxxx.github.io.
 on:
+  push:
+    branches:
+      - cursor/portfolio-roadmap-mvp-9ceb
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
-  export:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,13 +41,24 @@ jobs:
       - name: Export static site
         env:
           GITHUB_PAGES: "true"
+          NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
           DATABASE_URL: file:./dev.db
         run: |
           npm run build:pages
           node -e "require('fs').writeFileSync('out/.nojekyll','')"
 
-      - name: Upload site
-        uses: actions/upload-artifact@v4
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: site
-          path: out
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
