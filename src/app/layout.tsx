@@ -1,4 +1,5 @@
 import { Providers } from "@/components/providers";
+import { themeInitScript } from "@/lib/theme";
 import type { Metadata } from "next";
 import { Ubuntu_Sans, Vollkorn } from "next/font/google";
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased">
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <Providers>{children}</Providers>
       </body>
     </html>

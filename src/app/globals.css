@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
-/* Mapped Light — canonical from docs/tokens + SDD §4.2 */
-:root {
+/* Mapped Light — canonical from docs/tokens + SDD §4.2.
+   Without data-theme, prefers-color-scheme below overrides these on a dark OS. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
   --surface-page: #f7f7f4;
   --surface-card: #f2f1ed;
   --surface-control: #e6e5e0;
@@ -47,7 +50,33 @@
   --font-ui: var(--font-ubuntu-sans), "Ubuntu Sans", sans-serif;
 }
 
-[data-theme="dark"] {
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-page: #26251e;
+    --surface-card: #323232;
+    --surface-control: #323232;
+    --surface-points: #323232;
+    --surface-inverse: #f7f7f4;
+    --surface-overlay: #26251e73;
+    --text-primary: #f7f7f4;
+    --text-secondary: #d9d9d9;
+    --text-muted: #757575;
+    --text-on-inverse: #26251e;
+    --icon-primary: #f2f1ed;
+    --icon-secondary: #d9d9d9;
+    --icon-muted: #757575;
+    --border-subtle: #757575;
+    --border-default: #757575;
+    --accent-primary: #f7aa55;
+    --accent-primary-hover: #ffc98f;
+    --accent-information: #79aafa;
+  }
+}
+
+/* Explicit Button Bar choice. Same Mapped Dark values as the media query above. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
   --surface-page: #26251e;
   --surface-card: #323232;
   --surface-control: #323232;

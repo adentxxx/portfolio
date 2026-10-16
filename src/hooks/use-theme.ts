@@ -5,13 +5,13 @@ import {
   createElement,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
+import { THEME_SOURCE_KEY, THEME_STORAGE_KEY } from "@/lib/theme";
 
 type Theme = "light" | "dark";
 
@@ -39,36 +39,74 @@ function startCircularTransition(update: () => void): ViewTransitionHandle | nul
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function resolveInitialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  const stored = localStorage.getItem("portfolio-theme");
-  if (stored === "light" || stored === "dark") return stored;
+function systemTheme(): Theme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
+function explicitTheme(): Theme | null {
+  try {
+    if (localStorage.getItem(THEME_SOURCE_KEY) !== "user") return null;
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light" || stored === "dark") return stored;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function currentTheme(): Theme {
+  const attr = document.documentElement.getAttribute("data-theme");
+  if (attr === "light" || attr === "dark") return attr;
+  return systemTheme();
+}
+
+function paintTheme(next: Theme, explicit: boolean) {
+  const root = document.documentElement;
+  if (explicit) {
+    root.setAttribute("data-theme", next);
+    root.style.colorScheme = next;
+    return;
+  }
+  root.removeAttribute("data-theme");
+  root.style.removeProperty("color-scheme");
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
-  const themeRef = useRef<Theme>(theme);
-  themeRef.current = theme;
 
   const applyTheme = useCallback((next: Theme) => {
-    themeRef.current = next;
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("portfolio-theme", next);
+    paintTheme(next, true);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, next);
+      localStorage.setItem(THEME_SOURCE_KEY, "user");
+    } catch {
+      /* private mode */
+    }
     setThemeState(next);
   }, []);
 
-  useEffect(() => {
-    applyTheme(resolveInitialTheme());
-  }, [applyTheme]);
+  useLayoutEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const sync = () => {
+      const chosen = explicitTheme();
+      const next = chosen ?? (media.matches ? "dark" : "light");
+      paintTheme(next, chosen !== null);
+      setThemeState(next);
+    };
+
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   const setTheme = applyTheme;
 
   const toggleTheme = useCallback(
     (origin?: { x: number; y: number }) => {
-      const next: Theme = themeRef.current === "light" ? "dark" : "light";
+      const next: Theme = currentTheme() === "light" ? "dark" : "light";
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (reduced || !origin) {
