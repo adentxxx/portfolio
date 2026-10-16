@@ -6,9 +6,8 @@ import {
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
-import { publicPath } from "@/lib/public-path";
+import { publicPath, pagePath } from "@/lib/public-path";
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -104,9 +103,9 @@ function CaseNavLink({
   }
   return (
     <Button asChild mode="icon" className={className}>
-      <Link href={href} aria-label={label}>
+      <a href={pagePath(href)} aria-label={label}>
         {children}
-      </Link>
+      </a>
     </Button>
   );
 }
@@ -132,8 +131,8 @@ export default async function ProjectPage({ params }: PageProps) {
     <main className="min-h-screen bg-surface-page">
       <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-10 min-[1192px]:px-0">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href="/"
+          <a
+            href={pagePath("/")}
             aria-label="На главную"
             className="relative block size-20 shrink-0 overflow-hidden rounded-[32px] bg-surface-control"
           >
@@ -146,7 +145,7 @@ export default async function ProjectPage({ params }: PageProps) {
               unoptimized
             />
             <span className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_4px_4px_0_rgba(0,0,0,0.25)]" />
-          </Link>
+          </a>
           <div className="flex flex-wrap justify-end gap-3">
             {home.intro.links.map((link) => (
               <Button key={link.label} asChild mode="fill">

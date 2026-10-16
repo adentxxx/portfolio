@@ -2,10 +2,9 @@
 
 import { TiltedSurface } from "@/components/portfolio/tilted-surface";
 import { useSound } from "@/hooks/use-sound";
-import { publicPath } from "@/lib/public-path";
+import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import Link from "next/link";
 
 export type RoadmapCardData =
   | {
@@ -149,15 +148,14 @@ export function RoadmapCard({
 
   if (tiltEnabled && data.kind === "project") {
     return (
-      <Link
-        href={`/projects/${data.slug}`}
+      <a
+        href={pagePath(`/projects/${data.slug}`)}
         className={cn("block w-full max-w-[440px]", align, reveal)}
         data-state="active-project"
-        prefetch
         onClick={() => play("card")}
       >
         <TiltedSurface>{card}</TiltedSurface>
-      </Link>
+      </a>
     );
   }
 
@@ -196,15 +194,14 @@ export function RoadmapCard({
 
   if (data.kind === "project") {
     return (
-      <Link
-        href={`/projects/${data.slug}`}
+      <a
+        href={pagePath(`/projects/${data.slug}`)}
         className={className}
         data-state="active-project"
-        prefetch
         onClick={() => play("card")}
       >
         {inner}
-      </Link>
+      </a>
     );
   }
 
