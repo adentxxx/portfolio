@@ -72,6 +72,92 @@ function exitConnectorPath(width: number) {
   return `M 0 ${y0} A ${r} ${r} 0 0 0 ${r} ${y0 + r} H ${width - r} A ${r} ${r} 0 0 1 ${width} ${y0 + r * 2}`;
 }
 
+/** Bloub diameter on a point. The dot scales up to this and back. */
+const BLOUB_ON_DOT_PX = 44;
+/** Appear / disappear between decor/timeline-dot and bloub. */
+const DOT_BLOUB_MS = 200;
+
+/**
+ * Keeps the bloub mounted through the exit so opacity and scale can ease
+ * back into the dot. `shown` flips a frame after mount, so the 200ms
+ * transition has a real start state.
+ */
+function useDotBloubPresence(show: boolean, reducedMotion: boolean) {
+  const [mounted, setMounted] = useState(show);
+  const [shown, setShown] = useState(show);
+
+  useLayoutEffect(() => {
+    if (reducedMotion) {
+      setMounted(show);
+      setShown(show);
+      return;
+    }
+    if (show) setMounted(true);
+    else setShown(false);
+  }, [show, reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || !show || !mounted) return;
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(id);
+  }, [show, mounted, reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || show) return;
+    const id = window.setTimeout(() => setMounted(false), DOT_BLOUB_MS);
+    return () => window.clearTimeout(id);
+  }, [show, reducedMotion]);
+
+  return { mounted, shown };
+}
+
+function TimelineMarker({
+  showBloub,
+  emotion,
+  reducedMotion,
+  dotSize = 20,
+  lit,
+}: {
+  showBloub: boolean;
+  emotion: Emotion;
+  reducedMotion: boolean;
+  dotSize?: 20 | 10;
+  lit: boolean;
+}) {
+  const { mounted, shown } = useDotBloubPresence(showBloub, reducedMotion);
+
+  return (
+    <>
+      <TimelineDot
+        size={dotSize}
+        className={cn(
+          "timeline-marker-dot",
+          shown ? "opacity-0" : "opacity-100",
+          lit ? "text-accent-primary" : "text-surface-points",
+        )}
+      />
+      {mounted ? (
+        <span
+          className="timeline-marker-bloub absolute"
+          style={{
+            opacity: shown ? 1 : 0,
+            transform: shown
+              ? "scale(1)"
+              : `scale(${dotSize / BLOUB_ON_DOT_PX})`,
+          }}
+        >
+          <Bloub
+            phase="arrive"
+            emotion={emotion}
+            reducedMotion={reducedMotion}
+            size={BLOUB_ON_DOT_PX}
+          />
+        </span>
+      ) : null}
+    </>
+  );
+}
+
 function ColumnLabel({
   label,
   align,
@@ -526,26 +612,7 @@ export function Roadmap({
     setRevealedIndex((prev) => Math.max(prev, cardIndex));
   }, [arrivedIndex, rows.length]);
 
-  // The point bloub just left: its dot shrinks back in instead of popping.
-  const prevArrivedRef = useRef(-1);
-  const [leftIndex, setLeftIndex] = useState(-1);
-  useEffect(() => {
-    const prev = prevArrivedRef.current;
-    if (prev >= 0 && prev !== arrivedIndex) setLeftIndex(prev);
-    prevArrivedRef.current = arrivedIndex;
-  }, [arrivedIndex]);
-
-  const currentEmotion = rows[arrivedIndex]?.emotion ?? fallback;
   const bloubAtFooter = arrivedIndex === rows.length;
-
-  // Arrive: the dot grows into the bloub (scale .45 ≈ 20px dot → 44px bloub).
-  const arriveClass = !reducedMotion
-    ? "animate-[bloub-arrive_180ms_cubic-bezier(0.22,1,0.36,1)_both]"
-    : undefined;
-  const dotBackClass = (index: number) =>
-    !reducedMotion && index === leftIndex
-      ? "animate-[dot-back_360ms_cubic-bezier(0.22,1,0.36,1)_both]"
-      : undefined;
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
@@ -736,30 +803,17 @@ export function Roadmap({
                     }}
                     className="relative flex size-6 items-center justify-center"
                   >
-                    {showBloubHere ? (
-                      <Bloub
-                        phase="arrive"
-                        emotion={currentEmotion}
-                        reducedMotion={reducedMotion}
-                        size={44}
-                        className={cn("absolute", arriveClass)}
-                      />
-                    ) : (
-                      <TimelineDot
-                        // SDD §5.1: work → 20px, project → 10px
-                        size={row.side === "left" ? 20 : 10}
-                        className={cn(
-                          "transition-colors duration-300",
-                          dotBackClass(index),
-                          // Follows the current scroll position (not sticky):
-                          // surface/points until the 48% line reaches this card,
-                          // scrolling back up turns passed dots grey again.
-                          index <= passedIndex
-                            ? "text-accent-primary"
-                            : "text-surface-points",
-                        )}
-                      />
-                    )}
+                    <TimelineMarker
+                      showBloub={showBloubHere}
+                      emotion={row.emotion}
+                      reducedMotion={reducedMotion}
+                      // SDD §5.1: work → 20px, project → 10px
+                      dotSize={row.side === "left" ? 20 : 10}
+                      // Follows the current scroll position (not sticky):
+                      // surface/points until the 48% line reaches this card,
+                      // scrolling back up turns passed dots grey again.
+                      lit={index <= passedIndex}
+                    />
                   </span>
                 </div>
 
@@ -826,25 +880,12 @@ export function Roadmap({
             data-bloub={bloubAtFooter ? "true" : "false"}
             className="absolute bottom-2 left-1/2 z-[1] flex size-6 -translate-x-1/2 items-center justify-center"
           >
-            {bloubAtFooter ? (
-              <Bloub
-                phase="arrive"
-                emotion={fallback}
-                reducedMotion={reducedMotion}
-                size={44}
-                className={cn("absolute", arriveClass)}
-              />
-            ) : (
-              <TimelineDot
-                className={cn(
-                  "transition-colors duration-300",
-                  dotBackClass(rows.length),
-                  passedIndex >= rows.length
-                    ? "text-accent-primary"
-                    : "text-surface-points",
-                )}
-              />
-            )}
+            <TimelineMarker
+              showBloub={bloubAtFooter}
+              emotion={fallback}
+              reducedMotion={reducedMotion}
+              lit={passedIndex >= rows.length}
+            />
           </span>
           <p className="sr-only">Конец roadmap</p>
         </footer>

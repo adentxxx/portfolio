@@ -272,26 +272,17 @@ body {
   }
 }
 
-/* Arrive: a short pop so the bloub reads as already on the point */
-@keyframes bloub-arrive {
-  from {
-    opacity: 0.85;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* Bloub grows out of decor/timeline-dot and shrinks back into it. */
+.timeline-marker-dot {
+  transition:
+    color 300ms ease,
+    opacity 200ms ease-in-out;
 }
 
-/* The bloub left this point: its dot settles back from bloub size */
-@keyframes dot-back {
-  from {
-    transform: scale(1.8);
-  }
-  to {
-    transform: scale(1);
-  }
+.timeline-marker-bloub {
+  transition:
+    opacity 200ms ease-in-out,
+    transform 200ms ease-in-out;
 }
 
 @keyframes card-reveal {
@@ -358,21 +349,8 @@ body {
     }
   }
 
-  @keyframes bloub-arrive {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes dot-back {
-    from {
-      transform: none;
-    }
-    to {
-      transform: none;
-    }
+  .timeline-marker-dot,
+  .timeline-marker-bloub {
+    transition: none;
   }
 }
