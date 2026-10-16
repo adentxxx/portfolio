@@ -34,8 +34,8 @@ type Row = {
   emotion: Emotion;
 };
 
-/** Figma Point Container: dot (24px) sits at pt-40 of each 240px row → center at 52px. */
-const POINT_CENTER_PX = 52;
+/** 24px dot sits 52px from the row top so its center (~64px) lines up with the card avatar. */
+const POINT_CENTER_PX = 64;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
 const TRAVEL_DOT_PX = 4;
 /** Header decor/timeline-dot. Mobile morph lands here and stays (SDD §5.1). */
@@ -125,20 +125,28 @@ function TimelineMarker({
   lit: boolean;
 }) {
   const { mounted, shown } = useDotBloubPresence(showBloub, reducedMotion);
+  // 8px of page color around the dot. Above the dashed connector (the gap),
+  // below the progress line, so the orange stroke is not cut or lit by it.
+  const plate = dotSize + 16;
 
   return (
     <>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 z-[1] -translate-x-1/2 -translate-y-1/2 rounded-full bg-surface-page"
+        style={{ width: plate, height: plate }}
+      />
       <TimelineDot
         size={dotSize}
         className={cn(
-          "timeline-marker-dot",
+          "timeline-marker-dot relative z-[3]",
           shown ? "opacity-0" : "opacity-100",
           lit ? "text-accent-primary" : "text-surface-points",
         )}
       />
       {mounted ? (
         <span
-          className="timeline-marker-bloub absolute"
+          className="timeline-marker-bloub absolute z-[3]"
           style={{
             opacity: shown ? 1 : 0,
             transform: shown
@@ -455,7 +463,9 @@ export function Roadmap({
         const width = entry.getBoundingClientRect().width;
         const d = entryConnectorPath(width);
         if (entryTrack.getAttribute("d") !== d) {
-          entry.setAttribute("viewBox", `0 0 ${width} ${ENTRY_HEIGHT}`);
+          const viewBox = `0 0 ${width} ${ENTRY_HEIGHT}`;
+          entry.setAttribute("viewBox", viewBox);
+          entryFill.ownerSVGElement?.setAttribute("viewBox", viewBox);
           entryTrack.setAttribute("d", d);
           entryFill.setAttribute("d", d);
         }
@@ -488,7 +498,9 @@ export function Roadmap({
         const width = exit.getBoundingClientRect().width;
         const d = exitConnectorPath(width);
         if (exitTrack.getAttribute("d") !== d) {
-          exit.setAttribute("viewBox", `0 0 ${width} ${ENTRY_HEIGHT}`);
+          const viewBox = `0 0 ${width} ${ENTRY_HEIGHT}`;
+          exit.setAttribute("viewBox", viewBox);
+          exitFill.ownerSVGElement?.setAttribute("viewBox", viewBox);
           exitTrack.setAttribute("d", d);
           exitFill.setAttribute("d", d);
         }
@@ -711,7 +723,9 @@ export function Roadmap({
         ref={trackRef}
         className="relative mx-auto w-full max-w-[480px] min-[1160px]:mt-8 min-[1160px]:max-w-none"
       >
-        {/* Mobile: two-bend connector from the centered bloub onto the left rail. */}
+        {/* Mobile: two-bend connector from the centered bloub onto the left rail.
+            The shift creates a stacking context, so the orange stroke lives in
+            its own layer above the page plates. */}
         <div className="pointer-events-none absolute left-[14px] top-[52px] h-[112px] w-[calc(50%-14px)] -translate-y-full min-[1160px]:hidden">
           <svg
             ref={entrySvgRef}
@@ -727,6 +741,15 @@ export function Roadmap({
               strokeWidth="1"
               strokeDasharray="8 8"
             />
+          </svg>
+        </div>
+        <div className="pointer-events-none absolute left-[14px] top-[52px] z-[2] h-[112px] w-[calc(50%-14px)] -translate-y-full min-[1160px]:hidden">
+          <svg
+            viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
+            fill="none"
+            aria-hidden
+            className="size-full overflow-visible"
+          >
             <path
               ref={entryFillRef}
               d={entryConnectorPath(165)}
@@ -742,7 +765,9 @@ export function Roadmap({
             className="absolute left-0 top-0 size-1 rounded-full bg-accent-primary opacity-0 shadow-[0_0_10px_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] will-change-transform"
           />
         </div>
-        {/* decor/connector: 1px dashed line. Desktop: center axis. Mobile: left of the cards. */}
+        {/* decor/connector: 1px dashed line. Desktop: center axis. Mobile: left of the cards.
+            The centering shift is its own stacking context, so the progress
+            stroke is a sibling layer: above the page plates, below the dots. */}
         <div
           ref={connectorRef}
           className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2"
@@ -756,6 +781,11 @@ export function Roadmap({
                 "repeating-linear-gradient(to bottom, var(--border-default) 0 8px, transparent 8px 16px)",
             }}
           />
+        </div>
+        <div
+          className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] z-[2] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2"
+          aria-hidden
+        >
           {/* Progress: full-height line scaled from the top (transform only, see effect) */}
           <div
             ref={fillLineRef}
@@ -795,8 +825,8 @@ export function Roadmap({
                 // minmax(0,1fr): a skeleton's min-content must never push the center column off-axis
                 className="relative grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3 min-[1160px]:min-h-[240px] min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:gap-6"
               >
-                {/* Point Container: 24px dot. Mobile pt-6 keeps it level with the card once py-4 is desktop-only. */}
-                <div className="relative z-[1] flex justify-center pt-6 min-[1160px]:col-start-2 min-[1160px]:row-start-1 min-[1160px]:pt-10">
+                {/* Point Container: 24px dot. Desktop: 52px from the row top, level with the avatar. Mobile pt-6 matches the card once py-4 is desktop-only. No z-index here: the plate and the dot set their own layers. */}
+                <div className="relative flex justify-center pt-6 min-[1160px]:col-start-2 min-[1160px]:row-start-1 min-[1160px]:pt-[52px]">
                   <span
                     ref={(el) => {
                       pointRefs.current[index] = el;
@@ -858,6 +888,13 @@ export function Roadmap({
                 strokeWidth="1"
                 strokeDasharray="8 8"
               />
+            </svg>
+            <svg
+              viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
+              fill="none"
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[2] size-full overflow-visible"
+            >
               <path
                 ref={exitFillRef}
                 d={exitConnectorPath(165)}
@@ -870,7 +907,7 @@ export function Roadmap({
             </svg>
             <span
               ref={exitDotRef}
-              className="absolute left-0 top-0 size-1 rounded-full bg-accent-primary opacity-0 shadow-[0_0_10px_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] will-change-transform"
+              className="absolute left-0 top-0 z-[2] size-1 rounded-full bg-accent-primary opacity-0 shadow-[0_0_10px_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent)] will-change-transform"
             />
           </div>
           <span
@@ -878,7 +915,7 @@ export function Roadmap({
               pointRefs.current[rows.length] = el;
             }}
             data-bloub={bloubAtFooter ? "true" : "false"}
-            className="absolute bottom-2 left-1/2 z-[1] flex size-6 -translate-x-1/2 items-center justify-center"
+            className="absolute bottom-2 left-1/2 flex size-6 -translate-x-1/2 items-center justify-center"
           >
             <TimelineMarker
               showBloub={bloubAtFooter}
