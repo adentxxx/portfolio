@@ -688,7 +688,14 @@ export function Roadmap({
           />
         </div>
 
-        <div className="flex flex-col">
+        {/*
+          Mobile (<1160): 32px between cards, and 32px from a card to the
+          straight run of a curved connector. That run is one radius (56px)
+          off the rail. The rail starts at 52px, so the entry run is 4px above
+          the track and the first card begins at 28px. The exit rail stops
+          24px above the last card, so its run sits 32px below the card.
+        */}
+        <div className="flex flex-col gap-8 pt-[28px] min-[1160px]:gap-0 min-[1160px]:pt-0">
           {rows.map((row, index) => {
             const active = index <= revealedIndex;
             const showBloubHere = arrivedIndex === index;
@@ -699,10 +706,10 @@ export function Roadmap({
                 data-active={active ? "true" : "false"}
                 data-bloub={showBloubHere ? "true" : "false"}
                 // minmax(0,1fr): a skeleton's min-content must never push the center column off-axis
-                className="relative grid min-h-[240px] grid-cols-[28px_minmax(0,1fr)] items-start gap-3 min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:gap-6"
+                className="relative grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3 min-[1160px]:min-h-[240px] min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:gap-6"
               >
-                {/* Point Container: pt-40, 24px dot (or bloub on Arrive) */}
-                <div className="relative z-[1] flex justify-center pt-10 min-[1160px]:col-start-2 min-[1160px]:row-start-1">
+                {/* Point Container: 24px dot. Mobile pt-6 keeps it level with the card once py-4 is desktop-only. */}
+                <div className="relative z-[1] flex justify-center pt-6 min-[1160px]:col-start-2 min-[1160px]:row-start-1 min-[1160px]:pt-10">
                   <span
                     ref={(el) => {
                       pointRefs.current[index] = el;
@@ -738,7 +745,7 @@ export function Roadmap({
 
                 <div
                   className={cn(
-                    "py-4 min-[1160px]:row-start-1",
+                    "min-[1160px]:row-start-1 min-[1160px]:py-4",
                     row.side === "left" ? "min-[1160px]:col-start-1" : "min-[1160px]:col-start-3",
                   )}
                 >
@@ -761,8 +768,8 @@ export function Roadmap({
         </div>
 
         {/* Footer: desktop dot sits on the center line. Mobile dot is centered; two bends bring the rail back to it. */}
-        <footer className="relative h-[132px] min-[1160px]:h-[140px]">
-          <div className="pointer-events-none absolute left-[14px] top-0 h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden">
+        <footer className="relative h-[108px] min-[1160px]:h-[140px]">
+          <div className="pointer-events-none absolute -top-6 left-[14px] h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden">
             <svg
               ref={exitSvgRef}
               viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
