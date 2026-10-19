@@ -120,13 +120,14 @@ export function CaseNextIcon({ className }: IconProps) {
 /**
  * Figma `decor/timeline-dot`: 24×24 container, circle in `surface/points`.
  * Diameter depends on the card type (SDD §5.1): work → 20px, project → 10px.
+ * Phone (<768, Figma 161:559): work → 16px, project → 8px, footer → 16px.
  * The page-colored gap around the dot is a separate plate in `TimelineMarker`,
  * so it can sit above the dashed connector and below the progress line.
  */
 export function TimelineDot({
   className,
   size = 20,
-}: IconProps & { size?: 20 | 10 }) {
+}: IconProps & { size?: number }) {
   return (
     <svg
       width="24"

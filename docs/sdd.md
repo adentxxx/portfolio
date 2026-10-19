@@ -315,6 +315,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 **Default:** skeleton.  
 **Active (Work):** logo, date, title, role, description, **bloubEmotion**.  
 **Active (Project):** logo, date, title, tags, description, **bloubEmotion**, link → project page.  
+**Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; role `body`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); role `subheadline`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашка role **20** высотой. Лого **52** radius **16**, title `title3`, карточка radius **32**, gap 16 — в обоих размерах. Skeleton-плашки: дата radius **8**, заголовок и роль **12**, описание **16**.  
 **Hover (Active):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.
 
 ### 7.3 Button

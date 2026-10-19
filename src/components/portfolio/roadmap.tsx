@@ -38,8 +38,12 @@ type Row = {
 const POINT_CENTER_PX = 64;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
 const TRAVEL_DOT_PX = 4;
-/** Header decor/timeline-dot. Mobile morph lands here and stays (SDD §5.1). */
+/** Header decor/timeline-dot. Tablet morph lands here and stays (SDD §5.1). */
 const ORIGIN_DOT_PX = 20;
+/** Phone (<768, Figma 161:559): footer and work dots, and the morph landing dot. */
+const PHONE_DOT_PX = 16;
+/** Phone project decor/timeline-dot. Desktop/tablet stays 10. */
+const PHONE_PROJECT_DOT_PX = 8;
 /** Header → first point. Short on purpose: the bloub should be on the dot almost at once. */
 const MORPH_MS = 220;
 function usePrefersReducedMotion() {
@@ -74,6 +78,8 @@ function exitConnectorPath(width: number) {
 
 /** Bloub diameter on a point. The dot scales up to this and back. */
 const BLOUB_ON_DOT_PX = 44;
+/** Phone header and arrived bloub (Figma 161:820). */
+const PHONE_BLOUB_PX = 40;
 /** Appear / disappear between decor/timeline-dot and bloub. */
 const DOT_BLOUB_MS = 200;
 
@@ -116,12 +122,14 @@ function TimelineMarker({
   emotion,
   reducedMotion,
   dotSize = 20,
+  bloubSize = BLOUB_ON_DOT_PX,
   lit,
 }: {
   showBloub: boolean;
   emotion: Emotion;
   reducedMotion: boolean;
-  dotSize?: 20 | 10;
+  dotSize?: number;
+  bloubSize?: number;
   lit: boolean;
 }) {
   const { mounted, shown } = useDotBloubPresence(showBloub, reducedMotion);
@@ -151,14 +159,14 @@ function TimelineMarker({
             opacity: shown ? 1 : 0,
             transform: shown
               ? "scale(1)"
-              : `scale(${dotSize / BLOUB_ON_DOT_PX})`,
+              : `scale(${dotSize / bloubSize})`,
           }}
         >
           <Bloub
             phase="arrive"
             emotion={emotion}
             reducedMotion={reducedMotion}
-            size={BLOUB_ON_DOT_PX}
+            size={bloubSize}
           />
         </span>
       ) : null}
@@ -203,6 +211,15 @@ export function Roadmap({
   const [hasScrolled, setHasScrolled] = useState(false);
   // Viewport below the desktop breakpoint: mobile/tablet roadmap (§3.2).
   const [narrow, setNarrow] = useState(false);
+  // Phone frame (Figma 161:559). Tablet keeps the 44px bloub and 20/10 dots.
+  const [phone, setPhone] = useState(false);
+  useLayoutEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setPhone(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
   // Phase A → B morph has finished: bloub may now sit on a point.
   const [morphDone, setMorphDone] = useState(false);
   // Sticky: once a card is revealed it stays revealed.
@@ -429,6 +446,7 @@ export function Roadmap({
       const connectorBox = connectorRef.current?.getBoundingClientRect();
       const lineHeight = connectorRef.current?.clientHeight ?? 0;
       const narrowNow = window.matchMedia("(max-width: 1159px)").matches;
+      const phoneNow = window.matchMedia("(max-width: 767px)").matches;
 
       // Journey head, in document px. Normally the 48% line. On a short page the
       // footer dot never reaches that line, and snapping to it at the bottom
@@ -516,6 +534,7 @@ export function Roadmap({
       document.documentElement.dataset.narrow = narrowNow ? "1" : "0";
       setTargets(journeyPx);
       setNarrow((prev) => (prev === narrowNow ? prev : narrowNow));
+      setPhone((prev) => (prev === phoneNow ? prev : phoneNow));
 
       // Reversible: back at the top → bloub morphs back into the header (Phase A).
       setHasScrolled(window.scrollY > 20);
@@ -645,19 +664,23 @@ export function Roadmap({
           {/*
             Phase A → B: on first scroll the idle bloub shrinks into a dot.
             Desktop: 4px, slides to the first Point Container, then the travel
-            tip takes over. Mobile: 20px timeline-dot, stays at the start of
-            the entry curve while the tip keeps riding. Back at the top, the
-            dot grows into the bloub again.
+            tip takes over. Narrow: a timeline-dot (phone 16px, tablet 20px)
+            stays at the start of the entry curve while the tip keeps riding.
+            Back at the top, the dot grows into the bloub again.
           */}
           <div
             ref={headerMarkerRef}
-            className={cn("relative size-11", hasScrolled && narrow && "z-10")}
+            className={cn(
+              "relative",
+              phone ? "size-10" : "size-11",
+              hasScrolled && narrow && "z-10",
+            )}
           >
             <div
               className="absolute inset-0"
               style={{
                 transform: hasScrolled
-                  ? `translate(${travelOffset.x}px, ${travelOffset.y}px) scale(${(narrow ? ORIGIN_DOT_PX : TRAVEL_DOT_PX) / 44})`
+                  ? `translate(${travelOffset.x}px, ${travelOffset.y}px) scale(${(narrow ? (phone ? PHONE_DOT_PX : ORIGIN_DOT_PX) : TRAVEL_DOT_PX) / (phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX)})`
                   : "none",
                 opacity: hasScrolled && !narrow ? 0 : 1,
                 transition: reducedMotion
@@ -678,7 +701,7 @@ export function Roadmap({
                 reducedMotion={reducedMotion}
                 // Invisible after the morph: don't burn a rAF loop on it.
                 paused={hasScrolled}
-                size={44}
+                size={phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX}
                 className={cn(
                   "absolute inset-0 transition-opacity duration-300",
                   hasScrolled && "opacity-0",
@@ -825,8 +848,11 @@ export function Roadmap({
                 // minmax(0,1fr): a skeleton's min-content must never push the center column off-axis
                 className="relative grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3 min-[1160px]:min-h-[240px] min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:gap-6"
               >
-                {/* Point Container: 24px dot. Desktop: 52px from the row top, level with the avatar. Mobile pt-6 matches the card once py-4 is desktop-only. No z-index here: the plate and the dot set their own layers. */}
-                <div className="relative flex justify-center pt-6 min-[1160px]:col-start-2 min-[1160px]:row-start-1 min-[1160px]:pt-[52px]">
+                {/* Point Container: 24px box, level with the card avatar.
+                    Desktop card column has py-4, so the box sits at 52px.
+                    Phone and tablet: 36px from the top of the row.
+                    No z-index here: the plate and the dot set their own layers. */}
+                <div className="relative flex justify-center pt-[36px] min-[1160px]:col-start-2 min-[1160px]:row-start-1 min-[1160px]:pt-[52px]">
                   <span
                     ref={(el) => {
                       pointRefs.current[index] = el;
@@ -837,8 +863,17 @@ export function Roadmap({
                       showBloub={showBloubHere}
                       emotion={row.emotion}
                       reducedMotion={reducedMotion}
-                      // SDD §5.1: work → 20px, project → 10px
-                      dotSize={row.side === "left" ? 20 : 10}
+                      bloubSize={phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX}
+                      // Work 20 / project 10. Phone (Figma 161:559): 16 / 8.
+                      dotSize={
+                        row.side === "left"
+                          ? phone
+                            ? PHONE_DOT_PX
+                            : 20
+                          : phone
+                            ? PHONE_PROJECT_DOT_PX
+                            : 10
+                      }
                       // Follows the current scroll position (not sticky):
                       // surface/points until the 48% line reaches this card,
                       // scrolling back up turns passed dots grey again.
@@ -921,6 +956,8 @@ export function Roadmap({
               showBloub={bloubAtFooter}
               emotion={fallback}
               reducedMotion={reducedMotion}
+              bloubSize={phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX}
+              dotSize={phone ? PHONE_DOT_PX : 20}
               lit={passedIndex >= rows.length}
             />
           </span>
