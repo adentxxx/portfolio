@@ -7,6 +7,7 @@ import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
 import { publicPath, pagePath } from "@/lib/public-path";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -86,28 +87,69 @@ function CaseImage({ src }: { src: string }) {
 function CaseNavLink({
   href,
   label,
-  wide,
+  className,
   children,
 }: {
   href: string | null;
   label: string;
-  wide?: boolean;
+  className?: string;
   children: ReactNode;
 }) {
-  const className = wide ? "w-20" : undefined;
+  const buttonClass = cn("pointer-events-auto", className);
   if (!href) {
     return (
-      <Button mode="icon" disabled aria-label={label} className={className}>
+      <Button mode="icon" disabled aria-label={label} className={buttonClass}>
         {children}
       </Button>
     );
   }
   return (
-    <Button asChild mode="icon" className={className}>
+    <Button asChild mode="icon" className={buttonClass}>
       <Link href={pagePath(href)} aria-label={label}>
         {children}
       </Link>
     </Button>
+  );
+}
+
+function CaseNav({
+  prevHref,
+  nextHref,
+  stretch,
+}: {
+  prevHref: string | null;
+  nextHref: string | null;
+  stretch?: boolean;
+}) {
+  const sideClass = stretch ? "w-auto min-w-px flex-[1_0_0]" : "w-20";
+
+  return (
+    <nav
+      aria-label="Другие кейсы"
+      className={
+        stretch
+          ? "pointer-events-auto flex w-full items-center gap-3"
+          : "pointer-events-none fixed inset-x-0 bottom-10 z-40 hidden items-center justify-center gap-3 md:flex"
+      }
+    >
+      <CaseNavLink
+        href={prevHref}
+        label="Предыдущий кейс"
+        className={sideClass}
+      >
+        <CasePrevIcon />
+      </CaseNavLink>
+      <CaseNavLink href="/" label="На главную">
+        <CaseHomeIcon />
+      </CaseNavLink>
+      <CaseNavLink
+        href={nextHref}
+        label="Следующий кейс"
+        className={sideClass}
+      >
+        <CaseNextIcon />
+      </CaseNavLink>
+    </nav>
   );
 }
 
@@ -130,7 +172,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-surface-page">
-      <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-10 min-[1192px]:px-0">
+      <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-32 min-[1192px]:px-0 md:pb-10">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <a
             href={pagePath("/")}
@@ -198,31 +240,22 @@ export default async function ProjectPage({ params }: PageProps) {
           ),
         )}
 
-        <nav
-          aria-label="Другие кейсы"
-          className="fixed inset-x-0 bottom-6 z-40 flex items-center justify-center gap-3 md:bottom-10"
-        >
-          <CaseNavLink
-            href={prev ? `/projects/${prev.slug}` : null}
-            label="Предыдущий кейс"
-            wide
-          >
-            <CasePrevIcon />
-          </CaseNavLink>
-          <CaseNavLink href="/" label="На главную">
-            <CaseHomeIcon />
-          </CaseNavLink>
-          <CaseNavLink
-            href={next ? `/projects/${next.slug}` : null}
-            label="Следующий кейс"
-            wide
-          >
-            <CaseNextIcon />
-          </CaseNavLink>
-        </nav>
       </div>
 
-      <FloatingControls />
+      {/* Figma Bottom Bar 209:1225: phone stacks Button Bar above a full-width case row. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-end gap-4 px-3 pb-10 md:hidden">
+        <FloatingControls embedded className="pointer-events-auto" />
+        <CaseNav
+          prevHref={prev ? `/projects/${prev.slug}` : null}
+          nextHref={next ? `/projects/${next.slug}` : null}
+          stretch
+        />
+      </div>
+      <CaseNav
+        prevHref={prev ? `/projects/${prev.slug}` : null}
+        nextHref={next ? `/projects/${next.slug}` : null}
+      />
+      <FloatingControls className="max-md:hidden" />
     </main>
   );
 }
