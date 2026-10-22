@@ -1,9 +1,16 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
-import { useRef, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, type MouseEvent, type ReactNode } from "react";
 
 const springValues = { damping: 30, stiffness: 100, mass: 2 };
+
+/** Mobile and tablet layout. Desktop tilt stays at ≥ 1160. */
+const ADAPTIVE_QUERY = "(max-width: 1159px)";
+
+function isAdaptive() {
+  return window.matchMedia(ADAPTIVE_QUERY).matches;
+}
 
 type TiltedSurfaceProps = {
   children: ReactNode;
@@ -25,7 +32,21 @@ export function TiltedSurface({
   const rotateY = useSpring(0, springValues);
   const scale = useSpring(1, springValues);
 
+  useEffect(() => {
+    const mq = window.matchMedia(ADAPTIVE_QUERY);
+    const reset = () => {
+      if (!mq.matches) return;
+      scale.set(1);
+      rotateX.set(0);
+      rotateY.set(0);
+    };
+    reset();
+    mq.addEventListener("change", reset);
+    return () => mq.removeEventListener("change", reset);
+  }, [rotateX, rotateY, scale]);
+
   function handleMouse(event: MouseEvent<HTMLDivElement>) {
+    if (isAdaptive()) return;
     const el = ref.current;
     if (!el) return;
 
@@ -43,7 +64,10 @@ export function TiltedSurface({
       ref={ref}
       className="relative w-full [perspective:800px]"
       onMouseMove={handleMouse}
-      onMouseEnter={() => scale.set(scaleOnHover)}
+      onMouseEnter={() => {
+        if (isAdaptive()) return;
+        scale.set(scaleOnHover);
+      }}
       onMouseLeave={() => {
         scale.set(1);
         rotateX.set(0);

@@ -135,7 +135,7 @@ export function RoadmapCard({
   );
 
   const face = cn(
-    "roadmap-card flex w-full flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
+    "roadmap-card roadmap-card-press flex w-full flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
     data.kind === "project" &&
       "cursor-pointer",
   );
@@ -189,6 +189,7 @@ export function RoadmapCard({
 
   const className = cn(
     shell,
+    "roadmap-card-press",
     reveal,
     data.kind === "project" &&
       "cursor-pointer",

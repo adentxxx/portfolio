@@ -11,7 +11,14 @@ import {
   type RoadmapCardData,
 } from "@/components/portfolio/roadmap-card";
 import { cn } from "@/lib/utils";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 type Emotion = {
   id: string;
@@ -74,6 +81,82 @@ function exitConnectorPath(width: number) {
   const r = Math.min(ENTRY_RADIUS, width / 2);
   const y0 = ENTRY_HEIGHT - r * 2;
   return `M 0 ${y0} A ${r} ${r} 0 0 0 ${r} ${y0 + r} H ${width - r} A ${r} ${r} 0 0 1 ${width} ${y0 + r * 2}`;
+}
+
+/**
+ * Dashed bends before the box width is known. A fixed viewBox letterboxes
+ * (default preserveAspectRatio) and the tail misses the rail until JS
+ * measures — on a slow load that sat wrong for seconds. These arcs are
+ * pinned to the box edges, so the curve meets the rail on the first paint.
+ * Radius stays 56, and shrinks only when the box is narrower than 112.
+ */
+const CONNECTOR_ARC = "min(56px, 50cqw)";
+
+function DashArc({
+  d,
+  className,
+  style,
+}: {
+  d: string;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox={`0 0 ${ENTRY_RADIUS} ${ENTRY_RADIUS}`}
+      fill="none"
+      aria-hidden
+      className={cn("absolute overflow-visible text-border-default", className)}
+      style={{ width: CONNECTOR_ARC, height: CONNECTOR_ARC, ...style }}
+    >
+      <path
+        d={d}
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeDasharray="8 8"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+function ConnectorDashFallback({ side }: { side: "entry" | "exit" }) {
+  const entry = side === "entry";
+  const r = ENTRY_RADIUS;
+  return (
+    <>
+      <span
+        aria-hidden
+        className="absolute -translate-y-1/2"
+        style={{
+          left: `calc(${CONNECTOR_ARC} - 1px)`,
+          right: `calc(${CONNECTOR_ARC} - 1px)`,
+          top: `calc(100% - ${CONNECTOR_ARC})`,
+          height: 1,
+          backgroundImage: entry
+            ? "repeating-linear-gradient(to left, transparent 0 8px, var(--border-default) 8px 16px)"
+            : "repeating-linear-gradient(to right, transparent 0 8px, var(--border-default) 8px 16px)",
+        }}
+      />
+      <DashArc
+        d={
+          entry
+            ? `M ${r} 0 A ${r} ${r} 0 0 1 0 ${r}`
+            : `M 0 0 A ${r} ${r} 0 0 0 ${r} ${r}`
+        }
+        className={entry ? "right-0" : "left-0"}
+        style={{ top: `calc(100% - 2 * ${CONNECTOR_ARC})` }}
+      />
+      <DashArc
+        d={
+          entry
+            ? `M ${r} 0 A ${r} ${r} 0 0 0 0 ${r}`
+            : `M 0 0 A ${r} ${r} 0 0 1 ${r} ${r}`
+        }
+        className={entry ? "bottom-0 left-0" : "right-0 bottom-0"}
+      />
+    </>
+  );
 }
 
 /** Bloub diameter on a point. The dot scales up to this and back. */
@@ -220,6 +303,24 @@ export function Roadmap({
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+  // Measure before paint, and again if the box changes (scrollbar, rotation).
+  // Waiting for the scroll effect left the tail on the SSR viewBox for seconds.
+  useLayoutEffect(() => {
+    const read = (el: HTMLElement | null) => {
+      if (!el || el.getClientRects().length === 0) return 0;
+      return el.getBoundingClientRect().width;
+    };
+    const apply = () => {
+      const w = read(entryBoxRef.current) || read(exitBoxRef.current);
+      const next = w > 0 ? Math.round(w * 100) / 100 : null;
+      setCurveWidth((prev) => (prev === next ? prev : next));
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    if (entryBoxRef.current) ro.observe(entryBoxRef.current);
+    if (exitBoxRef.current) ro.observe(exitBoxRef.current);
+    return () => ro.disconnect();
+  }, []);
   // Phase A → B morph has finished: bloub may now sit on a point.
   const [morphDone, setMorphDone] = useState(false);
   // Sticky: once a card is revealed it stays revealed.
@@ -245,10 +346,16 @@ export function Roadmap({
   const entryTrackRef = useRef<SVGPathElement>(null);
   const entryFillRef = useRef<SVGPathElement>(null);
   const entryDotRef = useRef<HTMLSpanElement>(null);
+  const entryBoxRef = useRef<HTMLDivElement>(null);
   const exitSvgRef = useRef<SVGSVGElement>(null);
   const exitTrackRef = useRef<SVGPathElement>(null);
   const exitFillRef = useRef<SVGPathElement>(null);
   const exitDotRef = useRef<HTMLSpanElement>(null);
+  const exitBoxRef = useRef<HTMLDivElement>(null);
+  // Null until the entry/exit box is measured. The dashed fallback doesn't
+  // need it; the single path (and the scroll fill) does.
+  const [curveWidth, setCurveWidth] = useState<number | null>(null);
+  const updateRef = useRef<() => void>(() => {});
   const progressRef = useRef({
     // Unclamped head, px from the top of the vertical rail. The tail is the
     // part past `lineHeight`, so both pieces share one smoothed value.
@@ -584,6 +691,7 @@ export function Roadmap({
       rafRef.current = requestAnimationFrame(update);
     };
 
+    updateRef.current = update;
     try {
       update();
     } catch (error) {
@@ -601,6 +709,12 @@ export function Roadmap({
       window.removeEventListener("resize", onScrollOrResize);
     };
   }, [rows.length, reducedMotion]);
+
+  // Width lands in a layout effect, after the scroll listener is attached.
+  // Re-read geometry so a reload mid-page fills the curve that just mounted.
+  useLayoutEffect(() => {
+    updateRef.current();
+  }, [curveWidth]);
 
   // React re-renders (lit dots, morph) must not wipe the transforms and dash
   // offsets this loop writes straight to the DOM.
@@ -748,34 +862,44 @@ export function Roadmap({
       >
         {/* Mobile: two-bend connector from the centered bloub onto the left rail.
             The shift creates a stacking context, so the orange stroke lives in
-            its own layer above the page plates. */}
-        <div className="pointer-events-none absolute left-[14px] top-[52px] h-[112px] w-[calc(50%-14px)] -translate-y-full min-[1160px]:hidden">
-          <svg
-            ref={entrySvgRef}
-            viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
-            fill="none"
-            aria-hidden
-            className="size-full overflow-visible text-border-default"
-          >
-            <path
-              ref={entryTrackRef}
-              d={entryConnectorPath(165)}
-              stroke="currentColor"
-              strokeWidth="1"
-              strokeDasharray="8 8"
-            />
-          </svg>
+            its own layer above the page plates. Until `curveWidth` is measured
+            the dashes are edge-pinned; the single path replaces them in the
+            same geometry before the browser paints. */}
+        <div
+          ref={entryBoxRef}
+          className="pointer-events-none absolute left-[14px] top-[52px] h-[112px] w-[calc(50%-14px)] -translate-y-full min-[1160px]:hidden"
+          style={{ containerType: "inline-size" }}
+        >
+          {curveWidth ? (
+            <svg
+              ref={entrySvgRef}
+              viewBox={`0 0 ${curveWidth} ${ENTRY_HEIGHT}`}
+              fill="none"
+              aria-hidden
+              className="size-full overflow-visible text-border-default"
+            >
+              <path
+                ref={entryTrackRef}
+                d={entryConnectorPath(curveWidth)}
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeDasharray="8 8"
+              />
+            </svg>
+          ) : (
+            <ConnectorDashFallback side="entry" />
+          )}
         </div>
         <div className="pointer-events-none absolute left-[14px] top-[52px] z-[2] h-[112px] w-[calc(50%-14px)] -translate-y-full min-[1160px]:hidden">
           <svg
-            viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
+            viewBox={`0 0 ${curveWidth ?? 1} ${ENTRY_HEIGHT}`}
             fill="none"
             aria-hidden
             className="size-full overflow-visible"
           >
             <path
               ref={entryFillRef}
-              d={entryConnectorPath(165)}
+              d={entryConnectorPath(curveWidth ?? 1)}
               stroke="var(--accent-primary)"
               strokeWidth="2"
               strokeLinecap="round"
@@ -908,31 +1032,39 @@ export function Roadmap({
 
         {/* Footer: desktop dot sits on the center line. Mobile dot is centered; two bends bring the rail back to it. */}
         <footer className="relative h-[108px] min-[1160px]:h-[140px]">
-          <div className="pointer-events-none absolute -top-6 left-[14px] h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden">
+          <div
+            ref={exitBoxRef}
+            className="pointer-events-none absolute -top-6 left-[14px] h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden"
+            style={{ containerType: "inline-size" }}
+          >
+            {curveWidth ? (
+              <svg
+                ref={exitSvgRef}
+                viewBox={`0 0 ${curveWidth} ${ENTRY_HEIGHT}`}
+                fill="none"
+                aria-hidden
+                className="size-full overflow-visible text-border-default"
+              >
+                <path
+                  ref={exitTrackRef}
+                  d={exitConnectorPath(curveWidth)}
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeDasharray="8 8"
+                />
+              </svg>
+            ) : (
+              <ConnectorDashFallback side="exit" />
+            )}
             <svg
-              ref={exitSvgRef}
-              viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
-              fill="none"
-              aria-hidden
-              className="size-full overflow-visible text-border-default"
-            >
-              <path
-                ref={exitTrackRef}
-                d={exitConnectorPath(165)}
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeDasharray="8 8"
-              />
-            </svg>
-            <svg
-              viewBox={`0 0 165 ${ENTRY_HEIGHT}`}
+              viewBox={`0 0 ${curveWidth ?? 1} ${ENTRY_HEIGHT}`}
               fill="none"
               aria-hidden
               className="pointer-events-none absolute inset-0 z-[2] size-full overflow-visible"
             >
               <path
                 ref={exitFillRef}
-                d={exitConnectorPath(165)}
+                d={exitConnectorPath(curveWidth ?? 1)}
                 stroke="var(--accent-primary)"
                 strokeWidth="2"
                 strokeLinecap="round"
