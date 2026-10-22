@@ -200,7 +200,7 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
         </header>
 
-        <div className="flex flex-col items-center gap-2 text-center">
+        <div className="home-phone-type flex flex-col items-center gap-2 text-center">
           <h1 className="text-largeTitle text-text-primary">{project.title}</h1>
           <p className="max-w-[1160px] text-body text-text-secondary">
             {project.summary}
@@ -210,7 +210,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {project.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 rounded-lg bg-surface-inverse px-2 py-1"
+                  className="card-tag flex items-center gap-1 rounded-lg bg-surface-inverse px-2 py-1"
                 >
                   <span className="text-accent-primary">#</span>
                   <span className="text-text-on-inverse">{tag}</span>
@@ -226,10 +226,10 @@ export default async function ProjectPage({ params }: PageProps) {
           ) : (
             <div
               key={block.key}
-              className="mx-auto flex w-full max-w-[800px] flex-col gap-6"
+              className="mx-auto flex w-full max-w-[800px] flex-col gap-5 md:gap-6"
             >
               {block.items.map((item) => (
-                <section key={item.id} className="flex flex-col gap-3 text-left">
+                <section key={item.id} className="flex flex-col gap-1 text-left md:gap-3">
                   <h2 className="text-title3 text-text-primary">{item.heading}</h2>
                   <p className="text-subheadline whitespace-pre-line text-text-secondary">
                     {item.body}

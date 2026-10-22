@@ -196,7 +196,8 @@ body {
   letter-spacing: 0;
 }
 
-/* Phone home (Figma MOB 161:559, <768). Tablet and desktop keep largeTitle / body. */
+/* Phone home and case title (Figma MOB 161:559 and 209:1156, <768).
+   Tablet and desktop keep largeTitle / body / caption1. */
 @media (max-width: 767px) {
   .home-phone-type :is(h1, h2) {
     font-size: var(--size-title1);
@@ -206,6 +207,15 @@ body {
   .home-phone-type .text-body {
     font-size: var(--size-subheadline);
     line-height: var(--lh-subheadline);
+  }
+
+  .home-phone-type .text-caption1 {
+    font-size: var(--size-caption2);
+    line-height: var(--lh-caption2);
+  }
+
+  .home-phone-type .card-tag {
+    padding: 2px 6px;
   }
 }
 
