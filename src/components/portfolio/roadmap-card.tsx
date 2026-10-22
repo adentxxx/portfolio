@@ -1,7 +1,6 @@
 "use client";
 
 import { TiltedSurface } from "@/components/portfolio/tilted-surface";
-import { useSound } from "@/hooks/use-sound";
 import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -43,7 +42,6 @@ export function RoadmapCard({
   side,
   reducedMotion = false,
 }: RoadmapCardProps) {
-  const { play } = useSound();
   const tiltEnabled = active && !reducedMotion;
 
   // Figma `Cards`: 440 wide, radius 32, gap 16, surface/card + border/subtle.
@@ -154,7 +152,6 @@ export function RoadmapCard({
         href={pagePath(`/projects/${data.slug}`)}
         className={cn("block w-full max-w-[440px]", align, reveal)}
         data-state="active-project"
-        onClick={() => play("card")}
       >
         <TiltedSurface>{card}</TiltedSurface>
       </a>
@@ -169,7 +166,6 @@ export function RoadmapCard({
         rel="noreferrer"
         className={cn("block w-full max-w-[440px]", align, reveal)}
         data-state="active-work"
-        onClick={() => play("card")}
       >
         <TiltedSurface>{card}</TiltedSurface>
       </a>
@@ -201,7 +197,6 @@ export function RoadmapCard({
         href={pagePath(`/projects/${data.slug}`)}
         className={className}
         data-state="active-project"
-        onClick={() => play("card")}
       >
         {inner}
       </a>
@@ -216,7 +211,6 @@ export function RoadmapCard({
         rel="noreferrer"
         className={className}
         data-state="active-work"
-        onClick={() => play("card")}
       >
         {inner}
       </a>

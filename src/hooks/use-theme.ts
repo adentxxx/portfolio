@@ -7,6 +7,7 @@ import {
   useContext,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -21,7 +22,10 @@ type ThemeContextValue = {
   setTheme: (theme: Theme) => void;
 };
 
-type ViewTransitionHandle = { ready: Promise<void> };
+type ViewTransitionHandle = {
+  ready: Promise<void>;
+  finished: Promise<void>;
+};
 
 function startCircularTransition(update: () => void): ViewTransitionHandle | null {
   const start = (
@@ -103,9 +107,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setTheme = applyTheme;
+  // A second startViewTransition while the circle is still running crashes
+  // Chrome (STATUS_BREAKPOINT). Ignore toggles until this one finishes.
+  const themeAnimating = useRef(false);
 
   const toggleTheme = useCallback(
     (origin?: { x: number; y: number }) => {
+      if (themeAnimating.current) return;
+
       const next: Theme = currentTheme() === "light" ? "dark" : "light";
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -120,6 +129,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         Math.max(y, window.innerHeight - y),
       );
 
+      themeAnimating.current = true;
+      const release = () => {
+        themeAnimating.current = false;
+      };
+
       const transition = startCircularTransition(() => {
         flushSync(() => {
           applyTheme(next);
@@ -127,25 +141,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       });
 
       if (!transition) {
+        release();
         applyTheme(next);
         return;
       }
 
+      transition.finished.then(release, release);
+      window.setTimeout(release, 1200);
       transition.ready.then(() => {
-        document.documentElement.animate(
-          {
-            clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${endRadius}px at ${x}px ${y}px)`,
-            ],
-          },
-          {
-            duration: 700,
-            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-            pseudoElement: "::view-transition-new(root)",
-          },
-        );
-      });
+        try {
+          document.documentElement.animate(
+            {
+              clipPath: [
+                `circle(0px at ${x}px ${y}px)`,
+                `circle(${endRadius}px at ${x}px ${y}px)`,
+              ],
+            },
+            {
+              duration: 700,
+              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+              pseudoElement: "::view-transition-new(root)",
+            },
+          );
+        } catch {
+          release();
+        }
+      }, release);
     },
     [applyTheme],
   );

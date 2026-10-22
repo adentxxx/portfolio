@@ -128,11 +128,25 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Theme toggle: the new theme is revealed by a circle from the button. */
+/* Theme toggle: the new theme is revealed by a circle from the button.
+   The snapshot must not take hits, or :hover drops and the click lands
+   on the page instead of the theme / mute button. */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-group(root),
+::view-transition-image-pair(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  pointer-events: none;
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+  pointer-events: none;
 }
 
 ::view-transition-old(root) {
@@ -248,6 +262,11 @@ body {
 
 .btn-fill:active {
   transform: scale(1);
+}
+
+.btn-fill:disabled:hover,
+.btn-fill:disabled:active {
+  transform: none;
 }
 
 /* Opacity on the button itself drops backdrop-filter. Fade only the icon. */

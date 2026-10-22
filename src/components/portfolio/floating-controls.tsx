@@ -7,7 +7,7 @@ import { Moon, Sun, Volume2, VolumeX } from "lucide-react";
 
 export function FloatingControls() {
   const { theme, toggleTheme } = useTheme();
-  const { muted, setMuted, play } = useSound();
+  const { muted, setMuted } = useSound();
 
   return (
     // Figma Button Bar: padding 40, gap 12, 56px icon buttons with 24px glyphs
@@ -18,7 +18,7 @@ export function FloatingControls() {
         aria-label={
           theme === "light" ? "Включить тёмную тему" : "Включить светлую тему"
         }
-        soundKind="theme"
+        data-sound="theme"
         onClick={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
           toggleTheme({
@@ -37,12 +37,8 @@ export function FloatingControls() {
         mode="icon"
         type="button"
         aria-label={muted ? "Включить звук" : "Выключить звук"}
-        soundKind="button"
-        onClick={() => {
-          const next = !muted;
-          setMuted(next);
-          if (!next) play("button");
-        }}
+        data-sound="mute"
+        onClick={() => setMuted(!muted)}
       >
         {muted ? (
           <VolumeX className="size-6" strokeWidth={1.5} aria-hidden />

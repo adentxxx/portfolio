@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
 import { publicPath, pagePath } from "@/lib/public-path";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -103,9 +104,9 @@ function CaseNavLink({
   }
   return (
     <Button asChild mode="icon" className={className}>
-      <a href={pagePath(href)} aria-label={label}>
+      <Link href={pagePath(href)} aria-label={label}>
         {children}
-      </a>
+      </Link>
     </Button>
   );
 }

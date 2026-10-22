@@ -32,8 +32,7 @@ npm run dev
 ## Тема и звук
 
 - Тема и mute сохраняются в `localStorage` (`portfolio-theme`, `portfolio-muted`).
-- SFX — короткие тестовые WAV в `public/sounds/` (сгенерированные click-звуки для MVP; без автоплея).
-- Источник: локально сгенерированные UI clicks (не сток с CDN); замените файлы на финальные ассеты без смены API.
+- SFX владельца в `public/sounds/`: `drop_004` — смена темы, `switch_005` — mute, `select_008` — точка таймлайна дошла до карточки, `click` — кнопки, карточки и пустое место. Без автоплея при загрузке.
 
 ## Design tokens
 

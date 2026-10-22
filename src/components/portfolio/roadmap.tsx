@@ -10,6 +10,7 @@ import {
   RoadmapCard,
   type RoadmapCardData,
 } from "@/components/portfolio/roadmap-card";
+import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
 import {
   useEffect,
@@ -286,6 +287,7 @@ export function Roadmap({
   defaultEmotionId = "wave",
 }: RoadmapProps) {
   const reducedMotion = usePrefersReducedMotion();
+  const { play } = useSound();
   const headerMood = useHeaderMood();
   const trackRef = useRef<HTMLDivElement>(null);
   const headerMarkerRef = useRef<HTMLDivElement>(null);
@@ -758,6 +760,24 @@ export function Roadmap({
   }, [arrivedIndex, rows.length]);
 
   const bloubAtFooter = arrivedIndex === rows.length;
+
+  // select_008 when the timeline point reaches a card. Footer is not a card.
+  // The first settled index is the position on load, so a reload stays quiet.
+  const cardArrival =
+    arrivedIndex >= 0 && arrivedIndex < rows.length ? arrivedIndex : -1;
+  const heardArrival = useRef<number | null>(null);
+  useEffect(() => {
+    if (heardArrival.current === null) {
+      heardArrival.current = cardArrival;
+      return;
+    }
+    if (cardArrival < 0 || heardArrival.current === cardArrival) {
+      heardArrival.current = cardArrival;
+      return;
+    }
+    heardArrival.current = cardArrival;
+    play("arrive");
+  }, [cardArrival, play]);
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
