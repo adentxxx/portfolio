@@ -4,6 +4,7 @@ import {
   CasePrevIcon,
 } from "@/components/portfolio/decor-icons";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
+import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
 import { publicPath, pagePath } from "@/lib/public-path";
@@ -173,32 +174,7 @@ export default async function ProjectPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-surface-page">
       <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-32 min-[1192px]:px-0 md:pb-10">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <a
-            href={pagePath("/")}
-            aria-label="На главную"
-            className="relative block size-20 shrink-0 overflow-hidden rounded-[32px] bg-surface-control"
-          >
-            <Image
-              src={publicPath(home.intro.avatarSrc)}
-              alt=""
-              fill
-              className="object-cover object-top"
-              sizes="80px"
-              unoptimized
-            />
-            <span className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_4px_4px_0_rgba(0,0,0,0.25)]" />
-          </a>
-          <div className="flex flex-wrap justify-end gap-3">
-            {home.intro.links.map((link) => (
-              <Button key={link.label} asChild mode="fill">
-                <a href={link.href} target="_blank" rel="noreferrer">
-                  {link.label}
-                </a>
-              </Button>
-            ))}
-          </div>
-        </header>
+        <ProjectHeader links={home.intro.links} />
 
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
           <h1 className="text-largeTitle text-text-primary">{project.title}</h1>

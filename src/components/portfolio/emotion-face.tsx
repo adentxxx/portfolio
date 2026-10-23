@@ -49,11 +49,16 @@ function dotMask(src: string, width: number) {
   } as const;
 }
 
+type EmotionFaceProps = {
+  /** Home portrait is 140. Project header is 80. */
+  size?: 80 | 140;
+};
+
 /**
- * Intro portrait: 140 cutout. Click pulses the current face to 110% and
- * back to 100%, then swaps to the next file.
+ * Cutout portrait. Click pulses the current face to 110% and back to 100%,
+ * then swaps to the next file.
  */
-export function EmotionFace() {
+export function EmotionFace({ size = 140 }: EmotionFaceProps) {
   const { play } = useSound();
   const tipId = useId();
   const [index, setIndex] = useState(0);
@@ -117,7 +122,7 @@ export function EmotionFace() {
       data-sound="none"
       aria-label={`Эмоция ${index + 1} из ${FACES.length}. Сменить`}
       aria-describedby={tipVisible ? tipId : undefined}
-      className="relative grid size-[140px] shrink-0 cursor-pointer touch-manipulation place-items-center overflow-visible border-0 bg-transparent p-0"
+      className={`relative grid shrink-0 cursor-pointer touch-manipulation place-items-center overflow-visible border-0 bg-transparent p-0 ${size === 80 ? "size-20" : "size-[140px]"}`}
     >
       <span
         id={tipId}
