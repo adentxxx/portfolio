@@ -8,13 +8,14 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 type ProjectHeaderProps = {
   links: IntroLink[];
+  faces: string[];
 };
 
 /**
  * Project page header. Face and links stay on one row, face left and links
  * right, until the links wrap. Then both rows are centered.
  */
-export function ProjectHeader({ links }: ProjectHeaderProps) {
+export function ProjectHeader({ links, faces }: ProjectHeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
   const [wrapped, setWrapped] = useState(false);
 
@@ -51,7 +52,7 @@ export function ProjectHeader({ links }: ProjectHeaderProps) {
       )}
     >
       <div data-project-face className="shrink-0">
-        <EmotionFace size={80} />
+        <EmotionFace size={80} faces={faces} />
       </div>
       <div
         data-project-actions

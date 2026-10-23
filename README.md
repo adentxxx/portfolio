@@ -27,7 +27,7 @@ npm run dev
 
 - Главная: `/`
 - Кейс: `/projects/[slug]` (например `/projects/aurora-dashboard`)
-- Админка: `/admin` (пароль по умолчанию `demo-admin`, env `ADMIN_PASSWORD`)
+- Админка: `/admin` (логин и пароль из `ADMIN_LOGIN` и `ADMIN_PASSWORD`, по умолчанию `admin` / `demo-admin`)
 
 ## Тема и звук
 

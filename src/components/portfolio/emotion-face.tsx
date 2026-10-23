@@ -1,19 +1,12 @@
 "use client";
 
 import { useSound } from "@/hooks/use-sound";
+import { DEFAULT_FACES } from "@/lib/faces";
 import { publicPath } from "@/lib/public-path";
 import { motion, useAnimation } from "motion/react";
 import Image from "next/image";
 import { useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-
-/** Cutouts from the owner's `faces` folder, in filename order. */
-const FACES = [
-  "/faces/face_1.png",
-  "/faces/face_2.png",
-  "/faces/face_3.png",
-  "/faces/face_4.png",
-] as const;
 
 const TIP_ASK = "хочешь меня потрогать?";
 const TIP_EW = "эу....";
@@ -52,13 +45,17 @@ function dotMask(src: string, width: number) {
 type EmotionFaceProps = {
   /** Home portrait is 140. Project header is 80. */
   size?: 80 | 140;
+  /** Portrait files from the admin. Empty falls back to the shipped cutouts. */
+  faces?: readonly string[];
 };
 
 /**
  * Cutout portrait. Click pulses the current face to 110% and back to 100%,
  * then swaps to the next file.
  */
-export function EmotionFace({ size = 140 }: EmotionFaceProps) {
+export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) {
+  const faces = facesProp && facesProp.length > 0 ? facesProp : DEFAULT_FACES;
+  const faceKey = faces.join("|");
   const { play } = useSound();
   const tipId = useId();
   const [index, setIndex] = useState(0);
@@ -71,18 +68,23 @@ export function EmotionFace({ size = 140 }: EmotionFaceProps) {
   const tipVisible = over && tip !== "gone";
 
   useEffect(() => {
-    for (const src of FACES) {
+    setIndex(0);
+    indexRef.current = 0;
+  }, [faceKey]);
+
+  useEffect(() => {
+    for (const src of faces) {
       const img = new window.Image();
       img.src = publicPath(src);
     }
-  }, []);
+  }, [faceKey, faces]);
 
   function cycle() {
     // The shared click listener misses this press: React commits before the
     // event reaches document. Play the same click here, and opt out there.
     play("click");
     setTip((current) => (current === "ask" ? "ew" : "gone"));
-    indexRef.current = (indexRef.current + 1) % FACES.length;
+    indexRef.current = (indexRef.current + 1) % faces.length;
     const run = ++runRef.current;
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -110,6 +112,8 @@ export function EmotionFace({ size = 140 }: EmotionFaceProps) {
     })();
   }
 
+  const safeIndex = faces.length > 0 ? index % faces.length : 0;
+
   return (
     <button
       type="button"
@@ -120,7 +124,7 @@ export function EmotionFace({ size = 140 }: EmotionFaceProps) {
       }}
       onMouseLeave={() => setOver(false)}
       data-sound="none"
-      aria-label={`Эмоция ${index + 1} из ${FACES.length}. Сменить`}
+      aria-label={`Эмоция ${safeIndex + 1} из ${faces.length}. Сменить`}
       aria-describedby={tipVisible ? tipId : undefined}
       className={`relative grid shrink-0 cursor-pointer touch-manipulation place-items-center overflow-visible border-0 bg-transparent p-0 ${size === 80 ? "size-20" : "size-[140px]"}`}
     >
@@ -194,7 +198,7 @@ export function EmotionFace({ size = 140 }: EmotionFaceProps) {
         className="block size-full origin-center will-change-transform"
       >
         <Image
-          src={publicPath(FACES[index])}
+          src={publicPath(faces[safeIndex] ?? faces[0])}
           alt=""
           width={280}
           height={280}

@@ -350,12 +350,22 @@ type Company = {
   id: string;
   name: string;
   role: string;
-  dateLabel: string;
-  description: string;
+  dateLabel: string; // строка на карточке, собирается из полей периода
+  startMonth?: number | null; // 1–12
+  startYear?: number | null;
+  endMonth?: number | null;
+  endYear?: number | null;
+  ongoing: boolean; // «по настоящее время»
+  description: string; // текст карточки
   logoSrc: string;
   url?: string;
   order: number;
-  bloubEmotion: string; // id эмоции / asset key для bloub этой карточки
+  bloubEmotion: string; // id эмоции для точки таймлайна; в админке не редактируется
+  blocks: Array<{
+    kind: "heading" | "subheading" | "paragraph";
+    text: string;
+    sortOrder: number;
+  }>; // подробное описание для будущей страницы компании, на главной не показывается
   published: boolean;
 };
 ```
@@ -368,16 +378,20 @@ type Project = {
   slug: string;
   title: string;
   dateLabel: string;
+  createdMonth?: number | null;
+  createdYear?: number | null;
   description: string;
   tags: string[];
   logoSrc: string;
   order: number;
   bloubEmotion: string;
   summary: string;
-  heroImage: string;
+  heroImage: string; // первая фотография страницы, для совместимости
   sections: Array<{
+    kind: "legacy" | "heading" | "subheading" | "paragraph" | "image";
     heading: string;
     body: string;
+    text?: string;
     imageSrc?: string;
     sortOrder: number;
   }>;
@@ -420,6 +434,7 @@ type SiteContent = {
     headline: string;
     bio: string;
     avatarSrc: string;
+    faces: string[]; // портреты на главной и в шапке кейса, по порядку нажатия
     links: Array<{ label: string; href: string; icon?: string }>;
   };
   contact: {

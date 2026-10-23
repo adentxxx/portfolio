@@ -20,27 +20,86 @@ type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-type TextItem = { id: string; heading: string; body: string };
+type TextAtom = {
+  id: string;
+  kind: "heading" | "subheading" | "paragraph";
+  text: string;
+};
 
 type CaseBlock =
   | { kind: "image"; key: string; src: string }
-  | { kind: "text"; key: string; items: TextItem[] };
+  | { kind: "text"; key: string; items: TextAtom[] };
 
 function caseBlocks(project: {
   heroImage: string;
   sections: {
     id: string;
+    kind: string;
     heading: string;
     body: string;
+    text: string;
     imageSrc: string | null;
   }[];
 }): CaseBlock[] {
-  const blocks: CaseBlock[] = [];
-  if (project.heroImage) {
-    blocks.push({ kind: "image", key: "hero", src: project.heroImage });
+  const atoms: (
+    | { kind: "image"; key: string; src: string }
+    | TextAtom
+  )[] = [];
+  const heroInSections = project.sections.some(
+    (section) => section.imageSrc && section.imageSrc === project.heroImage,
+  );
+  if (project.heroImage && !heroInSections) {
+    atoms.push({ kind: "image", key: "hero", src: project.heroImage });
   }
 
-  let texts: TextItem[] = [];
+  for (const section of project.sections) {
+    if (section.kind === "image") {
+      if (section.imageSrc) {
+        atoms.push({ kind: "image", key: section.id, src: section.imageSrc });
+      }
+      continue;
+    }
+    if (section.kind === "subheading" || section.kind === "heading") {
+      const text = section.text || section.heading;
+      if (text) {
+        atoms.push({
+          id: section.id,
+          kind: section.kind,
+          text,
+        });
+      }
+      continue;
+    }
+    if (section.kind === "paragraph") {
+      const text = section.text || section.body;
+      if (text) atoms.push({ id: section.id, kind: "paragraph", text });
+      continue;
+    }
+    if (section.heading) {
+      atoms.push({
+        id: `${section.id}-h`,
+        kind: "heading",
+        text: section.heading,
+      });
+    }
+    if (section.body) {
+      atoms.push({
+        id: `${section.id}-b`,
+        kind: "paragraph",
+        text: section.body,
+      });
+    }
+    if (section.imageSrc) {
+      atoms.push({
+        kind: "image",
+        key: `${section.id}-i`,
+        src: section.imageSrc,
+      });
+    }
+  }
+
+  const blocks: CaseBlock[] = [];
+  let texts: TextAtom[] = [];
   const flush = () => {
     if (texts.length === 0) return;
     blocks.push({
@@ -50,24 +109,30 @@ function caseBlocks(project: {
     });
     texts = [];
   };
-
-  for (const section of project.sections) {
-    texts.push({
-      id: section.id,
-      heading: section.heading,
-      body: section.body,
-    });
-    if (section.imageSrc) {
+  for (const atom of atoms) {
+    if (atom.kind === "image") {
       flush();
-      blocks.push({
-        kind: "image",
-        key: `${section.id}-image`,
-        src: section.imageSrc,
-      });
+      blocks.push(atom);
+      continue;
     }
+    texts.push(atom);
   }
   flush();
   return blocks;
+}
+
+function textChunks(items: TextAtom[]) {
+  const chunks: { key: string; items: TextAtom[] }[] = [];
+  for (const item of items) {
+    const last = chunks[chunks.length - 1];
+    if (!last || item.kind === "heading") {
+      chunks.push({ key: item.id, items: [item] });
+      continue;
+    }
+    last.items.push(item);
+    last.key = `${last.key}-${item.id}`;
+  }
+  return chunks;
 }
 
 function CaseImage({ src }: { src: string }) {
@@ -174,13 +239,15 @@ export default async function ProjectPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-surface-page">
       <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-32 min-[1192px]:px-0 md:pb-10">
-        <ProjectHeader links={home.intro.links} />
+        <ProjectHeader links={home.intro.links} faces={home.intro.faces} />
 
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
           <h1 className="text-largeTitle text-text-primary">{project.title}</h1>
-          <p className="max-w-[1160px] text-body text-text-secondary">
-            {project.summary}
-          </p>
+          {project.summary ? (
+            <p className="max-w-[1160px] text-body text-text-secondary">
+              {project.summary}
+            </p>
+          ) : null}
           {project.tags.length > 0 ? (
             <div className="flex flex-wrap justify-center gap-2 text-caption1">
               {project.tags.map((tag) => (
@@ -202,14 +269,31 @@ export default async function ProjectPage({ params }: PageProps) {
           ) : (
             <div
               key={block.key}
-              className="mx-auto flex w-full max-w-[800px] flex-col gap-5 md:gap-6"
+              className="mx-auto flex w-full max-w-[800px] flex-col gap-5 text-left md:gap-6"
             >
-              {block.items.map((item) => (
-                <section key={item.id} className="flex flex-col gap-1 text-left md:gap-3">
-                  <h2 className="text-title3 text-text-primary">{item.heading}</h2>
-                  <p className="text-subheadline whitespace-pre-line text-text-secondary">
-                    {item.body}
-                  </p>
+              {textChunks(block.items).map((chunk) => (
+                <section
+                  key={chunk.key}
+                  className="flex flex-col gap-1 md:gap-3"
+                >
+                  {chunk.items.map((item) =>
+                    item.kind === "heading" ? (
+                      <h2 key={item.id} className="text-title3 text-text-primary">
+                        {item.text}
+                      </h2>
+                    ) : item.kind === "subheading" ? (
+                      <h3 key={item.id} className="text-body text-text-primary">
+                        {item.text}
+                      </h3>
+                    ) : (
+                      <p
+                        key={item.id}
+                        className="text-subheadline whitespace-pre-line text-text-secondary"
+                      >
+                        {item.text}
+                      </p>
+                    ),
+                  )}
                 </section>
               ))}
             </div>

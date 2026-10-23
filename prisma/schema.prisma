@@ -22,17 +22,36 @@ model BloubEmotion {
 }
 
 model Company {
-  id           String       @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
   role         String
   dateLabel    String
+  /// 1–12. Together with startYear this builds dateLabel.
+  startMonth   Int?
+  startYear    Int?
+  endMonth     Int?
+  endYear      Int?
+  /// «по настоящее время» — end month/year are ignored.
+  ongoing      Boolean        @default(false)
   description  String
   logoSrc      String
   url          String?
   order        Int
   bloubEmotion String
-  published    Boolean      @default(true)
-  emotion      BloubEmotion @relation(fields: [bloubEmotion], references: [id])
+  published    Boolean        @default(true)
+  emotion      BloubEmotion   @relation(fields: [bloubEmotion], references: [id])
+  blocks       CompanyBlock[]
+}
+
+/// Long-form copy for a future company page. Not shown on the roadmap card.
+model CompanyBlock {
+  id        String  @id @default(cuid())
+  companyId String
+  /// heading | subheading | paragraph
+  kind      String
+  text      String  @default("")
+  sortOrder Int
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model Project {
@@ -40,6 +59,8 @@ model Project {
   slug         String           @unique
   title        String
   dateLabel    String
+  createdMonth Int?
+  createdYear  Int?
   description  String
   tags         String
   logoSrc      String
@@ -55,20 +76,26 @@ model Project {
 model ProjectSection {
   id        String  @id @default(cuid())
   projectId String
+  /// legacy | heading | subheading | paragraph | image
+  kind      String  @default("legacy")
   heading   String
   body      String
+  /// Text of heading / subheading / paragraph. Legacy rows keep heading + body.
+  text      String  @default("")
   imageSrc  String?
   sortOrder Int
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model SiteSettings {
-  id             String @id @default("default")
-  introHeadline  String
-  introBio       String
-  avatarSrc      String
-  introLinksJson String
-  contactHeadline String
-  contactSubline  String
+  id               String @id @default("default")
+  introHeadline    String
+  introBio         String
+  avatarSrc        String
+  /// JSON string[] of portrait photos cycled on the home page and case header.
+  avatarFacesJson  String @default("[]")
+  introLinksJson   String
+  contactHeadline  String
+  contactSubline   String
   contactLinksJson String
 }

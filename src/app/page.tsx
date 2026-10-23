@@ -16,6 +16,7 @@ export default async function HomePage() {
         headline={intro.headline}
         bio={intro.bio}
         links={intro.links}
+        faces={intro.faces}
       />
       <Roadmap
         companies={companies}

@@ -9,11 +9,12 @@ type IntroCardProps = {
   headline: string;
   bio: string;
   links: IntroLink[];
+  faces: string[];
 };
 
-export function IntroCard({ headline, bio, links }: IntroCardProps) {
+export function IntroCard({ headline, bio, links, faces }: IntroCardProps) {
   // Headline phrases live in SiteSettings.introHeadline — one phrase per line
-  // (editable in /admin → Site settings → Intro headline, or prisma/seed.ts).
+  // (editable in /admin → Основное).
   const phrases = parsePhrases(headline);
 
   return (
@@ -24,7 +25,7 @@ export function IntroCard({ headline, bio, links }: IntroCardProps) {
         subheadline, gap 24 / 4. From md: largeTitle, body.
       */}
       <div className="flex h-[352px] w-full flex-col items-center gap-6 md:h-auto">
-        <EmotionFace />
+        <EmotionFace faces={faces} />
         <div className="flex w-full flex-col items-center gap-1 md:gap-2">
           <h1 className="min-h-[1lh] text-largeTitle text-text-primary">
             <Typewriter phrases={phrases} periodMs={7000} />

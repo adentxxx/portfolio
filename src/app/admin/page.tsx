@@ -1,47 +1,48 @@
-import { AdminPanel } from "@/components/portfolio/admin-panel";
-import { prisma } from "@/lib/prisma";
+import { AdminApp } from "@/components/portfolio/admin/admin-app";
+import { LoginForm } from "@/components/portfolio/admin/login-form";
+import { FloatingControls } from "@/components/portfolio/floating-controls";
+import { isAdminSession } from "@/lib/admin-auth";
+import { getAdminData } from "@/lib/admin-data";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "Админка",
+  robots: { index: false, follow: false },
+};
+
 export default async function AdminPage() {
-  const [companies, projects, emotions, settings] = await Promise.all([
-    prisma.company.findMany({ orderBy: { order: "asc" } }),
-    prisma.project.findMany({
-      orderBy: { order: "asc" },
-      include: { sections: { orderBy: { sortOrder: "asc" } } },
-    }),
-    prisma.bloubEmotion.findMany(),
-    prisma.siteSettings.findUnique({ where: { id: "default" } }),
-  ]);
+  const authed = await isAdminSession();
+  if (!authed) {
+    return (
+      <>
+        <LoginForm />
+        <FloatingControls />
+      </>
+    );
+  }
+
+  const data = await getAdminData();
+  if (!data.settings) {
+    return (
+      <main className="min-h-screen bg-surface-page px-4 py-10">
+        <p className="text-body text-text-primary">
+          Нет настроек сайта. Запустите npm run db:seed.
+        </p>
+      </main>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-surface-page px-4 py-10">
-      <div className="mx-auto w-full max-w-3xl">
-        <h1 className="text-title1 text-text-primary">Админка (MVP)</h1>
-        <p className="mt-2 text-body text-text-secondary">
-          Минимальный CRUD для демо-контента. Пароль по умолчанию:{" "}
-          <code className="text-caption1">demo-admin</code> (env{" "}
-          <code className="text-caption1">ADMIN_PASSWORD</code>).
-        </p>
-        <AdminPanel
-          companies={companies}
-          projects={projects.map((p) => ({
-            ...p,
-            tags: JSON.parse(p.tags) as string[],
-          }))}
-          emotions={emotions}
-          settings={
-            settings
-              ? {
-                  introHeadline: settings.introHeadline,
-                  introBio: settings.introBio,
-                  contactHeadline: settings.contactHeadline,
-                  contactSubline: settings.contactSubline,
-                }
-              : null
-          }
-        />
-      </div>
-    </main>
+    <>
+      <AdminApp
+        settings={data.settings}
+        companies={data.companies}
+        projects={data.projects}
+        emotions={data.emotions}
+      />
+      <FloatingControls />
+    </>
   );
 }

@@ -45,6 +45,12 @@ async function main() {
       introBio:
         "Это демо-портфолио (placeholder). Имена компаний и проектов случайные — не реальная биография. Замените через /admin.",
       avatarSrc: "/avatars/avatar.png",
+      avatarFacesJson: JSON.stringify([
+        "/faces/face_1.png",
+        "/faces/face_2.png",
+        "/faces/face_3.png",
+        "/faces/face_4.png",
+      ]),
       introLinksJson: JSON.stringify([
         { label: "Telegram", href: "https://t.me/", icon: "send" },
         { label: "CV", href: "#", icon: "file" },
@@ -66,6 +72,8 @@ async function main() {
         name: "Northwind Labs (demo)",
         role: "Product designer",
         dateLabel: "2024 — н.в.",
+        startYear: 2024,
+        ongoing: true,
         description:
           "Placeholder: дизайн платформы аналитики. Данные выдуманы для MVP.",
         logoSrc: "/logos/company-a.svg",
@@ -78,6 +86,8 @@ async function main() {
         name: "Cedar & Co (demo)",
         role: "UX designer",
         dateLabel: "2022 — 2024",
+        startYear: 2022,
+        endYear: 2024,
         description:
           "Placeholder: e-commerce и дизайн-система. Не реальный опыт.",
         logoSrc: "/logos/company-b.svg",
@@ -89,6 +99,8 @@ async function main() {
         name: "Pixel Harbor (demo)",
         role: "Junior product designer",
         dateLabel: "2020 — 2022",
+        startYear: 2020,
+        endYear: 2022,
         description: "Placeholder: мобильные сценарии и прототипы.",
         logoSrc: "/logos/company-c.svg",
         order: 3,
@@ -103,6 +115,7 @@ async function main() {
       slug: "aurora-dashboard",
       title: "Aurora Dashboard (demo)",
       dateLabel: "2025",
+      createdYear: 2025,
       description: "Кейс-заглушка: дашборд метрик с фокусом на ясность.",
       tags: JSON.stringify(["Product", "Dashboard", "Demo"]),
       logoSrc: "/logos/project-a.svg",
@@ -130,6 +143,7 @@ async function main() {
       slug: "harbor-checkout",
       title: "Harbor Checkout (demo)",
       dateLabel: "2024",
+      createdYear: 2024,
       description: "Кейс-заглушка: сокращение шагов оплаты.",
       tags: JSON.stringify(["UX", "Commerce", "Demo"]),
       logoSrc: "/logos/project-b.svg",
@@ -155,6 +169,7 @@ async function main() {
       slug: "moss-onboarding",
       title: "Moss Onboarding (demo)",
       dateLabel: "2023",
+      createdYear: 2023,
       description: "Кейс-заглушка: онбординг B2B SaaS.",
       tags: JSON.stringify(["Onboarding", "SaaS", "Demo"]),
       logoSrc: "/logos/project-c.svg",

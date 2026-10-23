@@ -1,3 +1,4 @@
+import { parseFaces } from "@/lib/content-format";
 import { prisma } from "@/lib/prisma";
 
 export type IntroLink = { label: string; href: string; icon?: string };
@@ -28,6 +29,7 @@ export async function getHomeContent() {
       headline: settings.introHeadline,
       bio: settings.introBio,
       avatarSrc: settings.avatarSrc,
+      faces: parseFaces(settings.avatarFacesJson),
       links: JSON.parse(settings.introLinksJson) as IntroLink[],
     },
     contact: {
