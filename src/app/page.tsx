@@ -15,7 +15,6 @@ export default async function HomePage() {
       <IntroCard
         headline={intro.headline}
         bio={intro.bio}
-        avatarSrc={intro.avatarSrc}
         links={intro.links}
       />
       <Roadmap
