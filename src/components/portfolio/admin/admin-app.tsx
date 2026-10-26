@@ -6,7 +6,6 @@ import { MainTab } from "@/components/portfolio/admin/main-tab";
 import { Button } from "@/components/ui/button";
 import type {
   AdminCompany,
-  AdminEmotion,
   AdminProject,
   AdminSettings,
 } from "@/lib/admin-data";
@@ -20,12 +19,10 @@ export function AdminApp({
   settings,
   companies,
   projects,
-  emotions,
 }: {
   settings: AdminSettings;
   companies: AdminCompany[];
   projects: AdminProject[];
-  emotions: AdminEmotion[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("main");
@@ -95,7 +92,6 @@ export function AdminApp({
           <ContentTab
             companies={companies}
             projects={projects}
-            emotions={emotions}
             onUnauthorized={onUnauthorized}
           />
         </div>

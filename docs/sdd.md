@@ -117,7 +117,7 @@
 
 1. `Header` — аватар **80**, radius 32, inset-тень; ссылка на `/`. Справа `BTNs` Fill, gap 12 (ссылки intro из БД).
 2. `Title` по центру. От `768`: название `largeTitle`, описание `body` / `text/secondary` — те же ступени, что заголовок и подзаголовок главной. Ниже `768` (макет `MOB Project Full Page` `209:1156`): название `title1`, описание `subheadline`, как на главной в телефонной ширине. Теги как на карточке: от `768` `caption1`, padding 8×4; ниже `768` `caption2` medium, padding 6×2, radius 8.
-3. `Image` на всю колонку, пропорция 1160×500, radius **24**, фон `surface/control`.
+3. `Image` на всю колонку, пропорция 1160×500, radius **24**, фон `surface/control`. Видео — тот же слот колонки: ширина 100%, radius **24**, фон `surface/control`, своя пропорция кадра (без обрезки). По умолчанию нативные controls, без автоплея и без предзагрузки всего файла (`preload="metadata"`). В админке у ролика: автовоспроизведение, без звука, зациклить, обложка и скрытие панели управления. Обложка — картинка до старта; пока она задана и ролик сам не играет, файл видео не качается (`preload="none"`). Без панели нет времени, полосы и настроек: запуск и пауза по нажатию на кадр. Автовоспроизведение только без звука — звук при загрузке страницы не стартует (§10). При `prefers-reduced-motion` автовоспроизведение не включается. Файл: mp4, webm или mov, до 80 МБ. В `heroImage` попадает только первая фотография.
 4. `Text Container` — колонка **800** по центру. От `768` gap 24 между блоками; `Text Block`: заголовок `title3`, текст `subheadline` / `text/secondary`, gap 12. Ниже `768`: заголовок по-прежнему `title3` (как название карточки на главной), текст `subheadline`, gap внутри блока **4**, между блоками **20**. Картинка секции идёт после её текста.
 5. Стиль кнопок — Only Icon (`surface/overlay`, blur 12, `border/default`). **От `768`:** «предыдущий кейс» 80×56, «на главную» 56×56 и «следующий кейс» 80×56 зафиксированы по центру внизу; `Button Bar` — тот же, что на главной (правый нижний угол, отступ 40). **Ниже `768`** (макет `Bottom Bar` `209:1225`): одна панель у нижнего края, `px 12`, `pb 40`, колонка с выравниванием вправо, gap **16**. Справа `Button Bar` (56×56, gap 12). Под ним ряд на всю ширину: «предыдущий» и «следующий» делят оставшуюся ширину (`flex 1 0 0`), «на главную» 56×56, gap 12. Пустая зона панели не перехватывает нажатия.
 
@@ -163,6 +163,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | `surface/points` | `#D9D9D9` | `#323232` | Точки timeline / points |
 | `surface/inverse` | `#323232` | `#F7F7F4` | Инверсия (теги) |
 | `surface/overlay` | `#F7F7F41F` | `#26251E73` | Фон Only Icon (light alpha 1F ~12%, dark alpha 73 ~45%, blur 12) |
+| `surface/overlay dark` | `#26251E33` | `#26251E73` | Оверлей модалки места работы (gray/900: light 20%, dark 45%), background blur 20 |
 | `text/primary` | `#323232` | `#F7F7F4` | Основной текст |
 | `text/secondary` | `#757575` | `#D9D9D9` | Вторичный |
 | `text/muted` | `#B3B3B3` | `#757575` | Даты / приглушённый |
@@ -239,7 +240,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 Дополнительно:
 
 1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)` через bounce-scale (`card-reveal`: 0.88 → 1.04 → 0.985 → 1, 640ms). Не сдвиг снизу. После анимации `transform` не остаётся, чтобы не глушить tilt.
-2. У **каждой** карточки (company/project) может быть **свой bloub со своей эмоцией**, настраиваемый **через БД** (`bloubEmotion` / asset id) — см. §8.
+2. У **каждой** карточки свой bloub. Компания берёт его из справочника (`bloubEmotion`). Проект хранит форму, выражение и анимацию отдельно (`bloubShape`, `bloubExpression`, `bloubState`) и настраивается в админке — см. §8.
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
@@ -254,7 +255,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 ### 5.2 Навигация
 
 - Клик по **Active (Project)** → `/projects/[slug]`.
-- Клик по компании: <!-- TODO:user --> раскрытие / внешняя ссылка / ничего.
+- Клик по **Active (Work)** открывает модалку места работы (Figma `236:935` desktop, `237:1175` mobile). Шапка: логотип, дата, название. Первый текстовый блок — роль и описание карточки, дальше `Company.blocks` (заголовок `title3`, подзаголовок `body`, абзац `subheadline` / `text/secondary`). Окно до **880**, поля страницы **20**, radius **48**. Ниже `768`: padding **32**, логотип **52**, название `title2`, дата `caption2`. От `768`: padding **40**, логотип **72**, название `title1`, дата `caption1`. Кнопка «закрыть» — Fill, над правым краем окна, зазор **24**. Оверлей на весь экран: `surface/overlay dark`, background blur **20**. Закрытие: кнопка, клик по оверлею, Escape. Открытие и закрытие — морф из прямоугольника карточки (позиция, размер, радиус, отступы, логотип и кегль названия) около 600ms, ease-out без отскока; оверлей проявляется вместе с ним. При `prefers-reduced-motion` окно появляется и исчезает сразу. Карточка в State=`Default` не открывает окно.
 - `BTNs` — внешние URL.
 - `Button Bar`: theme + mute.
 
@@ -301,7 +302,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 | Figma | Variants | Имя в коде |
 |---|---|---|
-| `Button` | State: Default / Hover / Pressed; Mode: Fill / Only Icon | `Button` |
+| `Button` | State: Default / Hover / Pressed; Mode: Fill / Only Icon / Accent | `Button` |
 | `Cards` | Default / Active (Work) / Active (Project) | `RoadmapCard` |
 | `bloub` | emotion из БД; states: idle / travel-as-dot / arrived | `Bloub` → `BloubBot` (SVG-рендер движка `src/lib/bloub-engine`) |
 | `decor/timeline-dot` | travel/rest; size: work 20px / project 10px | `TimelineDot` (часть маркера) |
@@ -316,7 +317,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 **Default:** skeleton.  
 **Active (Work):** logo, date, title, role, description, **bloubEmotion**.  
-**Active (Project):** logo, date, title, tags, description, **bloubEmotion**, link → project page.  
+**Active (Project):** logo, date, title, tags, description, **форма / выражение / анимация bloub**, link → project page.  
 **Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; role `body`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); role `subheadline`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашка role **20** высотой. Лого **52** radius **16**, title `title3`, карточка radius **32**, gap 16 — в обоих размерах. Skeleton-плашки: дата radius **8**, заголовок и роль **12**, описание **16**.  
 **Hover (Active), desktop (`≥ 1160`):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.  
 **Press, mobile и tablet (`< 1160`):** tilt нет. Пока кнопка мыши или палец зажаты, карточка `transform: scale(0.95)` (на 5% меньше), `transform-origin: center`, 150ms `ease-out`. Место в потоке не меняется.
@@ -324,8 +325,9 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 ### 7.3 Button
 
 - Fill: label ± iconLeft; `surface/control`; radius 20; padding 20×12. Фон на hover не меняется.
+- Accent (`244:915`): тот же размер и hover, что у Fill. Фон `surface/inverse`, подпись `text/on-inverse`. На сайте это кнопки сохранения в админке.
 - Default и Pressed: label `subheadline`, высота 44. Pressed сбрасывает скейл.
-- Hover (Fill): `transform: scale(1.0909)` — визуально 44→48, как UI Kit `105:62`. Место в потоке не меняется, страница не сдвигается.
+- Hover (Fill и Accent): `transform: scale(1.0909)` — визуально 44→48, как UI Kit `105:62` и `244:936`. Место в потоке не меняется, страница не сдвигается.
 - Only Icon: 56×56, radius 20, padding 16; фон `surface/overlay`, `backdrop-blur` 12px, `border/default`. Иконка 24px `icon/primary`, на hover — `accent/primary`. Размер не меняется.
 
 ### 7.4 Naming
@@ -365,7 +367,7 @@ type Company = {
     kind: "heading" | "subheading" | "paragraph";
     text: string;
     sortOrder: number;
-  }>; // подробное описание для будущей страницы компании, на главной не показывается
+  }>; // подробности в модалке места работы, на карточке не показываются
   published: boolean;
 };
 ```
@@ -384,15 +386,23 @@ type Project = {
   tags: string[];
   logoSrc: string;
   order: number;
-  bloubEmotion: string;
+  bloubShape: string; // ShapeId, по умолчанию cercle
+  bloubState: string; // анимация: idle | thinking | wink | …
+  bloubExpression?: string | null; // ExpressionId; на таймлайне видно в `idle`
+  bloubEmotion: string; // устаревший FK справочника, таймлайн проекта его не читает
   summary: string;
   heroImage: string; // первая фотография страницы, для совместимости
   sections: Array<{
-    kind: "legacy" | "heading" | "subheading" | "paragraph" | "image";
+    kind: "legacy" | "heading" | "subheading" | "paragraph" | "image" | "video";
     heading: string;
     body: string;
     text?: string;
-    imageSrc?: string;
+    imageSrc?: string; // путь фото или видео (`/uploads/…`)
+    videoAutoplay?: boolean; // только для video и только вместе с videoMuted
+    videoMuted?: boolean;
+    videoLoop?: boolean;
+    videoPoster?: string; // обложка до старта
+    videoControls?: boolean; // false — без панели времени и настроек
     sortOrder: number;
   }>;
   published: boolean;
@@ -403,7 +413,7 @@ type Project = {
 
 ```ts
 type BloubEmotion = {
-  id: string;          // ключ, напр. "wave" | "focus" — на него ссылаются Company/Project
+  id: string;          // ключ, напр. "wave" | "focus" — на него ссылается Company
   label: string;       // для админки
   state: string;       // StateId движка: idle | thinking | wink | wide | alert | notify |
                        // exclaim | sleep | egg | hexagon | play | orbit | burst | comet
@@ -419,12 +429,12 @@ type BloubEmotion = {
 - **MUST:** цвета только из токенов, `skins.ts`/`NOTIF_BLUE` движка не используются: тело — `accent/primary`,
   глаза — `surface/page` (подложка под дырками маски, поэтому меняются с темой), кольца/частицы —
   `accent/primary` → `accent/primary-hover`, пастилька notify — `accent/information`.
-- Форма тела — круг (как в Figma); состояния `swirl` (служебное) в справочнике нет.
+- Форма по умолчанию — круг (как в Figma). У проекта в админке выбирается форма персонализатора (`cercle`, `galet`, `squircle`, `capsule`, `triangle`, `hexagone`, `nuage`, `goutte`). Анимации со своим силуэтом её не подменяют; выражение лица применяется в `idle`. Состояния `swirl` (служебное) в выборе нет.
 - Появление и исчезновение на `decor/timeline-dot`: 200ms `ease-in-out` (scale от диаметра точки к 44px и обратно, opacity кроссфейдом с точкой).
   Нарративные состояния (`orbit`, `burst`, `alert`…) проигрываются один раз и держат финальную позу — это
   поведение движка, не баг.
 - `prefers-reduced-motion`: один кадр `POSES[state]`, без rAF-цикла.
-- Справочник редактируется в БД (`BloubEmotion`), сид — `prisma/seed.ts`; карточка выбирает эмоцию по `id`.
+- Справочник компаний — `BloubEmotion`, сид — `prisma/seed.ts`. Проект не выбирает строку справочника: форма, выражение и анимация лежат на самой карточке и правятся раскрывающимся блоком в `/admin`.
 
 ### 8.5 Site meta
 
@@ -451,7 +461,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 
 - [ ] Intro / contact / ссылки  
 - [ ] Компании + лого + `bloubEmotion`  
-- [ ] Проекты + slug + секции + изображения + `bloubEmotion`  
+- [ ] Проекты + slug + секции + изображения и видео + `bloubEmotion`  
 - [ ] Справочник эмоций bloub  
 - [ ] Favicon / OG  
 
@@ -471,7 +481,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 ### 9.2 Обязательные требования
 
 - **a11y:** семантика, контраст Light/Dark, focus, reduced-motion, aria на icon-кнопках.
-- **performance:** lazy images; без автоплея при load; `select_008` только по прибытию точки на карточку (§6.1); LCP — intro.
+- **performance:** lazy images; видео кейса по умолчанию без автоплея, автовоспроизведение только без звука и без старта при `prefers-reduced-motion` (§3.4); `select_008` только по прибытию точки на карточку (§6.1); LCP — intro.
 - **responsive:** desktop 1440 — Figma; mobile — `MOB Home Full Page` (`161:559`), см. §3.2.
 - **i18n:** сейчас RU (+ EN в CTA макета). Язык: <!-- TODO:user -->.
 
@@ -525,7 +535,7 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 | 2 | Утвердить контент intro/companies/projects в БД | Прод-данные | §8 |
 | 3 | ~~Набор эмоций bloub (ассеты + ключи)~~ — закрыто: эмоции = состояния движка, см. §8.4 | Маркер timeline | §5.1, §8.4 |
 | 4 | ~~Easing/ms morph bloub↔dot~~ — закрыто, см. §4.5 | Полировка | §4.5 |
-| 5 | Клик по company-карточке | UX | §5.2 |
+| 5 | ~~Клик по company-карточке~~ — закрыто: модалка места работы, см. §5.2 | UX | §5.2 |
 | 6 | Назначение кнопок Button Bar (подтвердить theme/mute) | UI | §5.2 |
 | 7 | Default mute on/off | Звук | §6.2 |
 | 8 | ~~Финальная замена сток-SFX~~ — закрыто: файлы владельца, см. §6.3 | Прод-аудио | §6.3 |

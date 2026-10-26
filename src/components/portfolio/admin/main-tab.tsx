@@ -52,7 +52,7 @@ export function MainTab({
     setError(null);
     try {
       const added: string[] = [];
-      for (const file of files) added.push(await uploadAdminFile(file));
+      for (const file of files) added.push(await uploadAdminFile(file, "image"));
       setSettings((current) => ({
         ...current,
         faces: [...current.faces, ...added].slice(0, 12),
@@ -215,7 +215,7 @@ export function MainTab({
         />
       </section>
 
-      <Button type="button" onClick={() => void save()} disabled={saving || uploading}>
+      <Button type="button" mode="accent" onClick={() => void save()} disabled={saving || uploading}>
         {saving ? "Сохраняю…" : "Сохранить основное"}
       </Button>
     </div>

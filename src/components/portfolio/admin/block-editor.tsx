@@ -1,9 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { uploadAdminFile } from "@/components/portfolio/admin/api";
-import { inputClass } from "@/components/portfolio/admin/fields";
+import { CheckField, inputClass } from "@/components/portfolio/admin/fields";
 import type { EditorBlock } from "@/lib/content-format";
+import { classifyUpload, IMAGE_ACCEPT, VIDEO_ACCEPT } from "@/lib/upload-rules";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -12,6 +13,7 @@ const KIND_LABEL: Record<EditorBlock["kind"], string> = {
   subheading: "Подзаголовок",
   paragraph: "Текст",
   image: "Фотография",
+  video: "Видео",
 };
 
 function moveBlock(blocks: EditorBlock[], index: number, direction: -1 | 1) {
@@ -43,20 +45,33 @@ export function BlockEditor({
     ]);
   }
 
-  async function addImages(files: File[]) {
+  async function addMedia(kind: "image" | "video", file: File) {
+    const classified = classifyUpload(file);
+    if (classified?.kind !== kind) {
+      onError(
+        new Error(
+          kind === "video"
+            ? "Нужен файл mp4, webm или mov"
+            : "Нужен файл png, jpg, webp, gif или svg",
+        ),
+      );
+      return;
+    }
     setUploading(true);
     try {
-      const added: EditorBlock[] = [];
-      for (const file of files) {
-        const src = await uploadAdminFile(file);
-        added.push({
+      const src = await uploadAdminFile(file, kind);
+      onChange([
+        ...blocks,
+        {
           id: crypto.randomUUID(),
-          kind: "image",
+          kind,
           text: "",
           imageSrc: src,
-        });
-      }
-      onChange([...blocks, ...added]);
+          ...(kind === "video"
+            ? { autoplay: false, muted: false, loop: false, poster: null, controls: true }
+            : {}),
+        },
+      ]);
     } catch (error) {
       onError(error);
     } finally {
@@ -64,14 +79,65 @@ export function BlockEditor({
     }
   }
 
-  async function replaceImage(id: string, file: File) {
+  async function replaceMedia(id: string, kind: "image" | "video", file: File) {
+    const classified = classifyUpload(file);
+    if (classified?.kind !== kind) {
+      onError(
+        new Error(
+          kind === "video"
+            ? "Нужен файл mp4, webm или mov"
+            : "Нужен файл png, jpg, webp, gif или svg",
+        ),
+      );
+      return;
+    }
     setUploading(true);
     try {
-      const src = await uploadAdminFile(file);
+      const src = await uploadAdminFile(file, kind);
       onChange(
         blocks.map((block) =>
           block.id === id ? { ...block, imageSrc: src } : block,
         ),
+      );
+    } catch (error) {
+      onError(error);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function updateVideo(
+    id: string,
+    patch: { autoplay?: boolean; muted?: boolean; loop?: boolean; controls?: boolean },
+  ) {
+    onChange(
+      blocks.map((block) => {
+        if (block.id !== id || block.kind !== "video") return block;
+        const next = {
+          ...block,
+          autoplay: Boolean(block.autoplay),
+          muted: Boolean(block.muted),
+          loop: Boolean(block.loop),
+          controls: block.controls !== false,
+          ...patch,
+        };
+        if (patch.autoplay) next.muted = true;
+        if (patch.muted === false) next.autoplay = false;
+        return next;
+      }),
+    );
+  }
+
+  async function setPoster(id: string, file: File) {
+    if (classifyUpload(file)?.kind !== "image") {
+      onError(new Error("Нужен файл png, jpg, webp, gif или svg"));
+      return;
+    }
+    setUploading(true);
+    try {
+      const src = await uploadAdminFile(file, "image");
+      onChange(
+        blocks.map((block) => (block.id === id ? { ...block, poster: src } : block)),
       );
     } catch (error) {
       onError(error);
@@ -97,18 +163,32 @@ export function BlockEditor({
           Текст
         </Button>
         {allowImages ? (
-          <ImagePick
-            label={uploading ? "Загружаю…" : "Фотография"}
-            disabled={uploading}
-            onFile={(file) => void addImages([file])}
-          />
+          <>
+            <MediaPick
+              label={uploading ? "Загружаю…" : "Фотография"}
+              accept={IMAGE_ACCEPT}
+              disabled={uploading}
+              onFile={(file) => void addMedia("image", file)}
+            />
+            <MediaPick
+              label={uploading ? "Загружаю…" : "Видео"}
+              accept={VIDEO_ACCEPT}
+              disabled={uploading}
+              onFile={(file) => void addMedia("video", file)}
+            />
+          </>
         ) : null}
       </div>
+      {allowImages ? (
+        <p className="text-caption2 text-text-muted">
+          Фото: png, jpg, webp, gif или svg, до 8 МБ. Видео: mp4, webm или mov, до 80 МБ.
+        </p>
+      ) : null}
 
       {blocks.length === 0 ? (
         <p className="text-subheadline text-text-muted">
           {allowImages
-            ? "Пока пусто. Добавьте заголовок, подзаголовок, текст или загрузите фотографию."
+            ? "Пока пусто. Добавьте заголовок, подзаголовок, текст, фотографию или видео."
             : "Пока пусто. Добавьте заголовок, подзаголовок или текст."}
         </p>
       ) : null}
@@ -146,20 +226,117 @@ export function BlockEditor({
               </Button>
             </div>
           </div>
-          {block.kind === "image" && block.imageSrc ? (
+          {block.kind === "image" || block.kind === "video" ? (
             <div className="space-y-2">
-              <Image
-                src={block.imageSrc}
-                alt=""
-                width={960}
-                height={400}
-                unoptimized
-                className="h-auto max-h-48 w-full rounded-[12px] object-cover"
-              />
-              <ImagePick
-                label="Заменить фото"
+              {block.kind === "image" && block.imageSrc ? (
+                <Image
+                  src={block.imageSrc}
+                  alt=""
+                  width={960}
+                  height={400}
+                  unoptimized
+                  className="h-auto max-h-48 w-full rounded-[12px] object-cover"
+                />
+              ) : null}
+              {block.kind === "video" && block.imageSrc ? (
+                <video
+                  key={`${block.imageSrc}-${block.poster ?? ""}-${block.autoplay}-${block.muted}-${block.loop}-${block.controls}`}
+                  src={block.imageSrc}
+                  poster={block.poster || undefined}
+                  controls={block.controls !== false}
+                  playsInline
+                  autoPlay={Boolean(block.autoplay)}
+                  muted={Boolean(block.muted || block.autoplay)}
+                  loop={Boolean(block.loop)}
+                  preload={
+                    block.autoplay ? "auto" : block.poster ? "none" : "metadata"
+                  }
+                  ref={(node) => {
+                    if (node) node.muted = Boolean(block.muted || block.autoplay);
+                  }}
+                  className={
+                    block.controls === false
+                      ? "video-clean max-h-48 w-full rounded-[12px] bg-surface-control"
+                      : "max-h-48 w-full rounded-[12px] bg-surface-control"
+                  }
+                />
+              ) : null}
+              {block.kind === "video" ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-x-4 gap-y-2">
+                    <CheckField
+                      label="Автовоспроизведение"
+                      checked={Boolean(block.autoplay)}
+                      onChange={(autoplay) => updateVideo(block.id, { autoplay })}
+                    />
+                    <CheckField
+                      label="Без звука"
+                      checked={Boolean(block.muted || block.autoplay)}
+                      onChange={(muted) => updateVideo(block.id, { muted })}
+                    />
+                    <CheckField
+                      label="Зациклить"
+                      checked={Boolean(block.loop)}
+                      onChange={(loop) => updateVideo(block.id, { loop })}
+                    />
+                    <CheckField
+                      label="Скрыть панель управления"
+                      checked={block.controls === false}
+                      onChange={(hide) => updateVideo(block.id, { controls: !hide })}
+                    />
+                  </div>
+                  <p className="text-caption2 text-text-muted">
+                    Автовоспроизведение идёт без звука. Если у посетителя уменьшены анимации, ролик сам не стартует. Без панели запуск и пауза — нажатием на кадр.
+                  </p>
+                  {block.poster ? (
+                    <Image
+                      src={block.poster}
+                      alt=""
+                      width={320}
+                      height={180}
+                      unoptimized
+                      className="h-auto max-h-24 w-40 rounded-[12px] object-cover"
+                    />
+                  ) : null}
+                  <div className="flex flex-wrap gap-2">
+                    <MediaPick
+                      label={
+                        uploading
+                          ? "Загружаю…"
+                          : block.poster
+                            ? "Заменить обложку"
+                            : "Загрузить обложку"
+                      }
+                      accept={IMAGE_ACCEPT}
+                      disabled={uploading}
+                      onFile={(file) => void setPoster(block.id, file)}
+                    />
+                    {block.poster ? (
+                      <Button
+                        type="button"
+                        disabled={uploading}
+                        onClick={() =>
+                          onChange(
+                            blocks.map((item) =>
+                              item.id === block.id ? { ...item, poster: null } : item,
+                            ),
+                          )
+                        }
+                      >
+                        Убрать обложку
+                      </Button>
+                    ) : null}
+                  </div>
+                  <p className="text-caption2 text-text-muted">
+                    Обложка видна, пока ролик не начал играть, и не даёт показать случайный кадр у тяжёлого файла.
+                  </p>
+                </div>
+              ) : null}
+              <MediaPick
+                label={block.kind === "video" ? "Заменить видео" : "Заменить фото"}
+                accept={block.kind === "video" ? VIDEO_ACCEPT : IMAGE_ACCEPT}
                 disabled={uploading}
-                onFile={(file) => void replaceImage(block.id, file)}
+                onFile={(file) => void replaceMedia(block.id, block.kind as "image" | "video", file)}
               />
             </div>
           ) : (
@@ -184,12 +361,14 @@ export function BlockEditor({
   );
 }
 
-function ImagePick({
+function MediaPick({
   label,
+  accept,
   disabled,
   onFile,
 }: {
   label: string;
+  accept: string;
   disabled: boolean;
   onFile: (file: File) => void;
 }) {
@@ -197,7 +376,7 @@ function ImagePick({
     <label className="inline-flex">
       <input
         type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.png,.jpg,.jpeg,.webp,.gif,.svg"
+        accept={accept}
         className="sr-only"
         disabled={disabled}
         onChange={(event) => {

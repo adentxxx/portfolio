@@ -13,20 +13,15 @@ import {
   Status,
   inputClass,
 } from "@/components/portfolio/admin/fields";
+import { BloubSettings } from "@/components/portfolio/admin/bloub-picker";
 import { Button } from "@/components/ui/button";
-import { BloubBot } from "@/components/portfolio/bloub-bot";
-import type {
-  AdminCompany,
-  AdminEmotion,
-  AdminProject,
-} from "@/lib/admin-data";
+import type { AdminCompany, AdminProject } from "@/lib/admin-data";
 import {
   MONTH_OPTIONS,
   formatPeriod,
   formatPoint,
   type EditorBlock,
 } from "@/lib/content-format";
-import { toExpressionId, toStateId } from "@/lib/bloub-engine";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
@@ -117,7 +112,7 @@ function LogoField({
           const file = files[0];
           if (!file) return;
           setUploading(true);
-          void uploadAdminFile(file)
+          void uploadAdminFile(file, "image")
             .then(onChange)
             .catch((error: unknown) => onError(error))
             .finally(() => setUploading(false));
@@ -130,12 +125,10 @@ function LogoField({
 export function ContentTab({
   companies: initialCompanies,
   projects: initialProjects,
-  emotions,
   onUnauthorized,
 }: {
   companies: AdminCompany[];
   projects: AdminProject[];
-  emotions: AdminEmotion[];
   onUnauthorized: () => void;
 }) {
   const [companies, setCompanies] = useState(initialCompanies);
@@ -317,7 +310,6 @@ export function ContentTab({
           <ProjectEditor
             key={project.id}
             project={project}
-            emotions={emotions}
             open={openId === project.id}
             saving={savingId === project.id}
             onToggle={() =>
@@ -495,8 +487,8 @@ function CompanyEditor({
         <section className="space-y-3">
           <h3 className="text-body text-text-primary">Описание работы</h3>
           <p className="text-caption2 text-text-muted">
-            Подробный текст сохранится для страницы места работы. На главной
-            пока видна только карточка.
+            Подробный текст открывается в окне по нажатию на карточку места
+            работы. На самой карточке остаётся короткое описание.
           </p>
           <BlockEditor
             blocks={company.blocks}
@@ -506,7 +498,7 @@ function CompanyEditor({
         </section>
 
         <div className="flex flex-wrap gap-3">
-          <Button type="button" onClick={onSave} disabled={saving}>
+          <Button type="button" mode="accent" onClick={onSave} disabled={saving}>
             {saving ? "Сохраняю…" : "Сохранить"}
           </Button>
           <Button type="button" onClick={onDelete} disabled={saving}>
@@ -520,7 +512,6 @@ function CompanyEditor({
 
 function ProjectEditor({
   project,
-  emotions,
   open,
   saving,
   onToggle,
@@ -530,7 +521,6 @@ function ProjectEditor({
   onDelete,
 }: {
   project: AdminProject;
-  emotions: AdminEmotion[];
   open: boolean;
   saving: boolean;
   onToggle: () => void;
@@ -543,7 +533,6 @@ function ProjectEditor({
     formatPoint(project.createdMonth, project.createdYear) ||
     project.dateLabel ||
     "дата не задана";
-  const emotion = emotions.find((item) => item.id === project.bloubEmotion);
   const [tagDraft, setTagDraft] = useState("");
 
   function addTags(raw: string) {
@@ -650,27 +639,12 @@ function ProjectEditor({
               className={inputClass}
             />
           </Field>
-          <Field label="Эмоция bloub">
-            <div className="flex items-center gap-3">
-              <BloubBot
-                key={project.bloubEmotion}
-                state={toStateId(emotion?.state)}
-                expression={toExpressionId(emotion?.expression)}
-                size={56}
-              />
-              <select
-                value={project.bloubEmotion}
-                onChange={(event) => onChange({ bloubEmotion: event.target.value })}
-                className={inputClass}
-              >
-                {emotions.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Field>
+          <BloubSettings
+            shape={project.bloubShape}
+            state={project.bloubState}
+            expression={project.bloubExpression}
+            onChange={onChange}
+          />
         </section>
 
         <section className="space-y-3">
@@ -702,7 +676,7 @@ function ProjectEditor({
         </section>
 
         <div className="flex flex-wrap gap-3">
-          <Button type="button" onClick={onSave} disabled={saving}>
+          <Button type="button" mode="accent" onClick={onSave} disabled={saving}>
             {saving ? "Сохраняю…" : "Сохранить"}
           </Button>
           <Button type="button" onClick={onDelete} disabled={saving}>

@@ -6,8 +6,10 @@ import {
   EXPRESSION_BY_ID,
   POSES,
   RAYON,
+  SHAPE_BY_ID,
   type BotFrame,
   type ExpressionId,
+  type ShapeId,
   type StateId,
 } from "@/lib/bloub-engine";
 import { useEffect, useId, useRef, useState } from "react";
@@ -17,6 +19,8 @@ type BloubBotProps = {
   state: StateId;
   /** Rest expression for `baseFace` states (`idle`); null = the measured one. */
   expression?: ExpressionId | null;
+  /** Customizer silhouette. Null keeps the silhouette drawn by the animation. */
+  shape?: ShapeId | null;
   /** Rendered diameter of the ball in px (rings may overflow, that's intended). */
   size?: number;
   /**
@@ -45,9 +49,14 @@ const MAX_DT = 0.064;
  * - notif dot  → `accent/information`
  * So the theme toggle re-colours the bloub without re-rendering a frame.
  */
+function shapeRadii(shape: ShapeId | null) {
+  return shape ? (SHAPE_BY_ID.get(shape)?.radii ?? null) : null;
+}
+
 export function BloubBot({
   state,
   expression = null,
+  shape = null,
   size = 44,
   entryFrom = null,
   frozen = false,
@@ -68,7 +77,7 @@ export function BloubBot({
   const [frame, setFrame] = useState<BotFrame>(() => {
     const expr = expression ? (EXPRESSION_BY_ID.get(expression) ?? null) : null;
     const start = entryFrom && entryFrom !== state ? entryFrom : state;
-    const engine = new BotEngine(RAYON, start, null, expr);
+    const engine = new BotEngine(RAYON, start, shapeRadii(shape), expr);
     let t0 = 0;
     if (start !== state) {
       // Arrive: begin as `entryFrom`, morph towards `state` from t = 0.
@@ -90,15 +99,33 @@ export function BloubBot({
     if (frozen) setFrame(engine.sample(clockRef.current + POSES[state]));
   }, [state, frozen]);
 
+  const appliedExpression = useRef(expression);
   useEffect(() => {
     const engine = engineRef.current;
-    if (!engine) return;
+    if (!engine || appliedExpression.current === expression) return;
+    appliedExpression.current = expression;
     engine.setExpression(
       expression ? (EXPRESSION_BY_ID.get(expression) ?? null) : null,
       clockRef.current,
     );
-    if (frozen) setFrame(engine.sample(clockRef.current));
+    if (frozen) {
+      // Finish the morph: a frozen frame never ticks, so a mid-blend would stick.
+      clockRef.current += BotEngine.SHAPE_MORPH;
+      setFrame(engine.sample(clockRef.current));
+    }
   }, [expression, frozen]);
+
+  const appliedShape = useRef(shape);
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine || appliedShape.current === shape) return;
+    appliedShape.current = shape;
+    engine.setShape(shapeRadii(shape), clockRef.current);
+    if (frozen) {
+      clockRef.current += BotEngine.SHAPE_MORPH;
+      setFrame(engine.sample(clockRef.current));
+    }
+  }, [shape, frozen]);
 
   useEffect(() => {
     if (frozen || paused) return;

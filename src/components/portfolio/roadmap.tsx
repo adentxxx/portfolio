@@ -8,8 +8,11 @@ import {
 } from "@/components/portfolio/decor-icons";
 import {
   RoadmapCard,
+  type CompanyCardData,
   type RoadmapCardData,
+  type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
+import { WorkModal } from "@/components/portfolio/work-modal";
 import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +29,7 @@ type Emotion = {
   label: string;
   state: string;
   expression?: string | null;
+  shape?: string | null;
 };
 
 type RoadmapProps = {
@@ -294,6 +298,10 @@ export function Roadmap({
   // Points 0..rows.length-1 are card rows, index rows.length is the footer dot.
   const pointRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [openWork, setOpenWork] = useState<{
+    company: CompanyCardData;
+    origin: WorkOrigin;
+  } | null>(null);
   // Viewport below the desktop breakpoint: mobile/tablet roadmap (§3.2).
   const [narrow, setNarrow] = useState(false);
   // Phone frame (Figma 161:559). Tablet keeps the 44px bloub and 20/10 dots.
@@ -409,7 +417,16 @@ export function Roadmap({
           id: `project-${card.id}`,
           side: "right",
           card,
-          emotion: emotionMap.get(card.bloubEmotion) ?? fallback,
+          emotion:
+            card.kind === "project"
+              ? {
+                  id: card.id,
+                  label: card.title,
+                  state: card.bloubState,
+                  expression: card.bloubExpression,
+                  shape: card.bloubShape,
+                }
+              : (emotionMap.get(card.bloubEmotion) ?? fallback),
         });
       }
     }
@@ -543,6 +560,9 @@ export function Roadmap({
     };
 
     const update = () => {
+      // The work modal pins the body and the window reports scroll 0.
+      // Recomputing the journey from that would rewind the roadmap.
+      if (document.documentElement.dataset.scrollLock) return;
       const track = trackRef.current;
       if (!track) return;
 
@@ -1037,6 +1057,13 @@ export function Roadmap({
                     active={active}
                     side={row.side}
                     reducedMotion={reducedMotion}
+                    concealed={
+                      row.card.kind === "company" &&
+                      openWork?.company.id === row.card.id
+                    }
+                    onOpenWork={(company, origin) =>
+                      setOpenWork({ company, origin })
+                    }
                   />
                 </div>
 
@@ -1116,6 +1143,13 @@ export function Roadmap({
           <p className="sr-only">Конец roadmap</p>
         </footer>
       </div>
+      {openWork ? (
+        <WorkModal
+          company={openWork.company}
+          origin={openWork.origin}
+          onClose={() => setOpenWork(null)}
+        />
+      ) : null}
     </section>
   );
 }

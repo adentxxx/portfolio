@@ -121,6 +121,9 @@ async function main() {
       logoSrc: "/logos/project-a.svg",
       order: 1,
       bloubEmotion: "spark",
+      bloubShape: "cercle",
+      bloubState: "orbit",
+      bloubExpression: null,
       summary:
         "Демо-кейс. Цель — показать маршрут /projects/[slug] и секции из БД.",
       heroImage: "/cases/aurora-hero.svg",
@@ -149,6 +152,9 @@ async function main() {
       logoSrc: "/logos/project-b.svg",
       order: 2,
       bloubEmotion: "focus",
+      bloubShape: "cercle",
+      bloubState: "thinking",
+      bloubExpression: null,
       summary: "Placeholder checkout flow — вымышленный кейс для roadmap.",
       heroImage: "/cases/harbor-hero.svg",
       sections: [
@@ -175,6 +181,9 @@ async function main() {
       logoSrc: "/logos/project-c.svg",
       order: 3,
       bloubEmotion: "wave",
+      bloubShape: "cercle",
+      bloubState: "wink",
+      bloubExpression: null,
       summary: "Ещё один placeholder-кейс для правой колонки roadmap.",
       heroImage: "/cases/moss-hero.svg",
       sections: [

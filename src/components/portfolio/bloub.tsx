@@ -1,7 +1,7 @@
 "use client";
 
 import { BloubBot } from "@/components/portfolio/bloub-bot";
-import { toExpressionId, toStateId } from "@/lib/bloub-engine";
+import { toExpressionId, toShapeId, toStateId } from "@/lib/bloub-engine";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -38,6 +38,8 @@ export type BloubEmotionLike = {
   state: string;
   /** rest expression for `idle`, e.g. "heureux"; null = measured default */
   expression?: string | null;
+  /** customizer shape, e.g. "squircle"; omitted = circle */
+  shape?: string | null;
 };
 
 type BloubProps = {
@@ -76,6 +78,7 @@ export function Bloub({
       <BloubBot
         state={state}
         expression={toExpressionId(emotion.expression)}
+        shape={toShapeId(emotion.shape)}
         size={size}
         frozen={reducedMotion}
         paused={paused}

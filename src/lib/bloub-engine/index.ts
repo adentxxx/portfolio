@@ -27,6 +27,7 @@ export { DEFAULT_SHAPE, SHAPE_BY_ID, SHAPES, type ShapeId } from "./skins";
 
 import { SEQUENCE, STATE_BY_ID, type StateId } from "./states";
 import { EXPRESSION_BY_ID, type ExpressionId } from "./expressions";
+import { DEFAULT_SHAPE, SHAPE_BY_ID, type ShapeId } from "./skins";
 
 /** Narrow an arbitrary DB string to a catalogue state (fallback `idle`). */
 export function toStateId(raw: string | null | undefined): StateId {
@@ -38,6 +39,11 @@ export function toExpressionId(
   raw: string | null | undefined,
 ): ExpressionId | null {
   return raw && EXPRESSION_BY_ID.has(raw) ? (raw as ExpressionId) : null;
+}
+
+/** Narrow an arbitrary DB string to a customizer shape (fallback circle). */
+export function toShapeId(raw: string | null | undefined): ShapeId {
+  return raw && SHAPE_BY_ID.has(raw) ? (raw as ShapeId) : DEFAULT_SHAPE;
 }
 
 /** States selectable in the admin: the measured catalogue, without the UI-only `swirl`. */

@@ -81,19 +81,31 @@ const RU: Record<string, string> = {
   я: "ya",
 };
 
-export type BlockKind = "heading" | "subheading" | "paragraph" | "image";
+export type BlockKind = "heading" | "subheading" | "paragraph" | "image" | "video";
 
 export type EditorBlock = {
   id: string;
   kind: BlockKind;
   text: string;
   imageSrc: string | null;
+  /** Video block. Autoplay is only kept together with muted. */
+  autoplay?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  poster?: string | null;
+  /** false hides the native control bar. */
+  controls?: boolean;
 };
 
 export type StoredBlock = {
   kind: BlockKind;
   text: string;
   imageSrc: string | null;
+  autoplay: boolean;
+  muted: boolean;
+  loop: boolean;
+  poster: string | null;
+  controls: boolean;
 };
 
 export type PeriodFields = {
@@ -262,7 +274,24 @@ type SectionLike = {
   body: string;
   text: string;
   imageSrc: string | null;
+  videoAutoplay?: boolean;
+  videoMuted?: boolean;
+  videoLoop?: boolean;
+  videoPoster?: string | null;
+  videoControls?: boolean;
 };
+
+function videoFlags(section: SectionLike) {
+  const autoplay = Boolean(section.videoAutoplay);
+  const poster = section.videoPoster;
+  return {
+    autoplay,
+    muted: autoplay || Boolean(section.videoMuted),
+    loop: Boolean(section.videoLoop),
+    poster: poster && isSafePublicPath(poster) ? poster : null,
+    controls: section.videoControls !== false,
+  };
+}
 
 export function sectionsToBlocks(
   sections: SectionLike[],
@@ -288,13 +317,14 @@ export function sectionsToBlocks(
       });
       continue;
     }
-    if (section.kind === "image") {
+    if (section.kind === "image" || section.kind === "video") {
       if (section.imageSrc) {
         blocks.push({
           id: section.id,
-          kind: "image",
+          kind: section.kind,
           text: "",
           imageSrc: section.imageSrc,
+          ...(section.kind === "video" ? videoFlags(section) : {}),
         });
       }
       continue;
@@ -339,34 +369,96 @@ export function sectionsToBlocks(
   return blocks;
 }
 
+/** `allowMedia` is true for project pages, which store photos and videos. */
 export function parseEditorBlocks(
   raw: unknown,
-  allowImages: boolean,
+  allowMedia: boolean,
 ): StoredBlock[] | null {
   if (!Array.isArray(raw) || raw.length > 200) return null;
   const blocks: StoredBlock[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object") return null;
-    const kind = (item as { kind?: unknown }).kind;
-    const text = (item as { text?: unknown }).text ?? "";
-    const imageSrc = (item as { imageSrc?: unknown }).imageSrc ?? null;
+    const record = item as {
+      kind?: unknown;
+      text?: unknown;
+      imageSrc?: unknown;
+      autoplay?: unknown;
+      muted?: unknown;
+      loop?: unknown;
+      poster?: unknown;
+      controls?: unknown;
+    };
+    const kind = record.kind;
+    const text = record.text ?? "";
+    const imageSrc = record.imageSrc ?? null;
     if (typeof text !== "string" || text.length > 20000) return null;
     if (kind === "heading" || kind === "subheading" || kind === "paragraph") {
-      blocks.push({ kind, text, imageSrc: null });
+      blocks.push({
+        kind,
+        text,
+        imageSrc: null,
+        autoplay: false,
+        muted: false,
+        loop: false,
+        poster: null,
+        controls: true,
+      });
       continue;
     }
     if (
-      allowImages &&
-      kind === "image" &&
+      allowMedia &&
+      (kind === "image" || kind === "video") &&
       typeof imageSrc === "string" &&
       isSafePublicPath(imageSrc)
     ) {
-      blocks.push({ kind: "image", text: "", imageSrc });
+      const autoplay = readFlag(record.autoplay);
+      const muted = readFlag(record.muted);
+      const loop = readFlag(record.loop);
+      const controls = readControls(record.controls);
+      const poster = readPoster(record.poster);
+      if (
+        autoplay === null ||
+        muted === null ||
+        loop === null ||
+        controls === null ||
+        poster === "bad"
+      ) {
+        return null;
+      }
+      const video = kind === "video";
+      blocks.push({
+        kind,
+        text: "",
+        imageSrc,
+        autoplay: video && autoplay,
+        muted: video && (autoplay || muted),
+        loop: video && loop,
+        poster: video ? poster : null,
+        controls: video ? controls : true,
+      });
       continue;
     }
     return null;
   }
   return blocks;
+}
+
+function readFlag(value: unknown) {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "boolean") return value;
+  return null;
+}
+
+function readControls(value: unknown) {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "boolean") return value;
+  return null;
+}
+
+function readPoster(value: unknown): string | null | "bad" {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value === "string" && isSafePublicPath(value)) return value;
+  return "bad";
 }
 
 export function readMonth(value: unknown): number | null | "bad" {

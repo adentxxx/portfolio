@@ -3,10 +3,12 @@ import {
   CaseNextIcon,
   CasePrevIcon,
 } from "@/components/portfolio/decor-icons";
+import { CaseVideo } from "@/components/portfolio/case-video";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
 import { getHomeContent, getProjectBySlug } from "@/lib/content";
+import { isSafePublicPath } from "@/lib/content-format";
 import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -26,9 +28,20 @@ type TextAtom = {
   text: string;
 };
 
-type CaseBlock =
-  | { kind: "image"; key: string; src: string }
-  | { kind: "text"; key: string; items: TextAtom[] };
+type ImageAtom = { kind: "image"; key: string; src: string };
+type VideoAtom = {
+  kind: "video";
+  key: string;
+  src: string;
+  autoplay: boolean;
+  muted: boolean;
+  loop: boolean;
+  poster: string | null;
+  controls: boolean;
+};
+type MediaAtom = ImageAtom | VideoAtom;
+
+type CaseBlock = MediaAtom | { kind: "text"; key: string; items: TextAtom[] };
 
 function caseBlocks(project: {
   heroImage: string;
@@ -39,12 +52,14 @@ function caseBlocks(project: {
     body: string;
     text: string;
     imageSrc: string | null;
+    videoAutoplay?: boolean;
+    videoMuted?: boolean;
+    videoLoop?: boolean;
+    videoPoster?: string | null;
+    videoControls?: boolean;
   }[];
 }): CaseBlock[] {
-  const atoms: (
-    | { kind: "image"; key: string; src: string }
-    | TextAtom
-  )[] = [];
+  const atoms: (MediaAtom | TextAtom)[] = [];
   const heroInSections = project.sections.some(
     (section) => section.imageSrc && section.imageSrc === project.heroImage,
   );
@@ -53,9 +68,25 @@ function caseBlocks(project: {
   }
 
   for (const section of project.sections) {
-    if (section.kind === "image") {
+    if (section.kind === "image" || section.kind === "video") {
       if (section.imageSrc) {
-        atoms.push({ kind: "image", key: section.id, src: section.imageSrc });
+        atoms.push(
+          section.kind === "video"
+            ? {
+                kind: "video",
+                key: section.id,
+                src: section.imageSrc,
+                autoplay: Boolean(section.videoAutoplay),
+                muted: Boolean(section.videoAutoplay || section.videoMuted),
+                loop: Boolean(section.videoLoop),
+                poster:
+                  section.videoPoster && isSafePublicPath(section.videoPoster)
+                    ? section.videoPoster
+                    : null,
+                controls: section.videoControls !== false,
+              }
+            : { kind: "image", key: section.id, src: section.imageSrc },
+        );
       }
       continue;
     }
@@ -110,7 +141,7 @@ function caseBlocks(project: {
     texts = [];
   };
   for (const atom of atoms) {
-    if (atom.kind === "image") {
+    if (atom.kind === "image" || atom.kind === "video") {
       flush();
       blocks.push(atom);
       continue;
@@ -263,10 +294,24 @@ export default async function ProjectPage({ params }: PageProps) {
           ) : null}
         </div>
 
-        {blocks.map((block) =>
-          block.kind === "image" ? (
-            <CaseImage key={block.key} src={block.src} />
-          ) : (
+        {blocks.map((block) => {
+          if (block.kind === "image") {
+            return <CaseImage key={block.key} src={block.src} />;
+          }
+          if (block.kind === "video") {
+            return (
+              <CaseVideo
+                key={block.key}
+                src={block.src}
+                autoplay={block.autoplay}
+                muted={block.muted}
+                loop={block.loop}
+                poster={block.poster}
+                controls={block.controls}
+              />
+            );
+          }
+          return (
             <div
               key={block.key}
               className="mx-auto flex w-full max-w-[800px] flex-col gap-5 text-left md:gap-6"
@@ -297,8 +342,8 @@ export default async function ProjectPage({ params }: PageProps) {
                 </section>
               ))}
             </div>
-          ),
-        )}
+          );
+        })}
 
       </div>
 

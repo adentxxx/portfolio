@@ -1,3 +1,4 @@
+import type { WorkBlock } from "@/components/portfolio/roadmap-card";
 import { parseFaces } from "@/lib/content-format";
 import { prisma } from "@/lib/prisma";
 
@@ -10,7 +11,10 @@ export async function getHomeContent() {
     prisma.company.findMany({
       where: { published: true },
       orderBy: { order: "asc" },
-      include: { emotion: true },
+      include: {
+        emotion: true,
+        blocks: { orderBy: { sortOrder: "asc" } },
+      },
     }),
     prisma.project.findMany({
       where: { published: true },
@@ -40,6 +44,16 @@ export async function getHomeContent() {
     companies: companies.map((c) => ({
       ...c,
       kind: "company" as const,
+      blocks: c.blocks.flatMap((block): WorkBlock[] => {
+        if (
+          block.kind !== "heading" &&
+          block.kind !== "subheading" &&
+          block.kind !== "paragraph"
+        ) {
+          return [];
+        }
+        return [{ id: block.id, kind: block.kind, text: block.text }];
+      }),
     })),
     projects: projects.map((p) => ({
       ...p,

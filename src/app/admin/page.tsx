@@ -40,7 +40,6 @@ export default async function AdminPage() {
         settings={data.settings}
         companies={data.companies}
         projects={data.projects}
-        emotions={data.emotions}
       />
       <FloatingControls />
     </>

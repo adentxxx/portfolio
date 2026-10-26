@@ -12,6 +12,8 @@
   --surface-inverse: #323232;
   /* Figma surface/overlay on Only Icon: page color at alpha 1F (~12%). */
   --surface-overlay: #f7f7f41f;
+  /* Figma surface/overlay dark: gray/900 at 20%. Modal scrim. */
+  --surface-overlay-dark: #26251e33;
   --text-primary: #323232;
   --text-secondary: #757575;
   --text-muted: #b3b3b3;
@@ -59,6 +61,8 @@
     --surface-points: #323232;
     --surface-inverse: #f7f7f4;
     --surface-overlay: #26251e73;
+    /* Figma surface/overlay dark: gray/900 at 45%. */
+    --surface-overlay-dark: #26251e73;
     --text-primary: #f7f7f4;
     --text-secondary: #d9d9d9;
     --text-muted: #757575;
@@ -83,6 +87,7 @@
   --surface-points: #323232;
   --surface-inverse: #f7f7f4;
   --surface-overlay: #26251e73;
+  --surface-overlay-dark: #26251e73;
   --text-primary: #f7f7f4;
   --text-secondary: #d9d9d9;
   --text-muted: #757575;
@@ -104,6 +109,7 @@
   --color-surface-points: var(--surface-points);
   --color-surface-inverse: var(--surface-inverse);
   --color-surface-overlay: var(--surface-overlay);
+  --color-surface-overlay-dark: var(--surface-overlay-dark);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
@@ -308,6 +314,11 @@ body {
   letter-spacing: 0;
 }
 
+/* Work modal (Figma 237:1120). Phone padding and type sit in the 767px query. */
+.work-modal {
+  padding: 40px;
+}
+
 /* Cards Size=L, phone only (Figma 189:744). Tablet and desktop stay Size=XL. */
 @media (max-width: 767px) {
   .roadmap-card {
@@ -335,6 +346,21 @@ body {
 
   .roadmap-card .card-subtitle-plate {
     height: 20px;
+  }
+
+  /* Work modal, phone (Figma 237:1285). From 768: title1 / caption1 / padding 40. */
+  .work-modal {
+    padding: 32px;
+  }
+
+  .work-modal .work-modal-title {
+    font-size: var(--size-title2);
+    line-height: var(--lh-title2);
+  }
+
+  .work-modal .work-modal-date {
+    font-size: var(--size-caption2);
+    line-height: var(--lh-caption2);
   }
 }
 
@@ -467,4 +493,13 @@ body {
   .timeline-marker-bloub {
     transition: none;
   }
+}
+
+/* A clean video has no time, progress, or settings. Click still plays it. */
+video.video-clean::-webkit-media-controls,
+video.video-clean::-webkit-media-controls-enclosure,
+video.video-clean::-webkit-media-controls-panel,
+video.video-clean::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
 }

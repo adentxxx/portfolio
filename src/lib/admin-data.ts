@@ -46,16 +46,11 @@ export type AdminProject = {
   createdMonth: number | null;
   createdYear: number | null;
   dateLabel: string;
-  bloubEmotion: string;
+  bloubShape: string;
+  bloubState: string;
+  bloubExpression: string | null;
   published: boolean;
   blocks: EditorBlock[];
-};
-
-export type AdminEmotion = {
-  id: string;
-  label: string;
-  state: string;
-  expression: string | null;
 };
 
 function parseLinkList(raw: string): AdminLink[] {
@@ -88,7 +83,7 @@ function parseTags(raw: string) {
 }
 
 export async function getAdminData() {
-  const [companies, projects, emotions, settings] = await Promise.all([
+  const [companies, projects, settings] = await Promise.all([
     prisma.company.findMany({
       orderBy: { order: "asc" },
       include: { blocks: { orderBy: { sortOrder: "asc" } } },
@@ -97,7 +92,6 @@ export async function getAdminData() {
       orderBy: { order: "asc" },
       include: { sections: { orderBy: { sortOrder: "asc" } } },
     }),
-    prisma.bloubEmotion.findMany({ orderBy: { label: "asc" } }),
     prisma.siteSettings.findUnique({ where: { id: "default" } }),
   ]);
 
@@ -160,19 +154,12 @@ export async function getAdminData() {
         createdMonth: created.createdMonth,
         createdYear: created.createdYear,
         dateLabel: project.dateLabel,
-        bloubEmotion: project.bloubEmotion,
+        bloubShape: project.bloubShape,
+        bloubState: project.bloubState,
+        bloubExpression: project.bloubExpression,
         published: project.published,
         blocks: sectionsToBlocks(project.sections, project.heroImage),
       } satisfies AdminProject;
     }),
-    emotions: emotions.map(
-      (emotion) =>
-        ({
-          id: emotion.id,
-          label: emotion.label,
-          state: emotion.state,
-          expression: emotion.expression,
-        }) satisfies AdminEmotion,
-    ),
   };
 }

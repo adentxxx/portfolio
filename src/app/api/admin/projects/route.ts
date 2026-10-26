@@ -9,6 +9,12 @@ import {
   slugify,
   type StoredBlock,
 } from "@/lib/content-format";
+import {
+  EXPRESSION_BY_ID,
+  SELECTABLE_STATES,
+  SHAPE_BY_ID,
+  type StateId,
+} from "@/lib/bloub-engine";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -28,7 +34,9 @@ function present(project: {
   createdMonth: number | null;
   createdYear: number | null;
   dateLabel: string;
-  bloubEmotion: string;
+  bloubShape: string;
+  bloubState: string;
+  bloubExpression: string | null;
   heroImage: string;
   published: boolean;
   sections: {
@@ -60,7 +68,9 @@ function present(project: {
     createdMonth: project.createdMonth,
     createdYear: project.createdYear,
     dateLabel: project.dateLabel,
-    bloubEmotion: project.bloubEmotion,
+    bloubShape: project.bloubShape,
+    bloubState: project.bloubState,
+    bloubExpression: project.bloubExpression,
     published: project.published,
     blocks: sectionsToBlocks(project.sections, project.heroImage),
   };
@@ -69,16 +79,24 @@ function present(project: {
 const include = { sections: { orderBy: { sortOrder: "asc" as const } } };
 
 function sectionRows(projectId: string, blocks: StoredBlock[]) {
-  return blocks.map((block, index) => ({
-    projectId,
-    kind: block.kind,
-    text: block.kind === "image" ? "" : block.text,
-    heading:
-      block.kind === "heading" || block.kind === "subheading" ? block.text : "",
-    body: block.kind === "paragraph" ? block.text : "",
-    imageSrc: block.kind === "image" ? block.imageSrc : null,
-    sortOrder: index,
-  }));
+  return blocks.map((block, index) => {
+    const media = block.kind === "image" || block.kind === "video";
+    return {
+      projectId,
+      kind: block.kind,
+      text: media ? "" : block.text,
+      heading:
+        block.kind === "heading" || block.kind === "subheading" ? block.text : "",
+      body: block.kind === "paragraph" ? block.text : "",
+      imageSrc: media ? block.imageSrc : null,
+      videoAutoplay: block.kind === "video" && block.autoplay,
+      videoMuted: block.kind === "video" && block.muted,
+      videoLoop: block.kind === "video" && block.loop,
+      videoPoster: block.kind === "video" ? block.poster : null,
+      videoControls: block.kind !== "video" || block.controls,
+      sortOrder: index,
+    };
+  });
 }
 
 async function uniqueSlug(base: string, exceptId?: string) {
@@ -105,6 +123,24 @@ async function defaultEmotionId() {
   if (calm) return calm.id;
   const first = await prisma.bloubEmotion.findFirst({ orderBy: { id: "asc" } });
   return first?.id ?? null;
+}
+
+function readBloubLook(shape: unknown, state: unknown, expression: unknown) {
+  if (typeof shape !== "string" || !SHAPE_BY_ID.has(shape)) return null;
+  if (
+    typeof state !== "string" ||
+    !(SELECTABLE_STATES as readonly string[]).includes(state)
+  ) {
+    return null;
+  }
+  if (expression != null && (typeof expression !== "string" || !EXPRESSION_BY_ID.has(expression))) {
+    return null;
+  }
+  return {
+    bloubShape: shape,
+    bloubState: state as StateId,
+    bloubExpression: typeof expression === "string" ? expression : null,
+  };
 }
 
 function readTags(raw: unknown) {
@@ -139,6 +175,9 @@ export async function POST(request: Request) {
       logoSrc: "/logos/project-a.svg",
       order: (last?.order ?? 0) + 1,
       bloubEmotion: emotionId,
+      bloubShape: "cercle",
+      bloubState: "idle",
+      bloubExpression: "heureux",
       summary: "",
       heroImage: "",
       published: false,
@@ -162,7 +201,9 @@ export async function PUT(request: Request) {
     logoSrc?: unknown;
     createdMonth?: unknown;
     createdYear?: unknown;
-    bloubEmotion?: unknown;
+    bloubShape?: unknown;
+    bloubState?: unknown;
+    bloubExpression?: unknown;
     published?: unknown;
     blocks?: unknown;
   } | null;
@@ -179,9 +220,11 @@ export async function PUT(request: Request) {
   if (typeof body.logoSrc !== "string" || !isSafePublicPath(body.logoSrc)) {
     return jsonError("Загрузите логотип", 400);
   }
-  if (typeof body.bloubEmotion !== "string" || typeof body.published !== "boolean") {
+  if (typeof body.published !== "boolean") {
     return jsonError("Некорректный запрос", 400);
   }
+  const look = readBloubLook(body.bloubShape, body.bloubState, body.bloubExpression);
+  if (!look) return jsonError("Проверьте настройку bloub", 400);
   if (typeof body.slug !== "string" || body.slug.length > 120) {
     return jsonError("Проверьте адрес страницы", 400);
   }
@@ -195,12 +238,6 @@ export async function PUT(request: Request) {
   if (!tags) return jsonError("Проверьте теги", 400);
   const blocks = parseEditorBlocks(body.blocks, true);
   if (!blocks) return jsonError("Проверьте описание проекта", 400);
-
-  const emotion = await prisma.bloubEmotion.findUnique({
-    where: { id: body.bloubEmotion },
-    select: { id: true },
-  });
-  if (!emotion) return jsonError("Такой эмоции bloub нет", 400);
 
   const slug = await uniqueSlug(
     slugify(body.slug) || slugify(body.title) || "proekt",
@@ -228,7 +265,9 @@ export async function PUT(request: Request) {
           createdMonth,
           createdYear,
           dateLabel: formatPoint(createdMonth, createdYear),
-          bloubEmotion: body.bloubEmotion as string,
+          bloubShape: look.bloubShape,
+          bloubState: look.bloubState,
+          bloubExpression: look.bloubExpression,
           heroImage,
           published: body.published as boolean,
         },

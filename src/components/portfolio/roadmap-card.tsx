@@ -5,18 +5,27 @@ import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
+export type WorkBlock = {
+  id: string;
+  kind: "heading" | "subheading" | "paragraph";
+  text: string;
+};
+
+export type CompanyCardData = {
+  kind: "company";
+  id: string;
+  name: string;
+  role: string;
+  dateLabel: string;
+  description: string;
+  logoSrc: string;
+  url?: string | null;
+  bloubEmotion: string;
+  blocks: WorkBlock[];
+};
+
 export type RoadmapCardData =
-  | {
-      kind: "company";
-      id: string;
-      name: string;
-      role: string;
-      dateLabel: string;
-      description: string;
-      logoSrc: string;
-      url?: string | null;
-      bloubEmotion: string;
-    }
+  | CompanyCardData
   | {
       kind: "project";
       id: string;
@@ -27,13 +36,78 @@ export type RoadmapCardData =
       tags: string[];
       logoSrc: string;
       bloubEmotion: string;
+      bloubShape: string;
+      bloubState: string;
+      bloubExpression: string | null;
     };
+
+/** Geometry and type of the work card at the moment it is pressed. */
+export type WorkOrigin = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  radius: number;
+  padding: number;
+  gap: number;
+  headerGap: number;
+  nameGap: number;
+  logo: number;
+  logoRadius: number;
+  icon: number;
+  titleSize: number;
+  titleLine: number;
+  /** Page scroll when the card was pressed, before the modal locks it. */
+  scrollY: number;
+};
+
+function px(value: string, fallback: number) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+export function readWorkOrigin(button: HTMLElement): WorkOrigin {
+  const face =
+    button.querySelector<HTMLElement>("[data-company-face]") ?? button;
+  // The button is not transformed. The tilted face's box would be the
+  // axis-aligned bounds of the hover, larger than the card in the layout.
+  const box = button.getBoundingClientRect();
+  const faceStyle = getComputedStyle(face);
+  const header = face.firstElementChild;
+  const headerStyle = header instanceof HTMLElement ? getComputedStyle(header) : null;
+  const name = header instanceof HTMLElement ? header.children[1] : null;
+  const nameStyle = name instanceof HTMLElement ? getComputedStyle(name) : null;
+  const logo = face.querySelector<HTMLElement>("[data-company-logo]");
+  const logoStyle = logo ? getComputedStyle(logo) : null;
+  const icon = logo?.querySelector("img");
+  const title = face.querySelector("h3");
+  const titleStyle = title ? getComputedStyle(title) : null;
+  return {
+    top: box.top,
+    left: box.left,
+    width: box.width,
+    height: box.height,
+    radius: px(faceStyle.borderRadius, 32),
+    padding: px(faceStyle.paddingTop, 24),
+    gap: px(faceStyle.rowGap || faceStyle.gap, 16),
+    headerGap: px(headerStyle?.columnGap || headerStyle?.gap || "", 12),
+    nameGap: px(nameStyle?.rowGap || nameStyle?.gap || "", 2),
+    logo: logo?.offsetWidth ?? 52,
+    logoRadius: px(logoStyle?.borderRadius || "", 16),
+    icon: icon?.offsetWidth ?? 32,
+    titleSize: px(titleStyle?.fontSize || "", 20),
+    titleLine: px(titleStyle?.lineHeight || "", 24),
+    scrollY: window.scrollY,
+  };
+}
 
 type RoadmapCardProps = {
   data: RoadmapCardData;
   active: boolean;
   side: "left" | "right";
   reducedMotion?: boolean;
+  concealed?: boolean;
+  onOpenWork?: (company: CompanyCardData, origin: WorkOrigin) => void;
 };
 
 export function RoadmapCard({
@@ -41,6 +115,8 @@ export function RoadmapCard({
   active,
   side,
   reducedMotion = false,
+  concealed = false,
+  onOpenWork,
 }: RoadmapCardProps) {
   const tiltEnabled = active && !reducedMotion;
 
@@ -86,7 +162,10 @@ export function RoadmapCard({
     <>
       <div className="flex w-full items-center gap-3">
         {data.kind === "company" ? (
-          <span className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page">
+          <span
+            data-company-logo
+            className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page"
+          >
             <Image
               src={publicPath(data.logoSrc)}
               alt=""
@@ -134,8 +213,7 @@ export function RoadmapCard({
 
   const face = cn(
     "roadmap-card roadmap-card-press flex w-full flex-col gap-4 rounded-[32px] border border-border-subtle bg-surface-card p-6 text-left",
-    data.kind === "project" &&
-      "cursor-pointer",
+    "cursor-pointer",
   );
   // Bounce scale on the outer box when the pointer arrives.
   // Fill stays `backwards` so the finished transform does not flatten the tilt.
@@ -158,28 +236,30 @@ export function RoadmapCard({
     );
   }
 
-  if (tiltEnabled && data.kind === "company" && data.url) {
-    return (
-      <a
-        href={data.url}
-        target="_blank"
-        rel="noreferrer"
-        className={cn("block w-full max-w-[440px]", align, reveal)}
-        data-state="active-work"
-      >
-        <TiltedSurface>{card}</TiltedSurface>
-      </a>
-    );
-  }
-
-  if (tiltEnabled) {
-    return (
-      <div
-        className={cn("w-full max-w-[440px]", align, reveal)}
-        data-state="active-work"
-      >
-        <TiltedSurface>{card}</TiltedSurface>
+  if (data.kind === "company") {
+    const visual = (
+      <div data-company-face className={face}>
+        {inner}
       </div>
+    );
+    return (
+      <button
+        type="button"
+        data-company-id={data.id}
+        data-state="active-work"
+        aria-hidden={concealed || undefined}
+        onClick={(event) => {
+          onOpenWork?.(data, readWorkOrigin(event.currentTarget));
+        }}
+        className={cn(
+          "block w-full max-w-[440px] cursor-pointer border-0 bg-transparent p-0 text-left",
+          align,
+          reveal,
+          concealed && "invisible",
+        )}
+      >
+        {tiltEnabled ? <TiltedSurface>{visual}</TiltedSurface> : visual}
+      </button>
     );
   }
 
@@ -187,8 +267,7 @@ export function RoadmapCard({
     shell,
     "roadmap-card-press",
     reveal,
-    data.kind === "project" &&
-      "cursor-pointer",
+    "cursor-pointer",
   );
 
   if (data.kind === "project") {
@@ -202,24 +281,4 @@ export function RoadmapCard({
       </a>
     );
   }
-
-  if (data.url) {
-    return (
-      <a
-        href={data.url}
-        target="_blank"
-        rel="noreferrer"
-        className={className}
-        data-state="active-work"
-      >
-        {inner}
-      </a>
-    );
-  }
-
-  return (
-    <div className={className} data-state="active-work">
-      {inner}
-    </div>
-  );
 }

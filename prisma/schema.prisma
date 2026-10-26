@@ -43,7 +43,7 @@ model Company {
   blocks       CompanyBlock[]
 }
 
-/// Long-form copy for a future company page. Not shown on the roadmap card.
+/// Long-form copy for the work modal. Not shown on the roadmap card.
 model CompanyBlock {
   id        String  @id @default(cuid())
   companyId String
@@ -65,6 +65,13 @@ model Project {
   tags         String
   logoSrc      String
   order        Int
+  /// Customizer shape (ShapeId). Default circle matches the Figma marker.
+  bloubShape   String           @default("cercle")
+  /// Customizer animation (StateId). `swirl` is not selectable.
+  bloubState   String           @default("idle")
+  /// Customizer rest face (ExpressionId). The engine shows it on `idle`.
+  bloubExpression String?
+  /// Legacy catalogue FK. The timeline reads the three fields above.
   bloubEmotion String
   summary      String
   heroImage    String
@@ -76,14 +83,23 @@ model Project {
 model ProjectSection {
   id        String  @id @default(cuid())
   projectId String
-  /// legacy | heading | subheading | paragraph | image
+  /// legacy | heading | subheading | paragraph | image | video
   kind      String  @default("legacy")
   heading   String
   body      String
   /// Text of heading / subheading / paragraph. Legacy rows keep heading + body.
   text      String  @default("")
-  imageSrc  String?
-  sortOrder Int
+  /// Public path of a photo (`image`) or a video file (`video`).
+  imageSrc      String?
+  /// Video only. Autoplay is always stored together with videoMuted.
+  videoAutoplay Boolean @default(false)
+  videoMuted    Boolean @default(false)
+  videoLoop     Boolean @default(false)
+  /// Cover shown until the video plays. Keeps a heavy file from flashing a bad frame.
+  videoPoster   String?
+  /// false hides the native time bar and settings. Playback stays on click.
+  videoControls Boolean @default(true)
+  sortOrder     Int
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 

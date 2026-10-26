@@ -11,6 +11,8 @@ const buttonVariants = cva(
     variants: {
       mode: {
         fill: "btn-fill rounded-[20px] bg-surface-control text-text-primary px-5 py-3 disabled:opacity-50",
+        accent:
+          "btn-fill rounded-[20px] bg-surface-inverse px-5 py-3 text-text-on-inverse disabled:opacity-50",
         icon: "btn-icon h-14 w-14 shrink-0 rounded-[20px] border border-border-default bg-surface-overlay text-icon-primary backdrop-blur-[12px] hover:text-accent-primary active:scale-[0.98] disabled:hover:text-icon-primary disabled:active:scale-100",
       },
     },

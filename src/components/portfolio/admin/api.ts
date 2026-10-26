@@ -39,10 +39,11 @@ export function isUnauthorized(error: unknown) {
   return error instanceof AdminHttpError && error.status === 401;
 }
 
-export async function uploadAdminFile(file: File) {
+export async function uploadAdminFile(file: File, kind?: "image" | "video") {
   const body = new FormData();
   body.set("file", file);
-  const response = await fetch("/api/admin/upload", { method: "POST", body });
+  const url = kind ? `/api/admin/upload?kind=${kind}` : "/api/admin/upload";
+  const response = await fetch(url, { method: "POST", body });
   if (!response.ok) {
     throw new AdminHttpError(response.status, await readError(response));
   }

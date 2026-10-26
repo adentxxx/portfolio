@@ -124,6 +124,35 @@ export function CaseNextIcon({ className }: IconProps) {
  * The page-colored gap around the dot is a separate plate in `TimelineMarker`,
  * so it can sit above the dashed connector and below the progress line.
  */
+/**
+ * Figma Close Button glyph (`Hicon / Outline / Close`), 12.9167 inside a 20px slot.
+ * Color is `icon/secondary` via currentColor.
+ */
+export function CloseIcon({ className }: IconProps) {
+  return (
+    <span
+      className={cn(
+        "flex size-5 shrink-0 items-center justify-center text-icon-secondary",
+        className,
+      )}
+    >
+      <svg
+        width="12.9167"
+        height="12.9167"
+        viewBox="0 0 12.9167 12.9167"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden
+      >
+        <path
+          d="M12.7336 1.06694C12.9777 0.822864 12.9777 0.427136 12.7336 0.183058C12.4896 -0.0610194 12.0938 -0.0610194 11.8497 0.183058L6.45834 5.57446L1.06694 0.183061C0.822864 -0.0610169 0.427136 -0.0610169 0.183058 0.183061C-0.0610194 0.427138 -0.0610194 0.822867 0.183058 1.06694L5.57446 6.45835L0.183081 11.8497C-0.060997 12.0938 -0.060997 12.4895 0.183081 12.7336C0.427158 12.9777 0.822887 12.9777 1.06696 12.7336L6.45834 7.34223L11.8497 12.7336C12.0938 12.9777 12.4895 12.9777 12.7336 12.7336C12.9777 12.4895 12.9777 12.0938 12.7336 11.8497L7.34223 6.45835L12.7336 1.06694Z"
+          fill="currentColor"
+        />
+      </svg>
+    </span>
+  );
+}
+
 export function TimelineDot({
   className,
   size = 20,
