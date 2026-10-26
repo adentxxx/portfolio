@@ -5,7 +5,7 @@ import { DEFAULT_FACES } from "@/lib/faces";
 import { publicPath } from "@/lib/public-path";
 import { motion, useAnimation } from "motion/react";
 import Image from "next/image";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 const TIP_ASK = "хочешь меня потрогать?";
@@ -58,9 +58,12 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
   const faceKey = faces.join("|");
   const { play } = useSound();
   const tipId = useId();
+  const tipRef = useRef<HTMLSpanElement>(null);
+  const tipShift = useRef(0);
   const [index, setIndex] = useState(0);
   const [over, setOver] = useState(false);
   const [tip, setTip] = useState<TipPhase>("ask");
+  const [tipOffset, setTipOffset] = useState(0);
   const indexRef = useRef(0);
   const runRef = useRef(0);
   const controls = useAnimation();
@@ -78,6 +81,42 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
       img.src = publicPath(src);
     }
   }, [faceKey, faces]);
+
+  // The tip is scaled to nothing until hover, but its layout box stays full
+  // size. Beside a centered portrait that box is wider than a phone, so the
+  // page pans sideways. Slide it back inside the viewport.
+  useLayoutEffect(() => {
+    const tip = tipRef.current;
+    if (!tip) return;
+
+    const fit = () => {
+      const box = tip.getBoundingClientRect();
+      const rawLeft = box.left - tipShift.current;
+      const rawRight = box.right - tipShift.current;
+      const limit = document.documentElement.clientWidth;
+      const margin = 16;
+      let next = 0;
+      if (rawRight > limit - margin) next = limit - margin - rawRight;
+      if (rawLeft + next < margin) next += margin - (rawLeft + next);
+      if (Math.abs(next - tipShift.current) < 0.5) return;
+      tipShift.current = next;
+      setTipOffset(next);
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(tip);
+    window.addEventListener("resize", fit);
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) fit();
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [tip, size, faceKey]);
 
   function cycle() {
     // The shared click listener misses this press: React commits before the
@@ -132,7 +171,9 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
         id={tipId}
         role="tooltip"
         aria-hidden={!tipVisible}
-        className="pointer-events-none absolute top-[-24px] left-[calc(100%+8px)] z-10 flex items-start"
+        ref={tipRef}
+        className="face-tip pointer-events-none absolute top-[-24px] left-[calc(100%+8px)] z-10 flex items-start"
+        style={tipOffset ? { transform: `translateX(${tipOffset}px)` } : undefined}
       >
         <motion.span
           aria-hidden

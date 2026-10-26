@@ -32,7 +32,7 @@ npm run dev
 ## Тема и звук
 
 - Тема и mute сохраняются в `localStorage` (`portfolio-theme`, `portfolio-muted`).
-- SFX владельца в `public/sounds/`: `drop_004` — смена темы, `switch_005` — mute, `select_008` — точка таймлайна дошла до карточки, `click` — кнопки, карточки и пустое место. Без автоплея при загрузке.
+- SFX владельца в `public/sounds/`: `drop_004` — смена темы, `switch_005` — mute, `click` — кнопки, карточки и пустое место. Точка таймлайна без звука. Без автоплея при загрузке.
 
 ## Design tokens
 

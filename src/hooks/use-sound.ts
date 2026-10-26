@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from "react";
 
-type SoundKind = "click" | "theme" | "mute" | "arrive";
+type SoundKind = "click" | "theme" | "mute";
 
 type SoundContextValue = {
   muted: boolean;
@@ -28,7 +28,6 @@ const SOUND_SRC: Record<SoundKind, string> = {
   click: publicPath("/sounds/click.mp3"),
   theme: publicPath("/sounds/drop_004.ogg"),
   mute: publicPath("/sounds/switch_005.ogg"),
-  arrive: publicPath("/sounds/select_008.ogg"),
 };
 
 const VOLUME = 0.45;
@@ -178,35 +177,54 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const playWithElement = useCallback((kind: SoundKind) => {
     const audio = new Audio(SOUND_SRC[kind]);
     audio.volume = VOLUME;
-    void audio.play().catch(() => {
-      /* gesture-gated; ignore autoplay rejection */
-    });
+    return audio.play().then(
+      () => true,
+      () => false,
+    );
   }, []);
 
   const play = useCallback(
     (kind: SoundKind) => {
       if (mutedRef.current && kind !== "mute") return;
+      let ctx: AudioContext;
       try {
-        const ctx = context();
-        void ctx.resume();
-        const buffer = buffersRef.current[kind];
-        if (buffer && ctx.state === "running") {
-          startBuffer(ctx, buffer);
-          return;
-        }
-        if (buffer) {
-          void ctx.resume().then(() => {
-            const decoded = buffersRef.current[kind];
-            if (decoded && ctx.state === "running") startBuffer(ctx, decoded);
-            else playWithElement(kind);
-          });
-          return;
-        }
-        playWithElement(kind);
-        decode(kind, ctx);
+        ctx = context();
       } catch {
-        playWithElement(kind);
+        void playWithElement(kind);
+        return;
       }
+      // One shot per call. A suspended context's resume() can resolve much
+      // later, on the next gesture; that must not replay this sound.
+      const at = performance.now();
+      let played: "none" | "buffer" | "element" = "none";
+      const startIfRunning = () => {
+        if (played !== "none") return false;
+        const buffer = buffersRef.current[kind];
+        if (!buffer || ctx.state !== "running") return false;
+        startBuffer(ctx, buffer);
+        played = "buffer";
+        return true;
+      };
+      const attempt = () => {
+        if (startIfRunning()) return;
+        if (played !== "none") return;
+        played = "element";
+        void playWithElement(kind).then((ok) => {
+          if (!ok && played === "element") {
+            played = "none";
+            startIfRunning();
+          }
+        });
+      };
+      void ctx.resume().then(() => {
+        if (performance.now() - at > 500) return;
+        void decode(kind, ctx);
+        startIfRunning();
+      });
+      decode(kind, ctx);
+      const pending = decodingRef.current[kind];
+      if (buffersRef.current[kind] || !pending) attempt();
+      else void pending.then(attempt);
     },
     [context, decode, playWithElement],
   );
@@ -261,11 +279,22 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       play("click");
     };
 
+    // Touch scroll ends on touchend, which is a real activation. Wheel is not,
+    // so a desktop scroll still cannot start audio until a click or a key.
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") return;
+      unlock();
+    };
+
     window.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("pointerup", onPointerUp, true);
+    window.addEventListener("touchend", unlock, { passive: true });
     window.addEventListener("keydown", unlock);
     document.addEventListener("click", onClick);
     return () => {
       window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("touchend", unlock);
       window.removeEventListener("keydown", unlock);
       document.removeEventListener("click", onClick);
     };

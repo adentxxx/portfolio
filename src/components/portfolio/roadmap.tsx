@@ -13,7 +13,6 @@ import {
   type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
 import { WorkModal } from "@/components/portfolio/work-modal";
-import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
 import {
   useEffect,
@@ -46,7 +45,9 @@ type Row = {
   emotion: Emotion;
 };
 
-/** 24px dot sits 52px from the row top so its center (~64px) lines up with the card avatar. */
+/** 24px box starts 52px down; its center (64px) lines up with the card avatar.
+ * Desktop connector uses this center as its top, so the stroke does not
+ * stick out above the timeline dot. */
 const POINT_CENTER_PX = 64;
 /** Travel marker (Phase B): bloub collapses into this dot and rides the connector. */
 const TRAVEL_DOT_PX = 4;
@@ -291,7 +292,6 @@ export function Roadmap({
   defaultEmotionId = "wave",
 }: RoadmapProps) {
   const reducedMotion = usePrefersReducedMotion();
-  const { play } = useSound();
   const headerMood = useHeaderMood();
   const trackRef = useRef<HTMLDivElement>(null);
   const headerMarkerRef = useRef<HTMLDivElement>(null);
@@ -781,24 +781,6 @@ export function Roadmap({
 
   const bloubAtFooter = arrivedIndex === rows.length;
 
-  // select_008 when the timeline point reaches a card. Footer is not a card.
-  // The first settled index is the position on load, so a reload stays quiet.
-  const cardArrival =
-    arrivedIndex >= 0 && arrivedIndex < rows.length ? arrivedIndex : -1;
-  const heardArrival = useRef<number | null>(null);
-  useEffect(() => {
-    if (heardArrival.current === null) {
-      heardArrival.current = cardArrival;
-      return;
-    }
-    if (cardArrival < 0 || heardArrival.current === cardArrival) {
-      heardArrival.current = cardArrival;
-      return;
-    }
-    heardArrival.current = cardArrival;
-    play("arrive");
-  }, [cardArrival, play]);
-
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
   const casesLabelInHeader = rows.length === 0 || rows[0].side !== "left";
@@ -957,7 +939,7 @@ export function Roadmap({
             stroke is a sibling layer: above the page plates, below the dots. */}
         <div
           ref={connectorRef}
-          className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2"
+          className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2 min-[1160px]:top-[64px]"
           aria-hidden
         >
           {/* dash 8px / gap 8px — border-dashed can't set dash length, so a repeating gradient */}
@@ -970,7 +952,7 @@ export function Roadmap({
           />
         </div>
         <div
-          className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] z-[2] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2"
+          className="pointer-events-none absolute bottom-[132px] left-[14px] top-[52px] z-[2] w-0 -translate-x-1/2 min-[1160px]:bottom-8 min-[1160px]:left-1/2 min-[1160px]:top-[64px]"
           aria-hidden
         >
           {/* Progress: full-height line scaled from the top (transform only, see effect) */}

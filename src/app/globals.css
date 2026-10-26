@@ -330,12 +330,14 @@ body {
     line-height: var(--lh-caption2);
   }
 
-  .roadmap-card .card-role {
+  .roadmap-card .card-role,
+  [data-work-dialog] .card-role {
     font-size: var(--size-subheadline);
     line-height: var(--lh-subheadline);
   }
 
-  .roadmap-card .card-copy {
+  .roadmap-card .card-copy,
+  [data-work-dialog] .card-copy {
     font-size: var(--size-footnote);
     line-height: var(--lh-footnote);
   }
@@ -358,9 +360,19 @@ body {
     line-height: var(--lh-title2);
   }
 
-  .work-modal .work-modal-date {
+  .work-modal-date {
     font-size: var(--size-caption2);
     line-height: var(--lh-caption2);
+  }
+}
+
+/* Home portrait tip sits to the right of the face. On a phone that box is
+   wider than the space left of the screen edge, and the scaled-out tip still
+   pans the page. Center it on the portrait while it would overflow. */
+@media (max-width: 540px) {
+  .home-phone-type .face-tip {
+    left: 50%;
+    translate: -50% 0;
   }
 }
 
@@ -380,6 +392,11 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 3px;
+}
+
+/* Focus handed back after the work dialog should not draw the accent box. */
+[data-focus-return]:focus-visible {
+  outline: none;
 }
 
 @keyframes bloub-bob {

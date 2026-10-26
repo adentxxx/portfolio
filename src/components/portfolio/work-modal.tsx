@@ -125,7 +125,11 @@ export function WorkModal({
     // Captured at the click. Reading window.scrollY here is already 0 once
     // the body is pinned, and a late read loses the place on the roadmap.
     const scrollY = Number.isFinite(origin.scrollY) ? origin.scrollY : window.scrollY;
+    // innerWidth includes a classic scrollbar. On a phone, a too-wide element
+    // inflates innerWidth the same way, and padding the body by that amount
+    // shifts the whole page when the dialog opens and closes.
     const gap = window.innerWidth - root.clientWidth;
+    const scrollbar = gap > 0 && gap <= 24 ? gap : 0;
     const prev = {
       position: document.body.style.position,
       top: document.body.style.top,
@@ -143,7 +147,7 @@ export function WorkModal({
     document.body.style.left = "0";
     document.body.style.right = "0";
     document.body.style.width = "100%";
-    if (gap > 0) document.body.style.paddingRight = `${gap}px`;
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
     main?.setAttribute("inert", "");
 
     const measure = measureRef.current;
@@ -210,7 +214,7 @@ export function WorkModal({
         restoreScroll();
         document
           .querySelector<HTMLElement>(`[data-company-id="${CSS.escape(id)}"]`)
-          ?.focus();
+          ?.focus({ preventScroll: true, focusVisible: false } as FocusOptions);
       });
     };
   }, [company.id, origin]);
@@ -247,6 +251,19 @@ export function WorkModal({
   function requestClose() {
     if (phaseRef.current === "closing") return;
     phaseRef.current = "closing";
+    const card = document.querySelector<HTMLElement>(
+      `[data-company-id="${CSS.escape(company.id)}"]`,
+    );
+    if (card) {
+      card.dataset.focusReturn = "";
+      card.addEventListener(
+        "blur",
+        () => {
+          delete card.dataset.focusReturn;
+        },
+        { once: true },
+      );
+    }
     if (reduced) {
       onCloseRef.current();
       return;

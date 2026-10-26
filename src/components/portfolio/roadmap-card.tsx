@@ -252,7 +252,7 @@ export function RoadmapCard({
           onOpenWork?.(data, readWorkOrigin(event.currentTarget));
         }}
         className={cn(
-          "block w-full max-w-[440px] cursor-pointer border-0 bg-transparent p-0 text-left",
+          "block w-full max-w-[440px] cursor-pointer rounded-[32px] border-0 bg-transparent p-0 text-left",
           align,
           reveal,
           concealed && "invisible",
