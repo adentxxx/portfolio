@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev --webpack --port 43123 --hostname 0.0.0.0",
     "build": "prisma generate && next build",
-    "build:pages": "prisma generate && node scripts/prepare-github-pages.mjs && next build && node scripts/flatten-pages-segments.mjs",
     "start": "next start --port 43123 --hostname 0.0.0.0",
     "lint": "next lint",
     "db:migrate": "prisma migrate dev",
