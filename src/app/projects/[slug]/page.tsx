@@ -271,7 +271,7 @@ export default async function ProjectPage({ params }: PageProps) {
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
           <h1 className="text-largeTitle text-text-primary">{project.title}</h1>
           {project.summary ? (
-            <p className="max-w-[1160px] text-body text-text-secondary">
+            <p className="max-w-[1160px] whitespace-pre-line text-body text-text-secondary">
               {project.summary}
             </p>
           ) : null}
@@ -317,13 +317,20 @@ export default async function ProjectPage({ params }: PageProps) {
                   key={chunk.key}
                   className="flex flex-col gap-1 md:gap-3"
                 >
-                  {chunk.items.map((item) =>
+                  {chunk.items.map((item, index) =>
                     item.kind === "heading" ? (
-                      <h2 key={item.id} className="text-title3 text-text-primary">
+                      <h2
+                        key={item.id}
+                        className={cn(
+                          "text-title2 text-text-primary",
+                          chunk.items[index + 1]?.kind === "subheading" &&
+                            "mb-4 md:mb-0",
+                        )}
+                      >
                         {item.text}
                       </h2>
                     ) : item.kind === "subheading" ? (
-                      <h3 key={item.id} className="text-body text-text-primary">
+                      <h3 key={item.id} className="text-title3 text-text-primary">
                         {item.text}
                       </h3>
                     ) : (

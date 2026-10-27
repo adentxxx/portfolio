@@ -8,7 +8,9 @@ import {
 import {
   Field,
   FileButton,
+  MoveButton,
   Status,
+  TrashButton,
   inputClass,
 } from "@/components/portfolio/admin/fields";
 import { Button } from "@/components/ui/button";
@@ -107,8 +109,9 @@ export function MainTab({
                 className="aspect-square w-full object-contain"
               />
               <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
+                <MoveButton
+                  direction="left"
+                  label="Левее"
                   disabled={index === 0 || uploading}
                   onClick={() =>
                     setSettings((current) => ({
@@ -116,11 +119,10 @@ export function MainTab({
                       faces: move(current.faces, index, -1),
                     }))
                   }
-                >
-                  Левее
-                </Button>
-                <Button
-                  type="button"
+                />
+                <MoveButton
+                  direction="right"
+                  label="Правее"
                   disabled={index === settings.faces.length - 1 || uploading}
                   onClick={() =>
                     setSettings((current) => ({
@@ -128,11 +130,8 @@ export function MainTab({
                       faces: move(current.faces, index, 1),
                     }))
                   }
-                >
-                  Правее
-                </Button>
-                <Button
-                  type="button"
+                />
+                <TrashButton
                   disabled={settings.faces.length === 1 || uploading}
                   onClick={() =>
                     setSettings((current) => ({
@@ -140,9 +139,7 @@ export function MainTab({
                       faces: current.faces.filter((_, faceIndex) => faceIndex !== index),
                     }))
                   }
-                >
-                  Удалить
-                </Button>
+                />
               </div>
             </div>
           ))}
@@ -260,12 +257,10 @@ function LinkEditor({
             }
             className={inputClass}
           />
-          <Button
-            type="button"
+          <TrashButton
+            label={`${label}, удалить ${index + 1}`}
             onClick={() => onChange(links.filter((_, itemIndex) => itemIndex !== index))}
-          >
-            Удалить
-          </Button>
+          />
         </div>
       ))}
       <Button

@@ -5,12 +5,17 @@ import {
   isUnauthorized,
   uploadAdminFile,
 } from "@/components/portfolio/admin/api";
-import { BlockEditor } from "@/components/portfolio/admin/block-editor";
+import {
+  AddBlockSelect,
+  BlockEditor,
+  type BlockEditorHandle,
+} from "@/components/portfolio/admin/block-editor";
 import {
   CheckField,
   Field,
   FileButton,
   Status,
+  TrashButton,
   inputClass,
 } from "@/components/portfolio/admin/fields";
 import { BloubSettings } from "@/components/portfolio/admin/bloub-picker";
@@ -23,7 +28,7 @@ import {
   type EditorBlock,
 } from "@/lib/content-format";
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 
 function failMessage(error: unknown) {
@@ -399,6 +404,8 @@ function CompanyEditor({
   onSave: () => void;
   onDelete: () => void;
 }) {
+  const blocksRef = useRef<BlockEditorHandle>(null);
+  const [blocksBusy, setBlocksBusy] = useState(false);
   const preview =
     formatPeriod(company) || company.dateLabel || "период не задан";
 
@@ -491,19 +498,23 @@ function CompanyEditor({
             работы. На самой карточке остаётся короткое описание.
           </p>
           <BlockEditor
+            ref={blocksRef}
             blocks={company.blocks}
             onChange={(blocks: EditorBlock[]) => onChange({ blocks })}
             onError={onError}
+            onBusyChange={setBlocksBusy}
           />
         </section>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="button" mode="accent" onClick={onSave} disabled={saving}>
             {saving ? "Сохраняю…" : "Сохранить"}
           </Button>
-          <Button type="button" onClick={onDelete} disabled={saving}>
-            Удалить
-          </Button>
+          <AddBlockSelect
+            disabled={saving || blocksBusy}
+            onAdd={(kind) => blocksRef.current?.add(kind)}
+          />
+          <TrashButton className="ml-auto" onClick={onDelete} disabled={saving} />
         </div>
       </fieldset>
     </CardShell>
@@ -529,6 +540,8 @@ function ProjectEditor({
   onSave: () => void;
   onDelete: () => void;
 }) {
+  const blocksRef = useRef<BlockEditorHandle>(null);
+  const [blocksBusy, setBlocksBusy] = useState(false);
   const preview =
     formatPoint(project.createdMonth, project.createdYear) ||
     project.dateLabel ||
@@ -668,20 +681,25 @@ function ProjectEditor({
             />
           </Field>
           <BlockEditor
+            ref={blocksRef}
             blocks={project.blocks}
             allowImages
             onChange={(blocks) => onChange({ blocks })}
             onError={onError}
+            onBusyChange={setBlocksBusy}
           />
         </section>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="button" mode="accent" onClick={onSave} disabled={saving}>
             {saving ? "Сохраняю…" : "Сохранить"}
           </Button>
-          <Button type="button" onClick={onDelete} disabled={saving}>
-            Удалить
-          </Button>
+          <AddBlockSelect
+            allowImages
+            disabled={saving || blocksBusy}
+            onAdd={(kind) => blocksRef.current?.add(kind)}
+          />
+          <TrashButton className="ml-auto" onClick={onDelete} disabled={saving} />
         </div>
       </fieldset>
     </CardShell>
