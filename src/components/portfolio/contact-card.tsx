@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import type { ContactLink } from "@/lib/content";
 

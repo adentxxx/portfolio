@@ -48,6 +48,15 @@ function controlAtPoint(x: number, y: number) {
  * or the theme button while the cursor is on mute. Trust the coordinates. */
 function pressedControl(event: MouseEvent | PointerEvent) {
   const target = event.target instanceof Element ? event.target : null;
+  // Walking every control is only needed when the theme snapshot steals the
+  // hit target, or when the click is on the theme/mute bar and may have landed
+  // on the neighbouring button. Ordinary clicks trust the event target.
+  const ambiguous =
+    !target ||
+    target === document.documentElement ||
+    target === document.body ||
+    target.closest("[data-sound='theme'], [data-sound='mute']") !== null;
+  if (!ambiguous) return target;
   const atPoint = controlAtPoint(event.clientX, event.clientY);
   if (!atPoint) return target;
   if (isDisabledControl(atPoint)) return atPoint;
@@ -131,21 +140,35 @@ export function SoundProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    for (const kind of Object.keys(SOUND_SRC) as SoundKind[]) {
-      void fetch(SOUND_SRC[kind])
-        .then((response) => {
-          if (!response.ok) throw new Error(String(response.status));
-          return response.arrayBuffer();
-        })
-        .then((buffer) => {
-          if (!cancelled) rawRef.current[kind] = buffer;
-        })
-        .catch(() => {
-          /* HTMLAudio still tries the same URL on play */
-        });
-    }
+    const load = () => {
+      for (const kind of Object.keys(SOUND_SRC) as SoundKind[]) {
+        void fetch(SOUND_SRC[kind])
+          .then((response) => {
+            if (!response.ok) throw new Error(String(response.status));
+            return response.arrayBuffer();
+          })
+          .then((buffer) => {
+            if (!cancelled) rawRef.current[kind] = buffer;
+          })
+          .catch(() => {
+            /* HTMLAudio still tries the same URL on play */
+          });
+      }
+    };
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (
+        callback: () => void,
+        options?: { timeout: number },
+      ) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const idleId = idleWindow.requestIdleCallback?.(load, { timeout: 2000 });
+    const timeoutId =
+      idleId === undefined ? window.setTimeout(load, 200) : 0;
     return () => {
       cancelled = true;
+      if (idleId !== undefined) idleWindow.cancelIdleCallback?.(idleId);
+      if (timeoutId) window.clearTimeout(timeoutId);
     };
   }, []);
 

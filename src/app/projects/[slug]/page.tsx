@@ -7,7 +7,7 @@ import { CaseVideo } from "@/components/portfolio/case-video";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
-import { getHomeContent, getProjectBySlug } from "@/lib/content";
+import { getProjectBySlug, getProjectNav } from "@/lib/content";
 import { isSafePublicPath } from "@/lib/content-format";
 import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
@@ -252,25 +252,21 @@ function CaseNav({
 
 export default async function ProjectPage({ params }: PageProps) {
   const { slug } = await params;
-  const [project, home] = await Promise.all([
+  const [project, nav] = await Promise.all([
     getProjectBySlug(slug),
-    getHomeContent(),
+    getProjectNav(slug),
   ]);
 
   if (!project) notFound();
 
-  const index = home.projects.findIndex((item) => item.slug === project.slug);
-  const prev = index > 0 ? home.projects[index - 1] : null;
-  const next =
-    index >= 0 && index < home.projects.length - 1
-      ? home.projects[index + 1]
-      : null;
+  const prevSlug = nav.prevSlug;
+  const nextSlug = nav.nextSlug;
   const blocks = caseBlocks(project);
 
   return (
     <main className="min-h-screen bg-surface-page">
       <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-32 min-[1192px]:px-0 md:pb-10">
-        <ProjectHeader links={home.intro.links} faces={home.intro.faces} />
+        <ProjectHeader links={nav.intro.links} faces={nav.intro.faces} />
 
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
           <h1 className="text-largeTitle text-text-primary">{project.title}</h1>
@@ -351,14 +347,14 @@ export default async function ProjectPage({ params }: PageProps) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-end gap-4 px-3 pb-10 md:hidden">
         <FloatingControls embedded className="pointer-events-auto" />
         <CaseNav
-          prevHref={prev ? `/projects/${prev.slug}` : null}
-          nextHref={next ? `/projects/${next.slug}` : null}
+          prevHref={prevSlug ? `/projects/${prevSlug}` : null}
+          nextHref={nextSlug ? `/projects/${nextSlug}` : null}
           stretch
         />
       </div>
       <CaseNav
-        prevHref={prev ? `/projects/${prev.slug}` : null}
-        nextHref={next ? `/projects/${next.slug}` : null}
+        prevHref={prevSlug ? `/projects/${prevSlug}` : null}
+        nextHref={nextSlug ? `/projects/${nextSlug}` : null}
       />
       <FloatingControls className="max-md:hidden" />
     </main>

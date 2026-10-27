@@ -438,7 +438,22 @@ export function Roadmap({
   >(() => {});
 
   useEffect(() => {
-    document.documentElement.dataset.roadmap = "effect";
+    const lengths = new WeakMap<SVGPathElement, number>();
+    const pathLength = (track: SVGPathElement) => {
+      const cached = lengths.get(track);
+      if (cached) return cached;
+      const length = track.getTotalLength();
+      if (length > 0) lengths.set(track, length);
+      return length;
+    };
+    const setPathD = (track: SVGPathElement, d: string) => {
+      if (track.getAttribute("d") === d) return;
+      track.setAttribute("d", d);
+      lengths.delete(track);
+    };
+    const narrowMq = window.matchMedia("(max-width: 1159px)");
+    const phoneMq = window.matchMedia("(max-width: 767px)");
+
     const paintCurve = (
       svg: SVGSVGElement | null,
       track: SVGPathElement | null,
@@ -452,7 +467,7 @@ export function Roadmap({
         if (tip) tip.style.opacity = "0";
         return false;
       }
-      const length = track.getTotalLength() || 1;
+      const length = pathLength(track) || 1;
       const shown = length * t;
       fill.style.strokeDasharray = `${length} ${length}`;
       fill.style.strokeDashoffset = `${length - shown}`;
@@ -574,8 +589,8 @@ export function Roadmap({
 
       const connectorBox = connectorRef.current?.getBoundingClientRect();
       const lineHeight = connectorRef.current?.clientHeight ?? 0;
-      const narrowNow = window.matchMedia("(max-width: 1159px)").matches;
-      const phoneNow = window.matchMedia("(max-width: 767px)").matches;
+      const narrowNow = narrowMq.matches;
+      const phoneNow = phoneMq.matches;
 
       // Journey head, in document px. Normally the 48% line. On a short page the
       // footer dot never reaches that line, and snapping to it at the bottom
@@ -613,8 +628,8 @@ export function Roadmap({
           const viewBox = `0 0 ${width} ${ENTRY_HEIGHT}`;
           entry.setAttribute("viewBox", viewBox);
           entryFill.ownerSVGElement?.setAttribute("viewBox", viewBox);
-          entryTrack.setAttribute("d", d);
-          entryFill.setAttribute("d", d);
+          setPathD(entryTrack, d);
+          setPathD(entryFill, d);
         }
         const box = entry.getBoundingClientRect();
         const topDoc = box.top + window.scrollY;
@@ -648,19 +663,17 @@ export function Roadmap({
           const viewBox = `0 0 ${width} ${ENTRY_HEIGHT}`;
           exit.setAttribute("viewBox", viewBox);
           exitFill.ownerSVGElement?.setAttribute("viewBox", viewBox);
-          exitTrack.setAttribute("d", d);
-          exitFill.setAttribute("d", d);
+          setPathD(exitTrack, d);
+          setPathD(exitFill, d);
         }
         const box = exit.getBoundingClientRect();
         progressRef.current.exitSpan = Math.max(1, box.height);
-        progressRef.current.exitLength = exitTrack.getTotalLength() || box.height;
+        progressRef.current.exitLength = pathLength(exitTrack) || box.height;
       } else {
         progressRef.current.exitSpan = 0;
         progressRef.current.exitLength = 0;
       }
       progressRef.current.lineHeight = lineHeight || 1;
-      document.documentElement.dataset.linePx = String(Math.round(Math.max(0, journeyPx)));
-      document.documentElement.dataset.narrow = narrowNow ? "1" : "0";
       setTargets(journeyPx);
       setNarrow((prev) => (prev === narrowNow ? prev : narrowNow));
       setPhone((prev) => (prev === phoneNow ? prev : phoneNow));
@@ -716,9 +729,8 @@ export function Roadmap({
     updateRef.current = update;
     try {
       update();
-    } catch (error) {
-      document.documentElement.dataset.roadmapErr =
-        error instanceof Error ? error.stack ?? error.message : String(error);
+    } catch {
+      // The first frame can run before the connector is measurable.
     }
     window.addEventListener("scroll", onScrollOrResize, { passive: true });
     window.addEventListener("resize", onScrollOrResize);

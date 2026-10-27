@@ -8,13 +8,13 @@ import "./globals.css";
 const vollkorn = Vollkorn({
   variable: "--font-vollkorn",
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
 });
 
 const ubuntuSans = Ubuntu_Sans({
   variable: "--font-ubuntu-sans",
   subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {

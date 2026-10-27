@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // Cloned request bodies default to 10MB. Project videos are allowed up to 80MB.
     proxyClientMaxBodySize: "84mb",
+    // `motion/react` is a wide barrel; only the hooks this site imports should load.
+    optimizePackageImports: ["motion"],
   },
 };
 

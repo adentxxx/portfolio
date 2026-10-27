@@ -5,29 +5,28 @@ import { prisma } from "@/lib/prisma";
 export type IntroLink = { label: string; href: string; icon?: string };
 export type ContactLink = { label: string; href: string };
 
-export async function getHomeContent() {
-  const [settings, companies, projects, emotions] = await Promise.all([
-    prisma.siteSettings.findUnique({ where: { id: "default" } }),
-    prisma.company.findMany({
-      where: { published: true },
-      orderBy: { order: "asc" },
-      include: {
-        emotion: true,
-        blocks: { orderBy: { sortOrder: "asc" } },
-      },
-    }),
-    prisma.project.findMany({
-      where: { published: true },
-      orderBy: { order: "asc" },
-      include: { emotion: true },
-    }),
-    prisma.bloubEmotion.findMany(),
-  ]);
+function textBlocks(
+  blocks: { id: string; kind: string; text: string }[],
+): WorkBlock[] {
+  return blocks.flatMap((block): WorkBlock[] => {
+    if (
+      block.kind !== "heading" &&
+      block.kind !== "subheading" &&
+      block.kind !== "paragraph"
+    ) {
+      return [];
+    }
+    return [{ id: block.id, kind: block.kind, text: block.text }];
+  });
+}
 
+async function readSettings() {
+  const settings = await prisma.siteSettings.findUnique({
+    where: { id: "default" },
+  });
   if (!settings) {
     throw new Error("Site settings missing. Run: npm run db:seed");
   }
-
   return {
     intro: {
       headline: settings.introHeadline,
@@ -41,26 +40,102 @@ export async function getHomeContent() {
       subline: settings.contactSubline,
       links: JSON.parse(settings.contactLinksJson) as ContactLink[],
     },
-    companies: companies.map((c) => ({
-      ...c,
+  };
+}
+
+export async function getHomeContent() {
+  const [chrome, companies, projects, emotions] = await Promise.all([
+    readSettings(),
+    prisma.company.findMany({
+      where: { published: true },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        dateLabel: true,
+        description: true,
+        logoSrc: true,
+        url: true,
+        bloubEmotion: true,
+        blocks: {
+          orderBy: { sortOrder: "asc" },
+          select: { id: true, kind: true, text: true },
+        },
+      },
+    }),
+    prisma.project.findMany({
+      where: { published: true },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        dateLabel: true,
+        description: true,
+        tags: true,
+        logoSrc: true,
+        bloubEmotion: true,
+        bloubShape: true,
+        bloubState: true,
+        bloubExpression: true,
+      },
+    }),
+    prisma.bloubEmotion.findMany({
+      select: { id: true, label: true, state: true, expression: true },
+    }),
+  ]);
+
+  return {
+    ...chrome,
+    companies: companies.map((company) => ({
       kind: "company" as const,
-      blocks: c.blocks.flatMap((block): WorkBlock[] => {
-        if (
-          block.kind !== "heading" &&
-          block.kind !== "subheading" &&
-          block.kind !== "paragraph"
-        ) {
-          return [];
-        }
-        return [{ id: block.id, kind: block.kind, text: block.text }];
-      }),
+      id: company.id,
+      name: company.name,
+      role: company.role,
+      dateLabel: company.dateLabel,
+      description: company.description,
+      logoSrc: company.logoSrc,
+      url: company.url,
+      bloubEmotion: company.bloubEmotion,
+      blocks: textBlocks(company.blocks),
     })),
-    projects: projects.map((p) => ({
-      ...p,
+    projects: projects.map((project) => ({
       kind: "project" as const,
-      tags: JSON.parse(p.tags) as string[],
+      id: project.id,
+      slug: project.slug,
+      title: project.title,
+      dateLabel: project.dateLabel,
+      description: project.description,
+      tags: JSON.parse(project.tags) as string[],
+      logoSrc: project.logoSrc,
+      bloubEmotion: project.bloubEmotion,
+      bloubShape: project.bloubShape,
+      bloubState: project.bloubState,
+      bloubExpression: project.bloubExpression,
     })),
     emotions,
+  };
+}
+
+/** Intro chrome plus the previous and next published case. */
+export async function getProjectNav(slug: string) {
+  const [chrome, projects] = await Promise.all([
+    readSettings(),
+    prisma.project.findMany({
+      where: { published: true },
+      orderBy: { order: "asc" },
+      select: { slug: true },
+    }),
+  ]);
+  const index = projects.findIndex((project) => project.slug === slug);
+  return {
+    intro: chrome.intro,
+    prevSlug: index > 0 ? projects[index - 1].slug : null,
+    nextSlug:
+      index >= 0 && index < projects.length - 1
+        ? projects[index + 1].slug
+        : null,
   };
 }
 
@@ -68,7 +143,6 @@ export async function getProjectBySlug(slug: string) {
   const project = await prisma.project.findFirst({
     where: { slug, published: true },
     include: {
-      emotion: true,
       sections: { orderBy: { sortOrder: "asc" } },
     },
   });
