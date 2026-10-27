@@ -304,9 +304,9 @@ export function WorkModal({
               <Image
                 src={publicPath(company.logoSrc)}
                 alt=""
-                width={44}
-                height={44}
-                className="size-8 md:size-11"
+                width={72}
+                height={72}
+                className="size-full object-cover"
                 unoptimized
               />
             ) : null}
@@ -419,7 +419,7 @@ export function WorkModal({
                     src={publicPath(company.logoSrc)}
                     alt=""
                     fill
-                    className="object-contain"
+                    className="object-cover"
                     unoptimized
                   />
                 </motion.span>

@@ -37,6 +37,13 @@ model Company {
   logoSrc      String
   url          String?
   order        Int
+  /// Customizer shape (ShapeId). Default circle matches the Figma marker.
+  bloubShape   String         @default("cercle")
+  /// Customizer animation (StateId). `swirl` is not selectable.
+  bloubState   String         @default("idle")
+  /// Customizer rest face (ExpressionId). The engine shows it on `idle`.
+  bloubExpression String?
+  /// Legacy catalogue FK. The timeline reads the three fields above.
   bloubEmotion String
   published    Boolean        @default(true)
   emotion      BloubEmotion   @relation(fields: [bloubEmotion], references: [id])

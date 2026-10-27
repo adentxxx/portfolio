@@ -240,7 +240,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 Дополнительно:
 
 1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)` через bounce-scale (`card-reveal`: 0.88 → 1.04 → 0.985 → 1, 640ms). Не сдвиг снизу. После анимации `transform` не остаётся, чтобы не глушить tilt.
-2. У **каждой** карточки свой bloub. Компания берёт его из справочника (`bloubEmotion`). Проект хранит форму, выражение и анимацию отдельно (`bloubShape`, `bloubExpression`, `bloubState`) и настраивается в админке — см. §8.
+2. У **каждой** карточки свой bloub. И компания, и проект хранят форму, выражение и анимацию отдельно (`bloubShape`, `bloubExpression`, `bloubState`) и настраиваются в админке — см. §8. `bloubEmotion` остаётся устаревшим FK справочника: таймлайн его не читает.
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
 5. Figma frames `Home` → `Start Scrolling` → `Continue Scrolling` → `Home Full Page` — референс прогрессии, не отдельные URL.
@@ -316,7 +316,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 ### 7.2 Cards — поля
 
 **Default:** skeleton.  
-**Active (Work):** logo, date, title, role, description, **bloubEmotion**.  
+**Active (Work):** logo, date, title, role, description, **форма / выражение / анимация bloub**.  
 **Active (Project):** logo, date, title, tags, description, **форма / выражение / анимация bloub**, link → project page.  
 **Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; role `body`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); role `subheadline`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашка role **20** высотой. Лого **52** radius **16**, title `title3`, карточка radius **32**, gap 16 — в обоих размерах. Skeleton-плашки: дата radius **8**, заголовок и роль **12**, описание **16**.  
 **Hover (Active), desktop (`≥ 1160`):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.  
@@ -362,7 +362,10 @@ type Company = {
   logoSrc: string;
   url?: string;
   order: number;
-  bloubEmotion: string; // id эмоции для точки таймлайна; в админке не редактируется
+  bloubShape: string; // ShapeId, по умолчанию cercle
+  bloubState: string; // анимация: idle | thinking | wink | …
+  bloubExpression?: string | null; // ExpressionId; на таймлайне видно в `idle`
+  bloubEmotion: string; // устаревший FK справочника, таймлайн компании его не читает
   blocks: Array<{
     kind: "heading" | "subheading" | "paragraph";
     text: string;
@@ -413,7 +416,7 @@ type Project = {
 
 ```ts
 type BloubEmotion = {
-  id: string;          // ключ, напр. "wave" | "focus" — на него ссылается Company
+  id: string;          // ключ, напр. "wave" | "focus" — устаревший FK Company и Project
   label: string;       // для админки
   state: string;       // StateId движка: idle | thinking | wink | wide | alert | notify |
                        // exclaim | sleep | egg | hexagon | play | orbit | burst | comet
@@ -460,8 +463,8 @@ Intro/contact могут жить в БД (таблица `settings`) или в 
 ### 8.6 Что заполнить владельцем (через БД)
 
 - [ ] Intro / contact / ссылки  
-- [ ] Компании + лого + `bloubEmotion`  
-- [ ] Проекты + slug + секции + изображения и видео + `bloubEmotion`  
+- [ ] Компании + лого + форма / выражение / анимация bloub  
+- [ ] Проекты + slug + секции + изображения и видео + форма / выражение / анимация bloub  
 - [ ] Справочник эмоций bloub  
 - [ ] Favicon / OG  
 

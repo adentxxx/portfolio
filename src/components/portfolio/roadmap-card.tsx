@@ -21,6 +21,9 @@ export type CompanyCardData = {
   logoSrc: string;
   url?: string | null;
   bloubEmotion: string;
+  bloubShape: string;
+  bloubState: string;
+  bloubExpression: string | null;
   blocks: WorkBlock[];
 };
 
@@ -169,9 +172,9 @@ export function RoadmapCard({
             <Image
               src={publicPath(data.logoSrc)}
               alt=""
-              width={32}
-              height={32}
-              className="size-8"
+              width={52}
+              height={52}
+              className="size-full object-cover"
               unoptimized
             />
           </span>

@@ -31,6 +31,9 @@ export type AdminCompany = {
   endYear: number | null;
   ongoing: boolean;
   dateLabel: string;
+  bloubShape: string;
+  bloubState: string;
+  bloubExpression: string | null;
   published: boolean;
   blocks: EditorBlock[];
 };
@@ -121,6 +124,9 @@ export async function getAdminData() {
         endYear: period.endYear,
         ongoing: period.ongoing,
         dateLabel: company.dateLabel,
+        bloubShape: company.bloubShape,
+        bloubState: company.bloubState,
+        bloubExpression: company.bloubExpression,
         published: company.published,
         blocks: company.blocks
           .filter(

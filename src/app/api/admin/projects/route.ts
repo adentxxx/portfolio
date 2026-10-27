@@ -9,12 +9,7 @@ import {
   slugify,
   type StoredBlock,
 } from "@/lib/content-format";
-import {
-  EXPRESSION_BY_ID,
-  SELECTABLE_STATES,
-  SHAPE_BY_ID,
-  type StateId,
-} from "@/lib/bloub-engine";
+import { readBloubLook } from "@/lib/bloub-look";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -123,24 +118,6 @@ async function defaultEmotionId() {
   if (calm) return calm.id;
   const first = await prisma.bloubEmotion.findFirst({ orderBy: { id: "asc" } });
   return first?.id ?? null;
-}
-
-function readBloubLook(shape: unknown, state: unknown, expression: unknown) {
-  if (typeof shape !== "string" || !SHAPE_BY_ID.has(shape)) return null;
-  if (
-    typeof state !== "string" ||
-    !(SELECTABLE_STATES as readonly string[]).includes(state)
-  ) {
-    return null;
-  }
-  if (expression != null && (typeof expression !== "string" || !EXPRESSION_BY_ID.has(expression))) {
-    return null;
-  }
-  return {
-    bloubShape: shape,
-    bloubState: state as StateId,
-    bloubExpression: typeof expression === "string" ? expression : null,
-  };
 }
 
 function readTags(raw: unknown) {

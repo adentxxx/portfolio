@@ -6,6 +6,7 @@ import {
   readMonth,
   readYear,
 } from "@/lib/content-format";
+import { readBloubLook } from "@/lib/bloub-look";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -26,6 +27,9 @@ function present(company: {
   endYear: number | null;
   ongoing: boolean;
   dateLabel: string;
+  bloubShape: string;
+  bloubState: string;
+  bloubExpression: string | null;
   published: boolean;
   blocks: { id: string; kind: string; text: string }[];
 }) {
@@ -41,6 +45,9 @@ function present(company: {
     endYear: company.endYear,
     ongoing: company.ongoing,
     dateLabel: company.dateLabel,
+    bloubShape: company.bloubShape,
+    bloubState: company.bloubState,
+    bloubExpression: company.bloubExpression,
     published: company.published,
     blocks: company.blocks
       .filter(
@@ -84,6 +91,9 @@ export async function POST(request: Request) {
       logoSrc: "/logos/company-a.svg",
       order: (last?.order ?? 0) + 1,
       bloubEmotion: emotionId,
+      bloubShape: "cercle",
+      bloubState: "idle",
+      bloubExpression: "heureux",
       published: false,
     },
     include,
@@ -106,6 +116,9 @@ export async function PUT(request: Request) {
     endMonth?: unknown;
     endYear?: unknown;
     ongoing?: unknown;
+    bloubShape?: unknown;
+    bloubState?: unknown;
+    bloubExpression?: unknown;
     published?: unknown;
     blocks?: unknown;
   } | null;
@@ -125,6 +138,8 @@ export async function PUT(request: Request) {
   if (typeof body.ongoing !== "boolean" || typeof body.published !== "boolean") {
     return jsonError("Некорректный запрос", 400);
   }
+  const look = readBloubLook(body.bloubShape, body.bloubState, body.bloubExpression);
+  if (!look) return jsonError("Проверьте настройку bloub", 400);
 
   const startMonth = readMonth(body.startMonth);
   const startYear = readYear(body.startYear);
@@ -172,6 +187,9 @@ export async function PUT(request: Request) {
           logoSrc: body.logoSrc as string,
           ...period,
           dateLabel: formatPeriod(period),
+          bloubShape: look.bloubShape,
+          bloubState: look.bloubState,
+          bloubExpression: look.bloubExpression,
           published: body.published as boolean,
         },
         include,

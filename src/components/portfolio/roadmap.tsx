@@ -402,36 +402,39 @@ export function Roadmap({
     const max = Math.max(companies.length, projects.length);
     const result: Row[] = [];
     for (let i = 0; i < max; i++) {
-      if (companies[i]) {
-        const card = companies[i];
+      const company = companies[i];
+      if (company?.kind === "company") {
         result.push({
-          id: `company-${card.id}`,
+          id: `company-${company.id}`,
           side: "left",
-          card,
-          emotion: emotionMap.get(card.bloubEmotion) ?? fallback,
+          card: company,
+          emotion: {
+            id: company.id,
+            label: company.name,
+            state: company.bloubState,
+            expression: company.bloubExpression,
+            shape: company.bloubShape,
+          },
         });
       }
-      if (projects[i]) {
-        const card = projects[i];
+      const project = projects[i];
+      if (project?.kind === "project") {
         result.push({
-          id: `project-${card.id}`,
+          id: `project-${project.id}`,
           side: "right",
-          card,
-          emotion:
-            card.kind === "project"
-              ? {
-                  id: card.id,
-                  label: card.title,
-                  state: card.bloubState,
-                  expression: card.bloubExpression,
-                  shape: card.bloubShape,
-                }
-              : (emotionMap.get(card.bloubEmotion) ?? fallback),
+          card: project,
+          emotion: {
+            id: project.id,
+            label: project.title,
+            state: project.bloubState,
+            expression: project.bloubExpression,
+            shape: project.bloubShape,
+          },
         });
       }
     }
     return result;
-  }, [companies, projects, emotionMap, fallback]);
+  }, [companies, projects]);
 
   const paintRef = useRef<
     (linePx: number, dotPx: number, entryT: number, exitT: number) => void

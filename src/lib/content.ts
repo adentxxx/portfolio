@@ -58,6 +58,9 @@ export async function getHomeContent() {
         logoSrc: true,
         url: true,
         bloubEmotion: true,
+        bloubShape: true,
+        bloubState: true,
+        bloubExpression: true,
         blocks: {
           orderBy: { sortOrder: "asc" },
           select: { id: true, kind: true, text: true },
@@ -98,6 +101,9 @@ export async function getHomeContent() {
       logoSrc: company.logoSrc,
       url: company.url,
       bloubEmotion: company.bloubEmotion,
+      bloubShape: company.bloubShape,
+      bloubState: company.bloubState,
+      bloubExpression: company.bloubExpression,
       blocks: textBlocks(company.blocks),
     })),
     projects: projects.map((project) => ({

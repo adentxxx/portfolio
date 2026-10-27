@@ -489,6 +489,12 @@ function CompanyEditor({
               className={inputClass}
             />
           </Field>
+          <BloubSettings
+            shape={company.bloubShape}
+            state={company.bloubState}
+            expression={company.bloubExpression}
+            onChange={onChange}
+          />
         </section>
 
         <section className="space-y-3">
