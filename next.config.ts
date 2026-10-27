@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "84mb",
     // `motion/react` is a wide barrel; only the hooks this site imports should load.
     optimizePackageImports: ["motion"],
+    agentUpgrade: "security",
   },
 };
 
