@@ -233,10 +233,18 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
           {tip === "ask" ? TIP_ASK : TIP_EW}
         </motion.span>
       </span>
+      {size === 140 ? (
+        // Home portrait only. Figma layer `light`: 60px circle, accent/primary,
+        // layer blur 80. CSS blur is the Gaussian sigma, half the Figma radius.
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-1/2 size-[60px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-primary blur-[40px]"
+        />
+      ) : null}
       <motion.span
         animate={controls}
         initial={{ scale: 1 }}
-        className="block size-full origin-center will-change-transform"
+        className="relative block size-full origin-center will-change-transform"
       >
         <Image
           src={publicPath(faces[safeIndex] ?? faces[0])}
