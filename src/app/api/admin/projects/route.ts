@@ -34,6 +34,7 @@ function present(project: {
   bloubExpression: string | null;
   heroImage: string;
   published: boolean;
+  order: number;
   sections: {
     id: string;
     kind: string;
@@ -67,6 +68,7 @@ function present(project: {
     bloubState: project.bloubState,
     bloubExpression: project.bloubExpression,
     published: project.published,
+    order: project.order,
     blocks: sectionsToBlocks(project.sections, project.heroImage),
   };
 }

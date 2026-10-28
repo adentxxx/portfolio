@@ -1,6 +1,12 @@
 import type { WorkBlock } from "@/components/portfolio/roadmap-card";
 import { parseFaces } from "@/lib/content-format";
 import { prisma } from "@/lib/prisma";
+import {
+  byRank,
+  companySortRank,
+  projectSortRank,
+  rankClock,
+} from "@/lib/timeline-order";
 
 export type IntroLink = { label: string; href: string; icon?: string };
 export type ContactLink = { label: string; href: string };
@@ -44,16 +50,23 @@ async function readSettings() {
 }
 
 export async function getHomeContent() {
+  const clock = rankClock(new Date());
   const [chrome, companies, projects, emotions] = await Promise.all([
     readSettings(),
     prisma.company.findMany({
       where: { published: true },
-      orderBy: { order: "asc" },
       select: {
         id: true,
         name: true,
         role: true,
         dateLabel: true,
+        startMonth: true,
+        startYear: true,
+        endMonth: true,
+        endYear: true,
+        ongoing: true,
+        manualRank: true,
+        order: true,
         description: true,
         logoSrc: true,
         url: true,
@@ -69,12 +82,14 @@ export async function getHomeContent() {
     }),
     prisma.project.findMany({
       where: { published: true },
-      orderBy: { order: "asc" },
       select: {
         id: true,
         slug: true,
         title: true,
         dateLabel: true,
+        createdMonth: true,
+        createdYear: true,
+        order: true,
         description: true,
         tags: true,
         logoSrc: true,
@@ -89,9 +104,8 @@ export async function getHomeContent() {
     }),
   ]);
 
-  return {
-    ...chrome,
-    companies: companies.map((company) => ({
+  const companyCards = byRank(
+    companies.map((company) => ({
       kind: "company" as const,
       id: company.id,
       name: company.name,
@@ -105,8 +119,15 @@ export async function getHomeContent() {
       bloubState: company.bloubState,
       bloubExpression: company.bloubExpression,
       blocks: textBlocks(company.blocks),
+      order: company.order,
+      sortRank: companySortRank(company, clock),
+      sortTie: company.order,
     })),
-    projects: projects.map((project) => ({
+    (company) => company.sortRank,
+  );
+
+  const projectCards = byRank(
+    projects.map((project) => ({
       kind: "project" as const,
       id: project.id,
       slug: project.slug,
@@ -119,7 +140,17 @@ export async function getHomeContent() {
       bloubShape: project.bloubShape,
       bloubState: project.bloubState,
       bloubExpression: project.bloubExpression,
+      order: project.order,
+      sortRank: projectSortRank(project),
+      sortTie: project.order,
     })),
+    (project) => project.sortRank,
+  );
+
+  return {
+    ...chrome,
+    companies: companyCards,
+    projects: projectCards,
     emotions,
   };
 }
@@ -130,17 +161,24 @@ export async function getProjectNav(slug: string) {
     readSettings(),
     prisma.project.findMany({
       where: { published: true },
-      orderBy: { order: "asc" },
-      select: { slug: true },
+      select: {
+        id: true,
+        slug: true,
+        order: true,
+        dateLabel: true,
+        createdMonth: true,
+        createdYear: true,
+      },
     }),
   ]);
-  const index = projects.findIndex((project) => project.slug === slug);
+  const ordered = byRank(projects, projectSortRank);
+  const index = ordered.findIndex((project) => project.slug === slug);
   return {
     intro: chrome.intro,
-    prevSlug: index > 0 ? projects[index - 1].slug : null,
+    prevSlug: index > 0 ? ordered[index - 1].slug : null,
     nextSlug:
-      index >= 0 && index < projects.length - 1
-        ? projects[index + 1].slug
+      index >= 0 && index < ordered.length - 1
+        ? ordered[index + 1].slug
         : null,
   };
 }

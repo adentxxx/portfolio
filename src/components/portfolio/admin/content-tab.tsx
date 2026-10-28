@@ -27,12 +27,46 @@ import {
   formatPoint,
   type EditorBlock,
 } from "@/lib/content-format";
+import {
+  byRank,
+  companySortRank,
+  projectSortRank,
+  rankBetween,
+  type RankClock,
+} from "@/lib/timeline-order";
 import Image from "next/image";
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 
 function failMessage(error: unknown) {
   return error instanceof Error ? error.message : "Не удалось сохранить";
+}
+
+const PERIOD_KEYS = [
+  "startMonth",
+  "startYear",
+  "endMonth",
+  "endYear",
+  "ongoing",
+] as const satisfies readonly (keyof AdminCompany)[];
+
+function arrayMove<T>(items: T[], from: number, to: number) {
+  const next = items.slice();
+  const [item] = next.splice(from, 1);
+  if (!item) return items;
+  next.splice(to, 0, item);
+  return next;
+}
+
+function GripIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className="size-4">
+      <path
+        fill="currentColor"
+        d="M5 3.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm0 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm0 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM11 3.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm0 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm0 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"
+      />
+    </svg>
+  );
 }
 
 function MonthSelect({
@@ -130,10 +164,12 @@ function LogoField({
 export function ContentTab({
   companies: initialCompanies,
   projects: initialProjects,
+  clock,
   onUnauthorized,
 }: {
   companies: AdminCompany[];
   projects: AdminProject[];
+  clock: RankClock;
   onUnauthorized: () => void;
 }) {
   const [companies, setCompanies] = useState(initialCompanies);
@@ -142,6 +178,16 @@ export function ContentTab({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const sortedCompanies = useMemo(
+    () => byRank(companies, (company) => companySortRank(company, clock)),
+    [companies, clock],
+  );
+  const sortedProjects = useMemo(
+    () => byRank(projects, projectSortRank),
+    [projects],
+  );
 
   function report(error: unknown) {
     if (isUnauthorized(error)) {
@@ -241,6 +287,53 @@ export function ContentTab({
     }
   }
 
+  function changeCompany(id: string, patch: Partial<AdminCompany>) {
+    setCompanies((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const next = { ...item, ...patch };
+        const periodEdited = PERIOD_KEYS.some(
+          (key) => key in patch && patch[key] !== item[key],
+        );
+        if (periodEdited) next.manualRank = null;
+        return next;
+      }),
+    );
+  }
+
+  async function setManualRank(id: string, manualRank: number | null) {
+    const previous = companies;
+    setCompanies((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, manualRank } : item)),
+    );
+    try {
+      const updated = await adminJson<AdminCompany>("/api/admin/companies", {
+        method: "PATCH",
+        body: JSON.stringify({ id, manualRank }),
+      });
+      setCompanies((prev) =>
+        prev.map((item) =>
+          item.id === updated.id ? { ...item, manualRank: updated.manualRank } : item,
+        ),
+      );
+    } catch (caught) {
+      setCompanies(previous);
+      report(caught);
+    }
+  }
+
+  function moveCompany(sourceId: string, targetId: string) {
+    if (sourceId === targetId) return;
+    const from = sortedCompanies.findIndex((company) => company.id === sourceId);
+    const to = sortedCompanies.findIndex((company) => company.id === targetId);
+    if (from < 0 || to < 0) return;
+    const next = arrayMove(sortedCompanies, from, to);
+    const above = to > 0 ? companySortRank(next[to - 1], clock) : null;
+    const below =
+      to < next.length - 1 ? companySortRank(next[to + 1], clock) : null;
+    void setManualRank(sourceId, rankBetween(above, below));
+  }
+
   async function deleteProject(project: AdminProject) {
     if (!window.confirm(`Удалить проект «${project.title}»?`)) return;
     setSavingId(project.id);
@@ -264,8 +357,10 @@ export function ContentTab({
     <div className="space-y-10">
       <Status message={message} error={error} />
       <p className="text-subheadline text-text-secondary">
-        Компании стоят слева на главной, проекты справа. Скрытая карточка на
-        сайте не показывается.
+        Компании стоят слева на главной, проекты справа. На сайте выше то, что
+        новее: у места работы берётся конец периода, у проекта — дата создания.
+        Место работы можно перетащить за ручку. Скрытая карточка на сайте не
+        показывается.
       </p>
 
       <section className="space-y-4">
@@ -275,28 +370,46 @@ export function ContentTab({
             Добавить компанию
           </Button>
         </div>
-        {companies.length === 0 ? (
+        {sortedCompanies.length === 0 ? (
           <p className="text-subheadline text-text-muted">Компаний пока нет.</p>
         ) : null}
-        {companies.map((company) => (
+        {sortedCompanies.map((company) => (
           <CompanyEditor
             key={company.id}
             company={company}
             open={openId === company.id}
             saving={savingId === company.id}
+            dragging={dragId === company.id}
+            dropOver={overId === company.id && dragId !== company.id}
             onToggle={() =>
               setOpenId((current) => (current === company.id ? null : company.id))
             }
-            onChange={(patch) =>
-              setCompanies((prev) =>
-                prev.map((item) =>
-                  item.id === company.id ? { ...item, ...patch } : item,
-                ),
-              )
-            }
+            onChange={(patch) => changeCompany(company.id, patch)}
             onError={report}
             onSave={() => void saveCompany(company)}
             onDelete={() => void deleteCompany(company)}
+            onResetOrder={() => void setManualRank(company.id, null)}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", company.id);
+              setDragId(company.id);
+            }}
+            onDragEnd={() => {
+              setDragId(null);
+              setOverId(null);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              setOverId(company.id);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const sourceId = dragId || event.dataTransfer.getData("text/plain");
+              setDragId(null);
+              setOverId(null);
+              if (sourceId) moveCompany(sourceId, company.id);
+            }}
           />
         ))}
       </section>
@@ -308,10 +421,10 @@ export function ContentTab({
             Добавить проект
           </Button>
         </div>
-        {projects.length === 0 ? (
+        {sortedProjects.length === 0 ? (
           <p className="text-subheadline text-text-muted">Проектов пока нет.</p>
         ) : null}
-        {projects.map((project) => (
+        {sortedProjects.map((project) => (
           <ProjectEditor
             key={project.id}
             project={project}
@@ -344,6 +457,7 @@ function CardShell({
   meta,
   hidden,
   onToggle,
+  reorder,
   children,
 }: {
   id: string;
@@ -352,34 +466,64 @@ function CardShell({
   meta: string;
   hidden: boolean;
   onToggle: () => void;
+  reorder?: {
+    dragging: boolean;
+    dropOver: boolean;
+    onDragStart: (event: DragEvent<HTMLButtonElement>) => void;
+    onDragEnd: () => void;
+    onDragOver: (event: DragEvent<HTMLElement>) => void;
+    onDrop: (event: DragEvent<HTMLElement>) => void;
+  };
   children: ReactNode;
 }) {
   return (
     <article
       id={id}
-      className="rounded-[24px] border border-border-subtle bg-surface-card p-5"
+      onDragOver={reorder?.onDragOver}
+      onDrop={reorder?.onDrop}
+      className={
+        reorder?.dropOver
+          ? "rounded-[24px] border border-accent-primary bg-surface-card p-5"
+          : reorder?.dragging
+            ? "rounded-[24px] border border-border-subtle bg-surface-card p-5 opacity-60"
+            : "rounded-[24px] border border-border-subtle bg-surface-card p-5"
+      }
     >
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={onToggle}
-        className="flex w-full items-center gap-3 text-left"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block text-caption1 text-text-muted">
-            {meta || "Дата не задана"}
-          </span>
-          <span className="block truncate text-title3 text-text-primary">
-            {title}
-          </span>
-        </span>
-        {hidden ? (
-          <span className="text-caption1 text-text-muted">Скрыто</span>
+      <div className="flex items-center gap-2">
+        {reorder ? (
+          <button
+            type="button"
+            draggable
+            aria-label={`Перетащить «${title}»`}
+            onDragStart={reorder.onDragStart}
+            onDragEnd={reorder.onDragEnd}
+            className="cursor-grab rounded-lg p-1 text-icon-muted hover:text-text-primary active:cursor-grabbing"
+          >
+            <GripIcon />
+          </button>
         ) : null}
-        <span className="text-caption1 text-text-secondary">
-          {open ? "Свернуть" : "Открыть"}
-        </span>
-      </button>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-caption1 text-text-muted">
+              {meta || "Дата не задана"}
+            </span>
+            <span className="block truncate text-title3 text-text-primary">
+              {title}
+            </span>
+          </span>
+          {hidden ? (
+            <span className="text-caption1 text-text-muted">Скрыто</span>
+          ) : null}
+          <span className="text-caption1 text-text-secondary">
+            {open ? "Свернуть" : "Открыть"}
+          </span>
+        </button>
+      </div>
       {open ? <div className="mt-5">{children}</div> : null}
     </article>
   );
@@ -389,20 +533,34 @@ function CompanyEditor({
   company,
   open,
   saving,
+  dragging,
+  dropOver,
   onToggle,
   onChange,
   onError,
   onSave,
   onDelete,
+  onResetOrder,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: {
   company: AdminCompany;
   open: boolean;
   saving: boolean;
+  dragging: boolean;
+  dropOver: boolean;
   onToggle: () => void;
   onChange: (patch: Partial<AdminCompany>) => void;
   onError: (error: unknown) => void;
   onSave: () => void;
   onDelete: () => void;
+  onResetOrder: () => void;
+  onDragStart: (event: DragEvent<HTMLButtonElement>) => void;
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLElement>) => void;
+  onDrop: (event: DragEvent<HTMLElement>) => void;
 }) {
   const blocksRef = useRef<BlockEditorHandle>(null);
   const [blocksBusy, setBlocksBusy] = useState(false);
@@ -414,9 +572,19 @@ function CompanyEditor({
       id={`company-${company.id}`}
       open={open}
       title={company.name}
-      meta={preview}
+      meta={
+        company.manualRank != null ? `${preview} · вручную` : preview
+      }
       hidden={!company.published}
       onToggle={onToggle}
+      reorder={{
+        dragging,
+        dropOver,
+        onDragStart,
+        onDragEnd,
+        onDragOver,
+        onDrop,
+      }}
     >
       <fieldset disabled={saving} className="m-0 min-w-0 space-y-5 border-0 p-0">
         <CheckField
@@ -473,7 +641,22 @@ function CompanyEditor({
               />
             </Field>
           </div>
-          <p className="text-caption1 text-text-secondary">На карточке: {preview}</p>
+          <p className="text-caption1 text-text-secondary">
+            На карточке: {preview}
+            {company.manualRank != null ? (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={onResetOrder}
+                  disabled={saving}
+                  className="underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  Вернуть по дате
+                </button>
+              </>
+            ) : null}
+          </p>
           <Field label="Роль в компании">
             <input
               value={company.role}

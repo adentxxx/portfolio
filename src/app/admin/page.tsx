@@ -3,6 +3,7 @@ import { LoginForm } from "@/components/portfolio/admin/login-form";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { isAdminSession } from "@/lib/admin-auth";
 import { getAdminData } from "@/lib/admin-data";
+import { rankClock } from "@/lib/timeline-order";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function AdminPage() {
         settings={data.settings}
         companies={data.companies}
         projects={data.projects}
+        clock={rankClock(new Date())}
       />
       <FloatingControls />
     </>

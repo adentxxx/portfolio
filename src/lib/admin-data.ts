@@ -35,6 +35,9 @@ export type AdminCompany = {
   bloubState: string;
   bloubExpression: string | null;
   published: boolean;
+  order: number;
+  /** Drag position. Null follows the work period. */
+  manualRank: number | null;
   blocks: EditorBlock[];
 };
 
@@ -53,6 +56,7 @@ export type AdminProject = {
   bloubState: string;
   bloubExpression: string | null;
   published: boolean;
+  order: number;
   blocks: EditorBlock[];
 };
 
@@ -88,11 +92,9 @@ function parseTags(raw: string) {
 export async function getAdminData() {
   const [companies, projects, settings] = await Promise.all([
     prisma.company.findMany({
-      orderBy: { order: "asc" },
       include: { blocks: { orderBy: { sortOrder: "asc" } } },
     }),
     prisma.project.findMany({
-      orderBy: { order: "asc" },
       include: { sections: { orderBy: { sortOrder: "asc" } } },
     }),
     prisma.siteSettings.findUnique({ where: { id: "default" } }),
@@ -128,6 +130,8 @@ export async function getAdminData() {
         bloubState: company.bloubState,
         bloubExpression: company.bloubExpression,
         published: company.published,
+        order: company.order,
+        manualRank: company.manualRank,
         blocks: company.blocks
           .filter(
             (block) =>
@@ -164,6 +168,7 @@ export async function getAdminData() {
         bloubState: project.bloubState,
         bloubExpression: project.bloubExpression,
         published: project.published,
+        order: project.order,
         blocks: sectionsToBlocks(project.sections, project.heroImage),
       } satisfies AdminProject;
     }),

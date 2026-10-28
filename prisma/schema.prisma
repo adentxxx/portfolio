@@ -37,6 +37,8 @@ model Company {
   logoSrc      String
   url          String?
   order        Int
+  /// Drag override. Null follows the work period (ongoing = current month).
+  manualRank   Int?
   /// Customizer shape (ShapeId). Default circle matches the Figma marker.
   bloubShape   String         @default("cercle")
   /// Customizer animation (StateId). `swirl` is not selectable.

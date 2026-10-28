@@ -399,41 +399,27 @@ export function Roadmap({
   );
 
   const rows: Row[] = useMemo(() => {
-    const max = Math.max(companies.length, projects.length);
-    const result: Row[] = [];
-    for (let i = 0; i < max; i++) {
-      const company = companies[i];
-      if (company?.kind === "company") {
-        result.push({
-          id: `company-${company.id}`,
-          side: "left",
-          card: company,
-          emotion: {
-            id: company.id,
-            label: company.name,
-            state: company.bloubState,
-            expression: company.bloubExpression,
-            shape: company.bloubShape,
-          },
-        });
-      }
-      const project = projects[i];
-      if (project?.kind === "project") {
-        result.push({
-          id: `project-${project.id}`,
-          side: "right",
-          card: project,
-          emotion: {
-            id: project.id,
-            label: project.title,
-            state: project.bloubState,
-            expression: project.bloubExpression,
-            shape: project.bloubShape,
-          },
-        });
-      }
-    }
-    return result;
+    const placed = [
+      ...companies.map((card) => ({ side: "left" as const, card })),
+      ...projects.map((card) => ({ side: "right" as const, card })),
+    ].sort((a, b) => {
+      if (a.card.sortRank !== b.card.sortRank) return b.card.sortRank - a.card.sortRank;
+      if (a.card.sortTie !== b.card.sortTie) return a.card.sortTie - b.card.sortTie;
+      if (a.card.kind !== b.card.kind) return a.card.kind === "company" ? -1 : 1;
+      return a.card.id < b.card.id ? -1 : a.card.id > b.card.id ? 1 : 0;
+    });
+    return placed.map(({ side, card }) => ({
+      id: `${card.kind}-${card.id}`,
+      side,
+      card,
+      emotion: {
+        id: card.id,
+        label: card.kind === "company" ? card.name : card.title,
+        state: card.bloubState,
+        expression: card.bloubExpression,
+        shape: card.bloubShape,
+      },
+    }));
   }, [companies, projects]);
 
   const paintRef = useRef<

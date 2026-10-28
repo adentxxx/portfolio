@@ -90,6 +90,7 @@
 - **Слева** → компании (опыт работы).
 - **Справа** → проекты (кейсы).
 - Карточки изначально `Cards` State=`Default`, при reveal → `Active (Work)` / `Active (Project)`.
+- **Сверху вниз** — по дате, более новые выше. Место работы — по концу периода; «по настоящее время» — текущий месяц, и оно выше проекта с тем же месяцем. Проект — по дате создания. Год без месяца — начало этого года. Одинаковая дата — по `order`. В админке место работы можно перетащить: `manualRank` держит его на новом месте, пока период снова не изменят.
 
 **Mobile и tablet** (`< 1160px`, макеты `161:559` и `TABLET Home Full Page` `170:1068`):
 
@@ -361,7 +362,8 @@ type Company = {
   description: string; // текст карточки
   logoSrc: string;
   url?: string;
-  order: number;
+  order: number; // запасной порядок при одинаковой дате
+  manualRank?: number | null; // ручная позиция; null — стоять по дате периода
   bloubShape: string; // ShapeId, по умолчанию cercle
   bloubState: string; // анимация: idle | thinking | wink | …
   bloubExpression?: string | null; // ExpressionId; на таймлайне видно в `idle`

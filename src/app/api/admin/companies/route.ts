@@ -4,6 +4,7 @@ import {
   isSafePublicPath,
   parseEditorBlocks,
   readMonth,
+  readPeriod,
   readYear,
 } from "@/lib/content-format";
 import { readBloubLook } from "@/lib/bloub-look";
@@ -31,6 +32,8 @@ function present(company: {
   bloubState: string;
   bloubExpression: string | null;
   published: boolean;
+  order: number;
+  manualRank: number | null;
   blocks: { id: string; kind: string; text: string }[];
 }) {
   return {
@@ -49,6 +52,8 @@ function present(company: {
     bloubState: company.bloubState,
     bloubExpression: company.bloubExpression,
     published: company.published,
+    order: company.order,
+    manualRank: company.manualRank,
     blocks: company.blocks
       .filter(
         (block) =>
@@ -157,6 +162,9 @@ export async function PUT(request: Request) {
   const blocks = parseEditorBlocks(body.blocks, false);
   if (!blocks) return jsonError("Проверьте описание работы", 400);
 
+  const existing = await prisma.company.findUnique({ where: { id: body.id } });
+  if (!existing) return jsonError("Компания не найдена", 404);
+
   const period = {
     startMonth,
     startYear,
@@ -164,6 +172,13 @@ export async function PUT(request: Request) {
     endYear: body.ongoing ? null : endYear,
     ongoing: body.ongoing,
   };
+  const current = readPeriod(existing);
+  const periodChanged =
+    current.startMonth !== period.startMonth ||
+    current.startYear !== period.startYear ||
+    current.endMonth !== period.endMonth ||
+    current.endYear !== period.endYear ||
+    current.ongoing !== period.ongoing;
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
@@ -191,6 +206,7 @@ export async function PUT(request: Request) {
           bloubState: look.bloubState,
           bloubExpression: look.bloubExpression,
           published: body.published as boolean,
+          ...(periodChanged ? { manualRank: null } : {}),
         },
         include,
       });
@@ -226,4 +242,43 @@ export async function DELETE(request: Request) {
     return jsonError("Не удалось удалить компанию", 500);
   }
   return NextResponse.json({ ok: true });
+}
+
+export async function PATCH(request: Request) {
+  const denied = assertAdmin(request);
+  if (denied) return denied;
+
+  const body = (await request.json().catch(() => null)) as {
+    id?: unknown;
+    manualRank?: unknown;
+  } | null;
+  if (!body || typeof body.id !== "string") return jsonError("Некорректный запрос", 400);
+  const manualRank = body.manualRank;
+  if (
+    manualRank !== null &&
+    (typeof manualRank !== "number" ||
+      !Number.isInteger(manualRank) ||
+      manualRank < -1_000_000_000 ||
+      manualRank > 2_000_000_000)
+  ) {
+    return jsonError("Некорректный порядок", 400);
+  }
+
+  try {
+    const updated = await prisma.company.update({
+      where: { id: body.id },
+      data: { manualRank },
+      include,
+    });
+    return NextResponse.json(present(updated));
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return jsonError("Компания не найдена", 404);
+    }
+    console.error(error);
+    return jsonError("Не удалось сохранить порядок", 500);
+  }
 }

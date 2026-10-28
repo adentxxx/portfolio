@@ -25,6 +25,9 @@ export type CompanyCardData = {
   bloubState: string;
   bloubExpression: string | null;
   blocks: WorkBlock[];
+  /** Newer cards have a higher rank. Not shown. */
+  sortRank: number;
+  sortTie: number;
 };
 
 export type RoadmapCardData =
@@ -42,6 +45,9 @@ export type RoadmapCardData =
       bloubShape: string;
       bloubState: string;
       bloubExpression: string | null;
+      /** Newer cards have a higher rank. Not shown. */
+      sortRank: number;
+      sortTie: number;
     };
 
 /** Geometry and type of the work card at the moment it is pressed. */

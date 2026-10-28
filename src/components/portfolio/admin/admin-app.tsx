@@ -9,6 +9,7 @@ import type {
   AdminProject,
   AdminSettings,
 } from "@/lib/admin-data";
+import type { RankClock } from "@/lib/timeline-order";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,10 +20,12 @@ export function AdminApp({
   settings,
   companies,
   projects,
+  clock,
 }: {
   settings: AdminSettings;
   companies: AdminCompany[];
   projects: AdminProject[];
+  clock: RankClock;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("main");
@@ -92,6 +95,7 @@ export function AdminApp({
           <ContentTab
             companies={companies}
             projects={projects}
+            clock={clock}
             onUnauthorized={onUnauthorized}
           />
         </div>
