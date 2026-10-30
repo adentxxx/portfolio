@@ -57,8 +57,8 @@
     },
     "title3": {
       "$type": "number",
-      "$value": 20,
-      "$description": "1.4286em — Apple HIG",
+      "$value": 18,
+      "$description": "1.2857em",
       "$extensions": {
         "com.figma.variableId": "VariableID:87:54",
         "com.figma.scopes": [
@@ -158,8 +158,8 @@
     },
     "title3": {
       "$type": "number",
-      "$value": 24,
-      "$description": "ratio 1.35",
+      "$value": 20,
+      "$description": "ratio 1.11",
       "$extensions": {
         "com.figma.variableId": "VariableID:87:55",
         "com.figma.scopes": [

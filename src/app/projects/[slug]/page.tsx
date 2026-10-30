@@ -310,38 +310,62 @@ export default async function ProjectPage({ params }: PageProps) {
           return (
             <div
               key={block.key}
-              className="mx-auto flex w-full max-w-[800px] flex-col gap-5 text-left md:gap-6"
+              className="mx-auto flex w-full max-w-[800px] flex-col gap-10 text-left"
             >
               {textChunks(block.items).map((chunk) => (
                 <section
                   key={chunk.key}
-                  className="flex flex-col gap-1 md:gap-3"
+                  className="flex flex-col gap-1"
                 >
-                  {chunk.items.map((item, index) =>
-                    item.kind === "heading" ? (
-                      <h2
+                  {chunk.items.map((item, index) => {
+                    const prevKind = chunk.items[index - 1]?.kind;
+                    const afterSubtitle =
+                      item.kind === "paragraph" && prevKind === "subheading";
+                    const beforeSubtitle =
+                      item.kind === "subheading" && index > 0;
+                    const blockGap = beforeSubtitle
+                      ? "mt-5"
+                      : index > 0 && !afterSubtitle
+                        ? "md:mt-2"
+                        : undefined;
+                    if (item.kind === "heading") {
+                      return (
+                        <h2
+                          key={item.id}
+                          className={cn(
+                            "text-title2 text-text-primary",
+                            blockGap,
+                          )}
+                        >
+                          {item.text}
+                        </h2>
+                      );
+                    }
+                    if (item.kind === "subheading") {
+                      return (
+                        <h3
+                          key={item.id}
+                          className={cn(
+                            "text-title3 text-text-primary",
+                            blockGap,
+                          )}
+                        >
+                          {item.text}
+                        </h3>
+                      );
+                    }
+                    return (
+                      <p
                         key={item.id}
                         className={cn(
-                          "text-title2 text-text-primary",
-                          chunk.items[index + 1]?.kind === "subheading" &&
-                            "mb-4 md:mb-0",
+                          "text-subheadline whitespace-pre-line text-text-secondary",
+                          blockGap,
                         )}
                       >
                         {item.text}
-                      </h2>
-                    ) : item.kind === "subheading" ? (
-                      <h3 key={item.id} className="text-title3 text-text-primary">
-                        {item.text}
-                      </h3>
-                    ) : (
-                      <p
-                        key={item.id}
-                        className="text-subheadline whitespace-pre-line text-text-secondary"
-                      >
-                        {item.text}
                       </p>
-                    ),
-                  )}
+                    );
+                  })}
                 </section>
               ))}
             </div>
