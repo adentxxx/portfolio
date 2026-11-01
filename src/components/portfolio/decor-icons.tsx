@@ -161,13 +161,13 @@ export function CaseNextIcon({ className }: IconProps) {
  */
 /**
  * Figma Close Button glyph (`Hicon / Outline / Close`), 12.9167 inside a 20px slot.
- * Color is `icon/secondary` via currentColor.
+ * Color follows the button label (`text/on-inverse` on Accent) via currentColor.
  */
 export function CloseIcon({ className }: IconProps) {
   return (
     <span
       className={cn(
-        "flex size-5 shrink-0 items-center justify-center text-icon-secondary",
+        "flex size-5 shrink-0 items-center justify-center",
         className,
       )}
     >

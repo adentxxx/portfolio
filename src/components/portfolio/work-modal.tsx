@@ -381,7 +381,7 @@ export function WorkModal({
           className="absolute right-0 bottom-[calc(100%+24px)]"
           style={{ pointerEvents: settled && phase === "open" ? "auto" : "none" }}
         >
-          <Button ref={closeRef} type="button" onClick={requestClose}>
+          <Button ref={closeRef} type="button" mode="accent" onClick={requestClose}>
             <CloseIcon />
             закрыть
           </Button>
