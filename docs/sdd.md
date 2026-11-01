@@ -199,9 +199,10 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 |---|---|---|---|---|
 | `largeTitle` | 34 | 40 | 1.15 | Крупный display (если есть) |
 | `title1` | 28 | 32 | 1.2 | Заголовок кейса / hero |
-| `title2` | 22 | 28 | 1.3 | Секции |
-| `title3` | 18 | 20 | 1.11 | Название компании/проекта на карточке (Vollkorn) |
-| `body` | 17 | 24 | 1.42 | Role, основной текст |
+| `title2` | 22 | 28 | 1.3 | Секции; название карточки от `768` |
+| `title3` | 18 | 20 | 1.11 | Название карточки ниже `768`; роль на карточке места работы от `768` (Vollkorn) |
+| `title4` | 15 | 20 | 1.33 | Роль на карточке места работы ниже `768` (Vollkorn) |
+| `body` | 17 | 24 | 1.42 | Основной текст |
 | `subheadline` | 15 | 20 | 1.47 | Description на карточке, button label Default |
 | `footnote` | 13 | 16 | 1.53 | Вспомогательный |
 | `caption1` | 12 | 16 | 1.57 | Даты, теги |
@@ -236,7 +237,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 | **B. Travel** | Пользователь начал скроллить (morph 220ms) | header-`bloub` **сжимается в точку 4px**. Desktop: переезжает к первому Point Container. Mobile/tablet: перетекает в `decor/timeline-dot` в **начале** верхнего connector (§3.2). Дальше travel-точка 4px «ездит» по `decor/connector` |
 | **C. Arrive** | Desktop: morph завершён → bloub на первой точке. Mobile: travel-точка доехала до точки карточки. Далее — каждая точка, центр которой пересёк trigger-линию (48% viewport) | `decor/timeline-dot` **превращается** в `bloub` с эмоцией этой карточки; карточка → Active. **Bloub остаётся на точке**, пока пользователь не дойдёт до следующей (не исчезает при продолжении скролла) |
 | **D. Next point** | Следующая точка пересекла trigger-линию | Bloub переезжает на новую точку (новая эмоция), предыдущая точка снова `timeline-dot` (accent). При обратном скролле — назад к предыдущей точке |
-| **E. Finish** | Низ страницы / footer-точка roadmap у блока контактов | Footer-`decor/timeline-dot` тоже становится `bloub` (fallback-эмоция); линия прогресса доходит до неё. Если trigger 48% не достаёт до footer к концу страницы, хвост connector (на mobile — нижняя дуга) заливается плавно на оставшемся скролле от последней карточки, без скачка точки и bloub |
+| **E. Finish** | Низ страницы / footer-точка roadmap у блока контактов | Footer-`decor/timeline-dot` тоже становится `bloub` с анимацией `wide` (круг, широко открытые глаза); линия прогресса доходит до неё. Если trigger 48% не достаёт до footer к концу страницы, хвост connector (на mobile — нижняя дуга) заливается плавно на оставшемся скролле от последней карточки, без скачка точки и bloub |
 
 Дополнительно:
 
@@ -319,7 +320,8 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 **Default:** skeleton.  
 **Active (Work):** logo, date, title, role, description, **форма / выражение / анимация bloub**.  
 **Active (Project):** logo, date, title, tags, description, **форма / выражение / анимация bloub**, link → project page.  
-**Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; role `body`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); role `subheadline`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашка role **20** высотой. Лого **52** radius **16**, title `title3`, карточка radius **32**, gap 16 — в обоих размерах. Skeleton-плашки: дата radius **8**, заголовок и роль **12**, описание **16**.  
+**Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; title `title2`; role `title3`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); title `title3`; role `title4`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашки title и role **20** высотой. Лого **52** radius **16** в обоих размерах. Картинка логотипа на всю плашку **52**, рамка `border/subtle`, фон `surface/page` — и у места работы, и у проекта. Карточка radius **32**, gap 16. Skeleton-плашки: дата radius **8** и высота **15**, заголовок и роль radius **12**, описание **16**. На `XL` плашка заголовка **28** (строка `title2`).  
+**Заголовок, телефон (`< 768`):** одна строка. Если название не помещается в колонку рядом с логотипом, конец обрезается многоточием. От `768` заголовок переносится целиком.  
 **Hover (Active), desktop (`≥ 1160`):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.  
 **Press, mobile и tablet (`< 1160`):** tilt нет. Пока кнопка мыши или палец зажаты, карточка `transform: scale(0.95)` (на 5% меньше), `transform-origin: center`, 150ms `ease-out`. Место в потоке не меняется.
 

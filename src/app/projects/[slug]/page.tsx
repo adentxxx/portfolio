@@ -3,15 +3,15 @@ import {
   CaseNextIcon,
   CasePrevIcon,
 } from "@/components/portfolio/decor-icons";
+import { CaseImage } from "@/components/portfolio/case-image";
 import { CaseVideo } from "@/components/portfolio/case-video";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
 import { getProjectBySlug, getProjectNav } from "@/lib/content";
 import { isSafePublicPath } from "@/lib/content-format";
-import { publicPath, pagePath } from "@/lib/public-path";
+import { pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -166,21 +166,6 @@ function textChunks(items: TextAtom[]) {
   return chunks;
 }
 
-function CaseImage({ src }: { src: string }) {
-  return (
-    <div className="relative aspect-[116/50] w-full overflow-hidden rounded-[24px] bg-surface-control">
-      <Image
-        src={publicPath(src)}
-        alt=""
-        fill
-        className="object-cover"
-        sizes="(min-width: 1200px) 1160px, 100vw"
-        unoptimized
-      />
-    </div>
-  );
-}
-
 function CaseNavLink({
   href,
   label,
@@ -236,7 +221,7 @@ function CaseNav({
       >
         <CasePrevIcon />
       </CaseNavLink>
-      <CaseNavLink href="/" label="На главную">
+      <CaseNavLink href="/" label="На главную">
         <CaseHomeIcon />
       </CaseNavLink>
       <CaseNavLink

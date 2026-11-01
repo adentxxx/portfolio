@@ -1,5 +1,6 @@
 import type { WorkBlock } from "@/components/portfolio/roadmap-card";
 import { parseFaces } from "@/lib/content-format";
+import { nbsp } from "@/lib/nbsp";
 import { prisma } from "@/lib/prisma";
 import {
   byRank,
@@ -22,7 +23,7 @@ function textBlocks(
     ) {
       return [];
     }
-    return [{ id: block.id, kind: block.kind, text: block.text }];
+    return [{ id: block.id, kind: block.kind, text: nbsp(block.text) }];
   });
 }
 
@@ -35,23 +36,27 @@ async function readSettings() {
   }
   return {
     intro: {
-      headline: settings.introHeadline,
-      bio: settings.introBio,
+      headline: nbsp(settings.introHeadline),
+      bio: nbsp(settings.introBio),
       avatarSrc: settings.avatarSrc,
       faces: parseFaces(settings.avatarFacesJson),
-      links: JSON.parse(settings.introLinksJson) as IntroLink[],
+      links: (JSON.parse(settings.introLinksJson) as IntroLink[]).map(
+        (link) => ({ ...link, label: nbsp(link.label) }),
+      ),
     },
     contact: {
-      headline: settings.contactHeadline,
-      subline: settings.contactSubline,
-      links: JSON.parse(settings.contactLinksJson) as ContactLink[],
+      headline: nbsp(settings.contactHeadline),
+      subline: nbsp(settings.contactSubline),
+      links: (JSON.parse(settings.contactLinksJson) as ContactLink[]).map(
+        (link) => ({ ...link, label: nbsp(link.label) }),
+      ),
     },
   };
 }
 
 export async function getHomeContent() {
   const clock = rankClock(new Date());
-  const [chrome, companies, projects, emotions] = await Promise.all([
+  const [chrome, companies, projects] = await Promise.all([
     readSettings(),
     prisma.company.findMany({
       where: { published: true },
@@ -99,19 +104,16 @@ export async function getHomeContent() {
         bloubExpression: true,
       },
     }),
-    prisma.bloubEmotion.findMany({
-      select: { id: true, label: true, state: true, expression: true },
-    }),
   ]);
 
   const companyCards = byRank(
     companies.map((company) => ({
       kind: "company" as const,
       id: company.id,
-      name: company.name,
-      role: company.role,
-      dateLabel: company.dateLabel,
-      description: company.description,
+      name: nbsp(company.name),
+      role: nbsp(company.role),
+      dateLabel: nbsp(company.dateLabel),
+      description: nbsp(company.description),
       logoSrc: company.logoSrc,
       url: company.url,
       bloubEmotion: company.bloubEmotion,
@@ -131,10 +133,10 @@ export async function getHomeContent() {
       kind: "project" as const,
       id: project.id,
       slug: project.slug,
-      title: project.title,
-      dateLabel: project.dateLabel,
-      description: project.description,
-      tags: JSON.parse(project.tags) as string[],
+      title: nbsp(project.title),
+      dateLabel: nbsp(project.dateLabel),
+      description: nbsp(project.description),
+      tags: (JSON.parse(project.tags) as string[]).map((tag) => nbsp(tag)),
       logoSrc: project.logoSrc,
       bloubEmotion: project.bloubEmotion,
       bloubShape: project.bloubShape,
@@ -151,7 +153,6 @@ export async function getHomeContent() {
     ...chrome,
     companies: companyCards,
     projects: projectCards,
-    emotions,
   };
 }
 
@@ -193,6 +194,16 @@ export async function getProjectBySlug(slug: string) {
   if (!project) return null;
   return {
     ...project,
-    tags: JSON.parse(project.tags) as string[],
+    title: nbsp(project.title),
+    dateLabel: nbsp(project.dateLabel),
+    description: nbsp(project.description),
+    summary: nbsp(project.summary),
+    tags: (JSON.parse(project.tags) as string[]).map((tag) => nbsp(tag)),
+    sections: project.sections.map((section) => ({
+      ...section,
+      heading: nbsp(section.heading),
+      body: nbsp(section.body),
+      text: nbsp(section.text),
+    })),
   };
 }

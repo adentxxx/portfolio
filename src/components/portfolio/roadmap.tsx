@@ -13,7 +13,9 @@ import {
   type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
 import { WorkModal } from "@/components/portfolio/work-modal";
+import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import {
   useEffect,
   useLayoutEffect,
@@ -34,8 +36,13 @@ type Emotion = {
 type RoadmapProps = {
   companies: RoadmapCardData[];
   projects: RoadmapCardData[];
-  emotions: Emotion[];
-  defaultEmotionId?: string;
+};
+
+/** Finish point under the contact block. Circle body, wide eyes. */
+const FOOTER_EMOTION: Emotion = {
+  id: "wide",
+  label: "Wide",
+  state: "wide",
 };
 
 type Row = {
@@ -44,6 +51,18 @@ type Row = {
   card: RoadmapCardData;
   emotion: Emotion;
 };
+
+/** Logo URLs for every card, in roadmap order, without duplicates. */
+function cardAvatarSrcs(cards: readonly RoadmapCardData[]) {
+  const seen = new Set<string>();
+  const srcs: string[] = [];
+  for (const card of cards) {
+    if (!card.logoSrc || seen.has(card.logoSrc)) continue;
+    seen.add(card.logoSrc);
+    srcs.push(publicPath(card.logoSrc));
+  }
+  return srcs;
+}
 
 /** 24px box starts 52px down; its center (64px) lines up with the card avatar.
  * Desktop connector uses this center as its top, so the stroke does not
@@ -285,12 +304,20 @@ function ColumnLabel({
   );
 }
 
-export function Roadmap({
-  companies,
-  projects,
-  emotions,
-  defaultEmotionId = "wave",
-}: RoadmapProps) {
+export function Roadmap({ companies, projects }: RoadmapProps) {
+  const avatarSrcs = useMemo(
+    () => cardAvatarSrcs([...companies, ...projects]),
+    [companies, projects],
+  );
+  const avatarPreloadRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = avatarPreloadRef.current;
+    if (!root) return;
+    for (const img of root.querySelectorAll("img")) {
+      void img.decode().catch(() => {});
+    }
+  }, [avatarSrcs]);
+
   const reducedMotion = usePrefersReducedMotion();
   const headerMood = useHeaderMood();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -381,22 +408,6 @@ export function Roadmap({
     raf: 0,
     last: 0,
   });
-
-  const emotionMap = useMemo(
-    () => new Map(emotions.map((e) => [e.id, e])),
-    [emotions],
-  );
-
-  const fallback = useMemo<Emotion>(
-    () =>
-      emotionMap.get(defaultEmotionId) ??
-      emotions[0] ?? {
-        id: "wave",
-        label: "Wave",
-        state: "wink",
-      },
-    [emotionMap, defaultEmotionId, emotions],
-  );
 
   const rows: Row[] = useMemo(() => {
     const placed = [
@@ -791,6 +802,28 @@ export function Roadmap({
       className="relative mx-auto mt-12 w-full max-w-[1160px] px-4 min-[1160px]:mt-20"
       aria-label="Roadmap"
     >
+      {/* Avatars are not in the card until bloub arrives. Load and decode
+          them with the page so the logo paints with the text. */}
+      <div
+        ref={avatarPreloadRef}
+        aria-hidden
+        className="pointer-events-none absolute size-px overflow-hidden opacity-0"
+      >
+        {avatarSrcs.map((src) => (
+          <Image
+            key={src}
+            src={src}
+            alt=""
+            width={52}
+            height={52}
+            unoptimized
+            preload
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+        ))}
+      </div>
       {/* Header RoadMap: 480 | 80 | 480, gap 48 (desktop). Mobile: centered bloub, no column labels. */}
       <header className="relative flex flex-col items-center pb-16 min-[1160px]:grid min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:items-start min-[1160px]:gap-6 min-[1160px]:pb-0">
         <div className="hidden min-[1160px]:block">
@@ -1116,7 +1149,7 @@ export function Roadmap({
           >
             <TimelineMarker
               showBloub={bloubAtFooter}
-              emotion={fallback}
+              emotion={FOOTER_EMOTION}
               reducedMotion={reducedMotion}
               bloubSize={phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX}
               dotSize={phone ? PHONE_DOT_PX : 20}

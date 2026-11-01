@@ -91,8 +91,8 @@ export function MainTab({
       <section className="space-y-3 rounded-[24px] border border-border-subtle bg-surface-card p-5">
         <h2 className="text-title3 text-text-primary">Фотографии</h2>
         <p className="text-subheadline text-text-secondary">
-          Эти портреты стоят на главной и в шапке кейса. Нажатие переключает
-          их по порядку в списке.
+          Эти портреты стоят на главной и в шапке кейса. Нажатие переключает
+          их по порядку в списке.
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {settings.faces.map((src, index) => (
@@ -156,7 +156,7 @@ export function MainTab({
         <h2 className="text-title3 text-text-primary">Заголовок и описание</h2>
         <Field
           label="Заголовок"
-          hint="Одна фраза на строку. Фразы сменяются каждые 7 секунд."
+          hint="Одна фраза на строку. Фразы сменяются каждые 7 секунд."
         >
           <textarea
             value={settings.introHeadline}
@@ -178,7 +178,7 @@ export function MainTab({
           />
         </Field>
         <LinkEditor
-          label="Кнопки под описанием"
+          label="Кнопки под описанием"
           links={settings.introLinks}
           onChange={(introLinks) => setSettings({ ...settings, introLinks })}
         />

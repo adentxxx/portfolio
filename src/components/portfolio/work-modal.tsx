@@ -472,7 +472,7 @@ export function WorkModal({
               transition={moving}
             >
               {company.role.trim() ? (
-                <p className="card-role text-body text-text-primary">{company.role}</p>
+                <p className="card-role text-title3 text-text-primary">{company.role}</p>
               ) : null}
               {company.description.trim() ? (
                 <p className="card-copy text-subheadline text-text-secondary">

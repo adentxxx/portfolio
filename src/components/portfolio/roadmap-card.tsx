@@ -149,11 +149,11 @@ export function RoadmapCard({
           <div className={cn(plate, "size-[52px] shrink-0 rounded-2xl")} />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <div className={cn(plate, "h-[15px] w-[101px] rounded-[8px]")} />
-            <div className={cn(plate, "h-6 w-[215px] max-w-full rounded-[12px]")} />
+            <div className={cn(plate, "card-title-plate h-7 w-[215px] max-w-full rounded-[12px]")} />
           </div>
         </div>
         <div className="flex w-full flex-col gap-2">
-          <div className={cn(plate, "card-subtitle-plate h-6 w-[101px] rounded-[12px]")} />
+          <div className={cn(plate, "card-subtitle-plate h-5 w-[101px] rounded-[12px]")} />
           {/* Real description, invisible: plate grows to the exact text height */}
           <div className={cn(plate, "flex w-full flex-col rounded-[16px]")}>
             <p className="card-copy w-full text-subheadline text-text-primary opacity-0">
@@ -170,38 +170,30 @@ export function RoadmapCard({
   const inner = (
     <>
       <div className="flex w-full items-center gap-3">
-        {data.kind === "company" ? (
-          <span
-            data-company-logo
-            className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page"
-          >
-            <Image
-              src={publicPath(data.logoSrc)}
-              alt=""
-              width={52}
-              height={52}
-              className="size-full object-cover"
-              unoptimized
-            />
-          </span>
-        ) : (
+        <span
+          data-company-logo={data.kind === "company" ? "" : undefined}
+          className="flex size-[52px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border-subtle bg-surface-page"
+        >
           <Image
             src={publicPath(data.logoSrc)}
             alt=""
             width={52}
             height={52}
-            className="size-[52px] shrink-0 rounded-2xl"
+            className="size-full object-cover"
             unoptimized
+            loading="eager"
+            decoding="sync"
+            fetchPriority="high"
           />
-        )}
+        </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-caption1 text-text-muted">{data.dateLabel}</span>
-          <h3 className="text-title3 text-text-primary">{title}</h3>
+          <h3 className="card-title text-title2 text-text-primary">{title}</h3>
         </div>
       </div>
       <div className="flex w-full flex-col gap-2">
         {data.kind === "company" ? (
-          <p className="card-role text-body text-text-primary">{data.role}</p>
+          <p className="card-role text-title3 text-text-primary">{data.role}</p>
         ) : (
           <div className="flex flex-wrap gap-2 text-caption1">
             {data.tags.map((tag) => (

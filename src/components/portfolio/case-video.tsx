@@ -1,7 +1,7 @@
 "use client";
 
 import { publicPath } from "@/lib/public-path";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function CaseVideo({
   src,
@@ -21,6 +21,10 @@ export function CaseVideo({
   const [motionReady, setMotionReady] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [visualReady, setVisualReady] = useState(false);
+  const [ratio, setRatio] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const posterSrc = poster ? publicPath(poster) : undefined;
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -31,9 +35,46 @@ export function CaseVideo({
     return () => media.removeEventListener("change", sync);
   }, []);
 
+  useEffect(() => {
+    if (!posterSrc) return;
+    let cancelled = false;
+    const img = new window.Image();
+    const show = () => {
+      if (cancelled || img.naturalWidth <= 0) return;
+      setRatio(img.naturalWidth / img.naturalHeight);
+      setVisualReady(true);
+    };
+    img.onload = show;
+    img.src = posterSrc;
+    if (img.complete) show();
+    return () => {
+      cancelled = true;
+    };
+  }, [posterSrc]);
+
   const play = autoplay && motionReady && !reduceMotion;
   const silent = muted || play;
-  const posterSrc = poster ? publicPath(poster) : undefined;
+
+  useEffect(() => {
+    const node = videoRef.current;
+    if (!node) return;
+    node.muted = silent;
+    const show = () => setVisualReady(true);
+    const measure = () => {
+      if (node.videoWidth > 0) setRatio(node.videoWidth / node.videoHeight);
+    };
+    measure();
+    if (node.readyState >= 2) show();
+    else if (!posterSrc) setVisualReady(false);
+    node.addEventListener("loadedmetadata", measure);
+    node.addEventListener("loadeddata", show);
+    node.addEventListener("error", show);
+    return () => {
+      node.removeEventListener("loadedmetadata", measure);
+      node.removeEventListener("loadeddata", show);
+      node.removeEventListener("error", show);
+    };
+  }, [src, posterSrc, silent, play, loop, controls]);
 
   function toggle(node: HTMLVideoElement) {
     if (node.paused) void node.play();
@@ -41,6 +82,13 @@ export function CaseVideo({
   }
 
   return (
+    <div
+      className="relative w-full overflow-hidden rounded-[24px] bg-surface-control"
+      style={{ aspectRatio: ratio ? String(ratio) : "116 / 50" }}
+    >
+      {visualReady ? null : (
+        <div className="media-skeleton absolute inset-0 z-10" aria-hidden />
+      )}
     <video
       key={`${src}-${posterSrc ?? ""}-${play}-${silent}-${loop}-${controls}`}
       src={publicPath(src)}
@@ -51,13 +99,12 @@ export function CaseVideo({
       muted={silent}
       loop={loop}
       preload={play ? "auto" : posterSrc ? "none" : "metadata"}
-      ref={(node) => {
-        if (node) node.muted = silent;
-      }}
+      ref={videoRef}
+      onError={() => setVisualReady(true)}
       className={
         controls
-          ? "w-full rounded-[24px] bg-surface-control"
-          : "video-clean w-full cursor-pointer rounded-[24px] bg-surface-control"
+          ? "absolute inset-0 size-full object-contain"
+          : "video-clean absolute inset-0 size-full cursor-pointer object-contain"
       }
       tabIndex={controls ? undefined : 0}
       aria-label={controls ? undefined : playing ? "Пауза" : "Воспроизвести видео"}
@@ -74,5 +121,6 @@ export function CaseVideo({
             }
       }
     />
+    </div>
   );
 }

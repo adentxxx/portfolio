@@ -88,7 +88,7 @@ export async function PUT(request: Request) {
   const contactLinks = readContactLinks(body.contactLinks);
   if (!introLinks || !contactLinks) {
     return jsonError(
-      "Проверьте кнопки: у каждой нужны подпись и ссылка http, https, mailto или путь на сайте",
+      "Проверьте кнопки: у каждой нужны подпись и ссылка http, https, mailto или путь на сайте",
       400,
     );
   }

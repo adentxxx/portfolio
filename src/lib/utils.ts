@@ -11,6 +11,7 @@ const typeScaleClasses = [
   "text-title1",
   "text-title2",
   "text-title3",
+  "text-title4",
   "text-body",
   "text-subheadline",
   "text-footnote",

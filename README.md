@@ -2,14 +2,14 @@
 
 Репозиторий: [github.com/adentxxx/portfolio](https://github.com/adentxxx/portfolio)
 
-Портфолио продуктового дизайнера в метафоре **roadmap**: компании слева, проекты справа, scroll-reveal, lifecycle **bloub**, light/dark через Mapped tokens, звук по жесту + mute.
+Портфолио продуктового дизайнера: компании слева, проекты справа. Карточки появляются по скроллу, у точек таймлайна есть bloub, тема светлая и тёмная, звук включается по жесту.
 
-Контент компаний/проектов — **случайные placeholder’ы** (не реальная биография). Править через `/admin` или `npm run db:seed`.
+Тексты сайта лежат в базе и правятся в `/admin`. `npm run db:seed` заливает демо с выдуманными компаниями.
 
 ## Стек
 
 - Next.js (App Router) + TypeScript + Tailwind CSS v4
-- shadcn-style primitives (`Button` на Radix Slot)
+- shadcn-style primitives (`Button` на Radix Slot)
 - Prisma + SQLite (локальная БД)
 - Шрифты: **Vollkorn** (display) + **Ubuntu Sans** (UI)
 
@@ -27,16 +27,16 @@ npm run dev
 
 - Главная: `/`
 - Кейс: `/projects/[slug]` (например `/projects/aurora-dashboard`)
-- Админка: `/admin` (логин и пароль из `ADMIN_LOGIN` и `ADMIN_PASSWORD`, по умолчанию `admin` / `demo-admin`)
+- Админка: `/admin` (логин и пароль из `ADMIN_LOGIN` и `ADMIN_PASSWORD`, по умолчанию `admin` / `demo-admin`)
 
 ## Тема и звук
 
-- Тема и mute сохраняются в `localStorage` (`portfolio-theme`, `portfolio-muted`).
-- SFX владельца в `public/sounds/`: `drop_004` — смена темы, `switch_005` — mute, `click` — кнопки, карточки и пустое место. Точка таймлайна без звука. Без автоплея при загрузке.
+- Тема и mute сохраняются в `localStorage` (`portfolio-theme`, `portfolio-muted`).
+- SFX владельца в `public/sounds/`: `drop_004` — смена темы, `switch_005` — mute, `click` — кнопки, карточки и пустое место. Точка таймлайна без звука. Без автоплея при загрузке.
 
 ## Design tokens
 
-Цвета и type scale соответствуют SDD / экспорту Figma Variables (`surface/*`, `text/*`, …) — см. CSS variables в `src/app/globals.css`.
+Цвета и type scale соответствуют SDD / экспорту Figma Variables (`surface/*`, `text/*`, …) — см. CSS variables в `src/app/globals.css`.
 
 ## БД
 

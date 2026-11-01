@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   const emotionId = await defaultEmotionId();
-  if (!emotionId) return jsonError("В базе нет эмоций bloub", 500);
+  if (!emotionId) return jsonError("В базе нет эмоций bloub", 500);
 
   const last = await prisma.company.findFirst({ orderBy: { order: "desc" } });
   const created = await prisma.company.create({

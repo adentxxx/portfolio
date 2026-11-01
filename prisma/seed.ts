@@ -43,7 +43,7 @@ async function main() {
         "Ты можешь скроллить и смотреть проекты",
       ].join("\n"),
       introBio:
-        "Это демо-портфолио (placeholder). Имена компаний и проектов случайные — не реальная биография. Замените через /admin.",
+        "Это демо. Названия компаний и проектов выдуманы и к биографии не относятся. Свой текст ставится в /admin.",
       avatarSrc: "/avatars/avatar.png",
       avatarFacesJson: JSON.stringify([
         "/faces/face_1.png",
@@ -56,9 +56,9 @@ async function main() {
         { label: "CV", href: "#", icon: "file" },
         { label: "LinkedIn", href: "https://linkedin.com/", icon: "link" },
       ]),
-      contactHeadline: "Связаться",
+      contactHeadline: "Давай делать грязь!",
       contactSubline:
-        "Демо-контакты. Подставьте свои ссылки в админке или сиде.",
+        "Беру консультации, редизайн платформ и разбор дизайн-систем. Пиши, если задача понятная.",
       contactLinksJson: JSON.stringify([
         { label: "Telegram", href: "https://t.me/" },
         { label: "Email", href: "mailto:demo@example.com" },
@@ -75,7 +75,7 @@ async function main() {
         startYear: 2024,
         ongoing: true,
         description:
-          "Placeholder: дизайн платформы аналитики. Данные выдуманы для MVP.",
+          "Заглушка: платформа аналитики. Цифры и детали ненастоящие.",
         logoSrc: "/logos/company-a.svg",
         url: "https://example.com",
         order: 1,
@@ -92,7 +92,7 @@ async function main() {
         startYear: 2022,
         endYear: 2024,
         description:
-          "Placeholder: e-commerce и дизайн-система. Не реальный опыт.",
+          "Заглушка: магазин и дизайн-система. Это не настоящая работа.",
         logoSrc: "/logos/company-b.svg",
         order: 2,
         bloubEmotion: "focus",
@@ -107,7 +107,7 @@ async function main() {
         dateLabel: "2020 — 2022",
         startYear: 2020,
         endYear: 2022,
-        description: "Placeholder: мобильные сценарии и прототипы.",
+        description: "Заглушка: мобильные сценарии и прототипы.",
         logoSrc: "/logos/company-c.svg",
         order: 3,
         bloubEmotion: "calm",
@@ -125,7 +125,7 @@ async function main() {
       title: "Aurora Dashboard (demo)",
       dateLabel: "2025",
       createdYear: 2025,
-      description: "Кейс-заглушка: дашборд метрик с фокусом на ясность.",
+      description: "Заглушка: дашборд, в котором метрики проще читать.",
       tags: JSON.stringify(["Product", "Dashboard", "Demo"]),
       logoSrc: "/logos/project-a.svg",
       order: 1,
@@ -134,18 +134,18 @@ async function main() {
       bloubState: "orbit",
       bloubExpression: null,
       summary:
-        "Демо-кейс. Цель — показать маршрут /projects/[slug] и секции из БД.",
+        "Демо-страница кейса: так выглядят блоки, которые лежат в базе.",
       heroImage: "/cases/aurora-hero.svg",
       sections: [
         {
           heading: "Задача (demo)",
-          body: "Случайный бриф: упростить чтение KPI для менеджеров. Это не реальный проект.",
+          body: "Выдуманный бриф: менеджерам нужно быстрее читать KPI. Проект ненастоящий.",
           imageSrc: "/cases/aurora-1.svg",
           sortOrder: 1,
         },
         {
           heading: "Решение (demo)",
-          body: "Иерархия карточек, спокойная палитра, понятные состояния пустых данных.",
+          body: "Карточки выстроены по важности, палитра спокойная, пустые данные подписаны.",
           imageSrc: "/cases/aurora-2.svg",
           sortOrder: 2,
         },
@@ -156,7 +156,7 @@ async function main() {
       title: "Harbor Checkout (demo)",
       dateLabel: "2024",
       createdYear: 2024,
-      description: "Кейс-заглушка: сокращение шагов оплаты.",
+      description: "Заглушка: меньше шагов в оплате.",
       tags: JSON.stringify(["UX", "Commerce", "Demo"]),
       logoSrc: "/logos/project-b.svg",
       order: 2,
@@ -164,17 +164,17 @@ async function main() {
       bloubShape: "cercle",
       bloubState: "thinking",
       bloubExpression: null,
-      summary: "Placeholder checkout flow — вымышленный кейс для roadmap.",
+      summary: "Выдуманная оплата, чтобы заполнить дорожку кейсов.",
       heroImage: "/cases/harbor-hero.svg",
       sections: [
         {
           heading: "Контекст (demo)",
-          body: "Вымышленный ритейлер. Нужно уменьшить трение на мобильном checkout.",
+          body: "Выдуманный магазин. На телефоне оплату нужно сделать короче.",
           sortOrder: 1,
         },
         {
           heading: "Итог (demo)",
-          body: "В демо нет метрик — только структура страницы кейса.",
+          body: "Метрик здесь нет. Страница показывает, как устроен кейс.",
           imageSrc: "/cases/harbor-1.svg",
           sortOrder: 2,
         },
@@ -185,7 +185,7 @@ async function main() {
       title: "Moss Onboarding (demo)",
       dateLabel: "2023",
       createdYear: 2023,
-      description: "Кейс-заглушка: онбординг B2B SaaS.",
+      description: "Заглушка: онбординг в B2B SaaS.",
       tags: JSON.stringify(["Onboarding", "SaaS", "Demo"]),
       logoSrc: "/logos/project-c.svg",
       order: 3,
@@ -193,12 +193,12 @@ async function main() {
       bloubShape: "cercle",
       bloubState: "wink",
       bloubExpression: null,
-      summary: "Ещё один placeholder-кейс для правой колонки roadmap.",
+      summary: "Ещё одна заглушка для правой колонки.",
       heroImage: "/cases/moss-hero.svg",
       sections: [
         {
           heading: "Подход (demo)",
-          body: "Прогрессивное раскрытие настроек и понятные empty states.",
+          body: "Настройки открываются по шагам, пустые экраны подписаны.",
           imageSrc: "/cases/moss-1.svg",
           sortOrder: 1,
         },

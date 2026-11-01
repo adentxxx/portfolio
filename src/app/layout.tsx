@@ -19,9 +19,9 @@ const ubuntuSans = Ubuntu_Sans({
   weight: ["400", "500"],
 });
 
-const title = "Portfolio Roadmap (demo)";
+const title = "Александр Проскуренко – быстро, дорого, аху...";
 const description =
-  "Демо-портфолио в метафоре roadmap: компании слева, проекты справа. Контент — placeholder из БД.";
+  "Портфолио продуктового дизайнера. Проекты для B2B, B2C и мобильных продуктов: как устроены экраны и почему они такие.";
 
 function firstHeader(value: string | null) {
   return value?.split(",")[0]?.trim() || null;

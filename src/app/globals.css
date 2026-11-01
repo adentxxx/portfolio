@@ -36,6 +36,8 @@
   --lh-title2: 28px;
   --size-title3: 18px;
   --lh-title3: 20px;
+  --size-title4: 15px;
+  --lh-title4: 20px;
   --size-body: 17px;
   --lh-body: 24px;
   --size-subheadline: 15px;
@@ -249,6 +251,14 @@ body {
   letter-spacing: 0;
 }
 
+.text-title4 {
+  font-family: var(--font-display);
+  font-size: var(--size-title4);
+  line-height: var(--lh-title4);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
 .text-body {
   font-family: var(--font-ui);
   font-size: var(--size-body);
@@ -330,10 +340,24 @@ body {
     line-height: var(--lh-caption2);
   }
 
+  .roadmap-card .card-title {
+    font-size: var(--size-title3);
+    line-height: var(--lh-title3);
+    /* One line. A long name ends in an ellipsis instead of wrapping. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .roadmap-card .card-title-plate {
+    height: 20px;
+  }
+
   .roadmap-card .card-role,
   [data-work-dialog] .card-role {
-    font-size: var(--size-subheadline);
-    line-height: var(--lh-subheadline);
+    font-size: var(--size-title4);
+    line-height: var(--lh-title4);
   }
 
   .roadmap-card .card-copy,
@@ -363,16 +387,6 @@ body {
   .work-modal-date {
     font-size: var(--size-caption2);
     line-height: var(--lh-caption2);
-  }
-}
-
-/* Home portrait tip sits to the right of the face. On a phone that box is
-   wider than the space left of the screen edge, and the scaled-out tip still
-   pans the page. Center it on the portrait while it would overflow. */
-@media (max-width: 540px) {
-  .home-phone-type .face-tip {
-    left: 50%;
-    translate: -50% 0;
   }
 }
 
@@ -490,10 +504,34 @@ body {
   animation: bloub-float 2.4s ease-in-out infinite;
 }
 
+@keyframes media-shimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+/* Soft sweep while a case photo or video has not painted yet. */
+.media-skeleton {
+  background-color: var(--surface-control);
+  background-image: linear-gradient(
+    105deg,
+    transparent 28%,
+    color-mix(in srgb, white 42%, var(--surface-page)) 50%,
+    transparent 72%
+  );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  animation: media-shimmer 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bloub-idle-bob,
   .bloub-idle-pulse,
-  .bloub-idle-float {
+  .bloub-idle-float,
+  .media-skeleton {
     animation: none;
   }
 

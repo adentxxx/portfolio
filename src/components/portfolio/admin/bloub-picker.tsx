@@ -31,7 +31,7 @@ const EXPRESSION_LABEL: Record<ExpressionId, string> = {
   neutre: "Нейтральный",
   attentif: "Внимательный",
   surpris: "Удивлён",
-  excite: "В восторге",
+  excite: "В восторге",
   heureux: "Радостный",
   hilare: "Смеётся",
   colere: "Злой",
@@ -131,9 +131,9 @@ export function BloubSettings({
   const keepsShape = def?.baseBody ?? true;
   const keepsFace = def?.baseFace ?? true;
   const lookNote = !keepsShape
-    ? "Эта анимация рисует свою фигуру и своё лицо. Форма видна в покое, подмигивании, широком взгляде и уведомлении. Выражение — в покое."
+    ? "У этой анимации свои фигура и лицо. Форму видно в покое, при подмигивании, широком взгляде и уведомлении. Выражение только в покое."
     : !keepsFace
-      ? "Эта анимация рисует своё лицо. Выбранное выражение видно в покое."
+      ? "У этой анимации своё лицо. Выбранное выражение видно в покое."
       : null;
 
   return (

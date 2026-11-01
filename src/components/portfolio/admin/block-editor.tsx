@@ -271,7 +271,7 @@ export const BlockEditor = forwardRef<
       />
       {allowImages ? (
         <p className="text-caption2 text-text-muted">
-          Фото: png, jpg, webp, gif или svg, до 8 МБ. Видео: mp4, webm или mov, до 80 МБ.
+          Фото: png, jpg, webp, gif или svg, до 8 МБ. Видео: mp4, webm или mov, до 80 МБ.
         </p>
       ) : null}
 
@@ -355,7 +355,7 @@ export const BlockEditor = forwardRef<
                       onChange={(autoplay) => updateVideo(block.id, { autoplay })}
                     />
                     <CheckField
-                      label="Без звука"
+                      label="Без звука"
                       checked={Boolean(block.muted || block.autoplay)}
                       onChange={(muted) => updateVideo(block.id, { muted })}
                     />
@@ -371,7 +371,7 @@ export const BlockEditor = forwardRef<
                     />
                   </div>
                   <p className="text-caption2 text-text-muted">
-                    Автовоспроизведение идёт без звука. Если у посетителя уменьшены анимации, ролик сам не стартует. Без панели запуск и пауза — нажатием на кадр.
+                    Автовоспроизведение идёт без звука. Если у посетителя уменьшены анимации, ролик сам не стартует. Без панели запуск и пауза — нажатием на кадр.
                   </p>
                   {block.poster ? (
                     <Image
@@ -413,7 +413,7 @@ export const BlockEditor = forwardRef<
                     ) : null}
                   </div>
                   <p className="text-caption2 text-text-muted">
-                    Обложка видна, пока ролик не начал играть, и не даёт показать случайный кадр у тяжёлого файла.
+                    Обложка видна, пока ролик не начал играть, и не даёт показать случайный кадр у тяжёлого файла.
                   </p>
                 </div>
               ) : null}

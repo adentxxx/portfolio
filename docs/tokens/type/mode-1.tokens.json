@@ -55,6 +55,11 @@
         ]
       }
     },
+    "title4": {
+      "$type": "number",
+      "$value": 15,
+      "$description": "Vollkorn. Role on the phone work card."
+    },
     "title3": {
       "$type": "number",
       "$value": 18,
@@ -155,6 +160,11 @@
           "LINE_HEIGHT"
         ]
       }
+    },
+    "title4": {
+      "$type": "number",
+      "$value": 20,
+      "$description": "ratio 1.33"
     },
     "title3": {
       "$type": "number",

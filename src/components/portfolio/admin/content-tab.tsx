@@ -207,7 +207,7 @@ export function ContentTab({
       });
       setCompanies((prev) => [...prev, created]);
       setOpenId(created.id);
-      setMessage("Компания добавлена. Она скрыта, пока не включите показ на сайте.");
+      setMessage("Компания добавлена. Она скрыта, пока не включите показ на сайте.");
     } catch (caught) {
       report(caught);
     }
@@ -222,7 +222,7 @@ export function ContentTab({
       });
       setProjects((prev) => [...prev, created]);
       setOpenId(created.id);
-      setMessage("Проект добавлен. Он скрыт, пока не включите показ на сайте.");
+      setMessage("Проект добавлен. Он скрыт, пока не включите показ на сайте.");
     } catch (caught) {
       report(caught);
     }
@@ -357,9 +357,9 @@ export function ContentTab({
     <div className="space-y-10">
       <Status message={message} error={error} />
       <p className="text-subheadline text-text-secondary">
-        Компании стоят слева на главной, проекты справа. На сайте выше то, что
-        новее: у места работы берётся конец периода, у проекта — дата создания.
-        Место работы можно перетащить за ручку. Скрытая карточка на сайте не
+        Компании стоят слева на главной, проекты справа. На сайте выше то, что
+        новее: у места работы берётся конец периода, у проекта — дата создания.
+        Место работы можно перетащить за ручку. Скрытая карточка на сайте не
         показывается.
       </p>
 
@@ -589,7 +589,7 @@ function CompanyEditor({
       <fieldset disabled={saving} className="m-0 min-w-0 space-y-5 border-0 p-0">
         <CheckField
           checked={company.published}
-          label="Показывать на сайте"
+          label="Показывать на сайте"
           onChange={(published) => onChange({ published })}
         />
         <section className="space-y-3">
@@ -622,7 +622,7 @@ function CompanyEditor({
           </div>
           <CheckField
             checked={company.ongoing}
-            label="По настоящее время"
+            label="По настоящее время"
             onChange={(ongoing) => onChange({ ongoing })}
           />
           <div className="grid gap-3 sm:grid-cols-2">
@@ -652,19 +652,19 @@ function CompanyEditor({
                   disabled={saving}
                   className="underline-offset-2 hover:underline disabled:opacity-50"
                 >
-                  Вернуть по дате
+                  Вернуть по дате
                 </button>
               </>
             ) : null}
           </p>
-          <Field label="Роль в компании">
+          <Field label="Роль в компании">
             <input
               value={company.role}
               onChange={(event) => onChange({ role: event.target.value })}
               className={inputClass}
             />
           </Field>
-          <Field label="Описание для карточки">
+          <Field label="Описание для карточки">
             <textarea
               value={company.description}
               rows={4}
@@ -683,8 +683,8 @@ function CompanyEditor({
         <section className="space-y-3">
           <h3 className="text-body text-text-primary">Описание работы</h3>
           <p className="text-caption2 text-text-muted">
-            Подробный текст открывается в окне по нажатию на карточку места
-            работы. На самой карточке остаётся короткое описание.
+            Подробный текст открывается в окне по нажатию на карточку места
+            работы. На самой карточке остаётся короткое описание.
           </p>
           <BlockEditor
             ref={blocksRef}
@@ -765,7 +765,7 @@ function ProjectEditor({
       <fieldset disabled={saving} className="m-0 min-w-0 space-y-5 border-0 p-0">
         <CheckField
           checked={project.published}
-          label="Показывать на сайте"
+          label="Показывать на сайте"
           onChange={(published) => onChange({ published })}
         />
         <section className="space-y-3">
@@ -797,7 +797,7 @@ function ProjectEditor({
             </Field>
           </div>
           <p className="text-caption1 text-text-secondary">На карточке: {preview}</p>
-          <Field label="Теги" hint="Enter или запятая добавляет тег. Нажатие на тег убирает его.">
+          <Field label="Теги" hint="Enter или запятая добавляет тег. Нажатие на тег убирает его.">
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2">
                 {project.tags.map((tag) => (
@@ -833,7 +833,7 @@ function ProjectEditor({
               />
             </div>
           </Field>
-          <Field label="Описание для карточки">
+          <Field label="Описание для карточки">
             <textarea
               value={project.description}
               rows={4}
@@ -861,7 +861,7 @@ function ProjectEditor({
               className={inputClass}
             />
           </Field>
-          <Field label="Текст под заголовком">
+          <Field label="Текст под заголовком">
             <textarea
               value={project.summary}
               rows={3}

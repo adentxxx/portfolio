@@ -7,8 +7,7 @@ import { getHomeContent } from "@/lib/content";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { intro, contact, companies, projects, emotions } =
-    await getHomeContent();
+  const { intro, contact, companies, projects } = await getHomeContent();
 
   return (
     <main className="min-h-screen bg-surface-page pb-20">
@@ -21,7 +20,6 @@ export default async function HomePage() {
       <Roadmap
         companies={companies}
         projects={projects}
-        emotions={emotions}
       />
       <ContactCard
         headline={contact.headline}

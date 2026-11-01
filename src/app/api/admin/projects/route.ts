@@ -141,7 +141,7 @@ export async function POST(request: Request) {
   if (denied) return denied;
 
   const emotionId = await defaultEmotionId();
-  if (!emotionId) return jsonError("В базе нет эмоций bloub", 500);
+  if (!emotionId) return jsonError("В базе нет эмоций bloub", 500);
   const last = await prisma.project.findFirst({ orderBy: { order: "desc" } });
   const slug = await uniqueSlug(slugify("Новый проект"));
   const created = await prisma.project.create({

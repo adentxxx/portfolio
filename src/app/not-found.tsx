@@ -76,7 +76,7 @@ export default function NotFound() {
       <Button asChild mode="accent">
         <Link href={pagePath("/")}>
           <ButtonHomeIcon />
-          На главную
+          На главную
         </Link>
       </Button>
     </main>

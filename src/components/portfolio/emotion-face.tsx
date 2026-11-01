@@ -59,11 +59,14 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
   const { play } = useSound();
   const tipId = useId();
   const tipRef = useRef<HTMLSpanElement>(null);
-  const tipShift = useRef(0);
+  const bubbleRef = useRef<HTMLSpanElement>(null);
   const [index, setIndex] = useState(0);
   const [over, setOver] = useState(false);
   const [tip, setTip] = useState<TipPhase>("ask");
-  const [tipOffset, setTipOffset] = useState(0);
+  const [bubbleMax, setBubbleMax] = useState<number | undefined>(undefined);
+  // Null keeps the tip beside the portrait. A number parks it above, shifted
+  // so a wrapped bubble stays inside the screen instead of covering the face.
+  const [aboveShift, setAboveShift] = useState<number | null>(null);
   const indexRef = useRef(0);
   const runRef = useRef(0);
   const controls = useAnimation();
@@ -82,41 +85,83 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
     }
   }, [faceKey, faces]);
 
-  // The tip is scaled to nothing until hover, but its layout box stays full
-  // size. Beside a centered portrait that box is wider than a phone, so the
-  // page pans sideways. Slide it back inside the viewport.
+  // The tip hangs to the right of the portrait. On a phone that side is
+  // narrower than the line, so the words wrap at the screen edge. If even one
+  // word cannot fit there, the bubble moves above the face: sliding it left
+  // would cover the portrait, and letting it stick out pans the page.
   useLayoutEffect(() => {
     const tip = tipRef.current;
-    if (!tip) return;
+    const bubble = bubbleRef.current;
+    if (!tip || !bubble) return;
 
     const fit = () => {
-      const box = tip.getBoundingClientRect();
-      const rawLeft = box.left - tipShift.current;
-      const rawRight = box.right - tipShift.current;
+      const button = tip.offsetParent;
+      if (!(button instanceof HTMLElement)) return;
+      const buttonRect = button.getBoundingClientRect();
       const limit = document.documentElement.clientWidth;
-      const margin = 16;
-      let next = 0;
-      if (rawRight > limit - margin) next = limit - margin - rawRight;
-      if (rawLeft + next < margin) next += margin - (rawLeft + next);
-      if (Math.abs(next - tipShift.current) < 0.5) return;
-      tipShift.current = next;
-      setTipOffset(next);
+      const style = getComputedStyle(bubble);
+      const padX =
+        parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const probe = document.createElement("span");
+      probe.style.position = "absolute";
+      probe.style.visibility = "hidden";
+      probe.style.whiteSpace = "nowrap";
+      probe.style.font = style.font;
+      probe.style.fontWeight = style.fontWeight;
+      document.body.appendChild(probe);
+      const words = (bubble.textContent ?? "").trim().split(/\s+/);
+      let longest = 0;
+      for (const word of words) {
+        probe.textContent = word;
+        longest = Math.max(longest, probe.offsetWidth);
+      }
+      probe.remove();
+      const minBubble = Math.ceil(longest + padX);
+      // Tail dots sit between the face and the label. 10px + 12px.
+      const tail = 22;
+      const gap = 8;
+      const roomFor = (margin: number) =>
+        Math.floor(limit - margin - buttonRect.right - gap - tail);
+      const room =
+        roomFor(16) >= minBubble ? roomFor(16) : roomFor(8);
+
+      if (room >= minBubble) {
+        setAboveShift((current) => (current === null ? current : null));
+        setBubbleMax((current) => (current === room ? current : room));
+        return;
+      }
+
+      const cap = Math.max(0, Math.floor(limit - 32));
+      const prevMax = bubble.style.maxWidth;
+      const prevWhite = bubble.style.whiteSpace;
+      bubble.style.whiteSpace = "nowrap";
+      bubble.style.maxWidth = "none";
+      const line = bubble.offsetWidth;
+      bubble.style.whiteSpace = prevWhite;
+      bubble.style.maxWidth = prevMax;
+      const bubbleWidth = Math.min(line, cap);
+      const viewLeft = Math.max(
+        16,
+        Math.min((limit - bubbleWidth) / 2, limit - 16 - bubbleWidth),
+      );
+      const shift = Math.round(viewLeft - buttonRect.left);
+      setAboveShift((current) => (current === shift ? current : shift));
+      setBubbleMax((current) => (current === cap ? current : cap));
     };
 
     fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(tip);
     window.addEventListener("resize", fit);
     let cancelled = false;
-    document.fonts?.ready.then(() => {
-      if (!cancelled) fit();
-    }).catch(() => {});
+    document.fonts?.ready
+      .then(() => {
+        if (!cancelled) fit();
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
-      observer.disconnect();
       window.removeEventListener("resize", fit);
     };
-  }, [tip, size, faceKey]);
+  }, [size, faceKey, tip]);
 
   function cycle() {
     // The shared click listener misses this press: React commits before the
@@ -172,12 +217,16 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
         role="tooltip"
         aria-hidden={!tipVisible}
         ref={tipRef}
-        className="face-tip pointer-events-none absolute top-[-24px] left-[calc(100%+8px)] z-10 flex items-start"
-        style={tipOffset ? { transform: `translateX(${tipOffset}px)` } : undefined}
+        className={`face-tip pointer-events-none absolute z-10 flex items-start ${
+          aboveShift === null
+            ? "top-[-24px] left-[calc(100%+8px)]"
+            : "bottom-[calc(100%+8px)]"
+        }`}
+        style={aboveShift === null ? undefined : { left: aboveShift }}
       >
         <motion.span
           aria-hidden
-          className="block h-12 w-[10px] shrink-0 origin-[5px_45px] bg-surface-inverse"
+          className={`block h-12 w-[10px] shrink-0 origin-[5px_45px] bg-surface-inverse ${aboveShift === null ? "" : "hidden"}`}
           style={dotMask(POINT_1, 10)}
           initial={false}
           animate={
@@ -191,7 +240,7 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
         />
         <motion.span
           aria-hidden
-          className="block h-12 w-3 shrink-0 origin-[6px_34px] bg-surface-inverse"
+          className={`block h-12 w-3 shrink-0 origin-[6px_34px] bg-surface-inverse ${aboveShift === null ? "" : "hidden"}`}
           style={dotMask(POINT_2, 12)}
           initial={false}
           animate={
@@ -210,8 +259,9 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
           }
         />
         <motion.span
-          className="flex origin-bottom-left items-center justify-center whitespace-nowrap rounded-[24px] bg-surface-inverse px-3 py-1.5 text-center text-caption2 text-text-on-inverse"
-          style={{ fontWeight: 500 }}
+          ref={bubbleRef}
+          className="block origin-bottom-left min-w-0 rounded-[24px] bg-surface-inverse px-3 py-1.5 text-center text-caption2 text-text-on-inverse"
+          style={{ fontWeight: 500, width: "max-content", maxWidth: bubbleMax }}
           initial={false}
           animate={
             tipVisible
