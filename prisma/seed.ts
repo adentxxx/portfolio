@@ -53,7 +53,7 @@ async function main() {
       ]),
       introLinksJson: JSON.stringify([
         { label: "Telegram", href: "https://t.me/", icon: "send" },
-        { label: "CV", href: "#", icon: "file" },
+        { label: "CV", href: "/cv/CV-Proskurenko-Aleksandr-ru.pdf", icon: "file" },
         { label: "LinkedIn", href: "https://linkedin.com/", icon: "link" },
       ]),
       contactHeadline: "Давай делать грязь!",
