@@ -2,6 +2,7 @@ import type { WorkBlock } from "@/components/portfolio/roadmap-card";
 import { parseFaces } from "@/lib/content-format";
 import { nbsp } from "@/lib/nbsp";
 import { prisma } from "@/lib/prisma";
+import { cache } from "react";
 import {
   byRank,
   companySortRank,
@@ -184,7 +185,7 @@ export async function getProjectNav(slug: string) {
   };
 }
 
-export async function getProjectBySlug(slug: string) {
+export const getProjectBySlug = cache(async (slug: string) => {
   const project = await prisma.project.findFirst({
     where: { slug, published: true },
     include: {
@@ -206,4 +207,4 @@ export async function getProjectBySlug(slug: string) {
       text: nbsp(section.text),
     })),
   };
-}
+});

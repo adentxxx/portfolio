@@ -6,7 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "404",
+  title: { absolute: "404" },
+  robots: { index: false, follow: false },
 };
 
 const POINT_1 = "/tooltip/point-1.svg";

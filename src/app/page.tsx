@@ -3,8 +3,14 @@ import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { IntroCard } from "@/components/portfolio/intro-card";
 import { Roadmap } from "@/components/portfolio/roadmap";
 import { getHomeContent } from "@/lib/content";
+import { pagePath } from "@/lib/public-path";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: { canonical: pagePath("/") },
+};
 
 export default async function HomePage() {
   const { intro, contact, companies, projects } = await getHomeContent();

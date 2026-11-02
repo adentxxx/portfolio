@@ -12,6 +12,7 @@ import { getProjectBySlug, getProjectNav } from "@/lib/content";
 import { isSafePublicPath } from "@/lib/content-format";
 import { pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -233,6 +234,37 @@ function CaseNav({
       </CaseNavLink>
     </nav>
   );
+}
+
+function metaText(value: string) {
+  const text = value.replace(/\s+/g, " ").trim();
+  return text || undefined;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const project = await getProjectBySlug(slug);
+  if (!project) return {};
+
+  const description = metaText(project.summary);
+  const canonical = pagePath(`/projects/${project.slug}`);
+
+  return {
+    title: project.title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: project.title,
+      description,
+      url: canonical,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: project.title,
+      description,
+    },
+  };
 }
 
 export default async function ProjectPage({ params }: PageProps) {

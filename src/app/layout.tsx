@@ -1,9 +1,10 @@
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { Providers } from "@/components/providers";
 import { publicPath } from "@/lib/public-path";
+import { metadataBaseUrl } from "@/lib/site-url";
 import { themeInitScript } from "@/lib/theme";
 import type { Metadata } from "next";
 import { Ubuntu_Sans, Vollkorn } from "next/font/google";
-import { headers } from "next/headers";
 import "./globals.css";
 
 // Figma text styles: Vollkorn Regular (titles), Ubuntu Sans Regular/Medium (body/caption).
@@ -23,49 +24,19 @@ const title = "Александр Проскуренко – быстро, до�
 const description =
   "Портфолио продуктового дизайнера. Проекты для B2B, B2C и мобильных продуктов: как устроены экраны и почему они такие.";
 
-function firstHeader(value: string | null) {
-  return value?.split(",")[0]?.trim() || null;
-}
-
-/** Absolute origin for og:video. Crawlers ignore relative video URLs. */
-async function siteOrigin() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) {
-    try {
-      return new URL(configured);
-    } catch {
-      // Fall through to the request host when the env value is not a URL.
-    }
-  }
-
-  const headerList = await headers();
-  const host =
-    firstHeader(headerList.get("x-forwarded-host")) ??
-    firstHeader(headerList.get("host"));
-  if (!host) return new URL("http://127.0.0.1:43123");
-
-  const forwarded = firstHeader(headerList.get("x-forwarded-proto"));
-  const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host);
-  const proto =
-    forwarded === "http" || forwarded === "https"
-      ? forwarded
-      : local
-        ? "http"
-        : "https";
-  return new URL(`${proto}://${host}`);
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-  const origin = await siteOrigin();
-  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  const metadataBase = new URL(`${origin.origin}${base || "/"}`);
+  const metadataBase = await metadataBaseUrl();
   // Social cards play this H.264 loop (1200×630, ~2s).
   const videoUrl = new URL(publicPath("/og/cover.mp4"), metadataBase).href;
 
   return {
     metadataBase,
-    title,
+    title: {
+      default: title,
+      template: "%s – Александр Проскуренко",
+    },
     description,
+    robots: { index: true, follow: true },
     openGraph: {
       title,
       description,
@@ -105,6 +76,7 @@ export default function RootLayout({
     >
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <GoogleAnalytics />
         <Providers>{children}</Providers>
       </body>
     </html>
