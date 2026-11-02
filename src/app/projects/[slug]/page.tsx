@@ -8,7 +8,7 @@ import { CaseVideo } from "@/components/portfolio/case-video";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
 import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
-import { getProjectBySlug, getProjectNav } from "@/lib/content";
+import { getProjectBySlug, getProjectNav, type ContactLink } from "@/lib/content";
 import { isSafePublicPath } from "@/lib/content-format";
 import { pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
@@ -236,6 +236,63 @@ function CaseNav({
   );
 }
 
+function ndaPhoto(project: {
+  heroImage: string;
+  sections: { kind: string; imageSrc: string | null }[];
+}) {
+  if (project.heroImage && isSafePublicPath(project.heroImage)) {
+    return project.heroImage;
+  }
+  const section = project.sections.find(
+    (item) =>
+      item.kind !== "video" &&
+      item.imageSrc &&
+      isSafePublicPath(item.imageSrc),
+  );
+  return section?.imageSrc ?? null;
+}
+
+function NdaNote({
+  title,
+  text,
+  links,
+}: {
+  title: string;
+  text: string;
+  links: ContactLink[];
+}) {
+  return (
+    <section className="mx-auto flex w-full max-w-[800px] flex-col gap-8 text-left">
+      <div className="flex flex-col gap-3">
+        {title ? (
+          <h2 className="text-title3 text-text-primary">{title}</h2>
+        ) : null}
+        {text ? (
+          <p className="whitespace-pre-line text-subheadline text-text-secondary">
+            {text}
+          </p>
+        ) : null}
+      </div>
+      {links.length > 0 ? (
+        <div className="flex flex-wrap gap-3">
+          {links.map((link) => (
+            <Button
+              key={`${link.label}-${link.href}`}
+              asChild
+              mode="fill"
+              className="btn-fill-subtle min-w-[calc(50%-0.375rem)] flex-1"
+            >
+              <a href={link.href} target="_blank" rel="noreferrer">
+                {link.label}
+              </a>
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function metaText(value: string) {
   const text = value.replace(/\s+/g, " ").trim();
   return text || undefined;
@@ -246,12 +303,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const project = await getProjectBySlug(slug);
   if (!project) return {};
 
-  const description = metaText(project.summary);
+  const description = metaText(
+    project.nda ? project.ndaText || project.summary : project.summary,
+  );
   const canonical = pagePath(`/projects/${project.slug}`);
 
   return {
     title: project.title,
     description,
+    robots: project.nda
+      ? {
+          index: false,
+          follow: true,
+          googleBot: { index: false, follow: true, noimageindex: true },
+        }
+      : { index: true, follow: true },
     alternates: { canonical },
     openGraph: {
       title: project.title,
@@ -278,11 +344,18 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const prevSlug = nav.prevSlug;
   const nextSlug = nav.nextSlug;
-  const blocks = caseBlocks(project);
+  const blocks = project.nda ? [] : caseBlocks(project);
+  const photo = project.nda ? ndaPhoto(project) : null;
 
   return (
     <main className="min-h-screen bg-surface-page">
-      <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 pb-32 min-[1192px]:px-0 md:pb-10">
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 min-[1192px]:px-0",
+          // The NDA page is short, so the last buttons need room above the fixed bars.
+          project.nda ? "pb-64" : "pb-32 md:pb-10",
+        )}
+      >
         <ProjectHeader links={nav.intro.links} faces={nav.intro.faces} />
 
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
@@ -292,7 +365,7 @@ export default async function ProjectPage({ params }: PageProps) {
               {project.summary}
             </p>
           ) : null}
-          {project.tags.length > 0 ? (
+          {!project.nda && project.tags.length > 0 ? (
             <div className="flex flex-wrap justify-center gap-2 text-caption1">
               {project.tags.map((tag) => (
                 <span
@@ -307,7 +380,17 @@ export default async function ProjectPage({ params }: PageProps) {
           ) : null}
         </div>
 
-        {blocks.map((block) => {
+        {project.nda ? (
+          <>
+            {photo ? <CaseImage src={photo} /> : null}
+            <NdaNote
+              title={project.ndaTitle}
+              text={project.ndaText}
+              links={nav.contact.links}
+            />
+          </>
+        ) : (
+          blocks.map((block) => {
           if (block.kind === "image") {
             return <CaseImage key={block.key} src={block.src} />;
           }
@@ -387,7 +470,8 @@ export default async function ProjectPage({ params }: PageProps) {
               ))}
             </div>
           );
-        })}
+        })
+        )}
 
       </div>
 

@@ -758,7 +758,7 @@ function ProjectEditor({
       id={`project-${project.id}`}
       open={open}
       title={project.title}
-      meta={preview}
+      meta={project.nda ? `${preview} · NDA` : preview}
       hidden={!project.published}
       onToggle={onToggle}
     >
@@ -869,6 +869,41 @@ function ProjectEditor({
               className={inputClass}
             />
           </Field>
+          <CheckField
+            checked={project.nda}
+            label="Проект под NDA"
+            onChange={(nda) =>
+              onChange(
+                nda && !(project.ndaTitle ?? "").trim()
+                  ? { nda, ndaTitle: "Project under NDA" }
+                  : { nda },
+              )
+            }
+          />
+          {project.nda ? (
+            <>
+              <p className="text-caption1 text-text-secondary">
+                Страница не попадает в поиск. На ней остаются заголовок, первая
+                фотография, короткое описание и кнопки из блока «Обратная связь».
+                Остальные блоки сохраняются и появятся, если снять NDA.
+              </p>
+              <Field label="Заголовок">
+                <input
+                  value={project.ndaTitle}
+                  onChange={(event) => onChange({ ndaTitle: event.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Короткое описание">
+                <textarea
+                  value={project.ndaText}
+                  rows={5}
+                  onChange={(event) => onChange({ ndaText: event.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+            </>
+          ) : null}
           <BlockEditor
             ref={blocksRef}
             blocks={project.blocks}

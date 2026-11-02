@@ -177,6 +177,7 @@ export async function getProjectNav(slug: string) {
   const index = ordered.findIndex((project) => project.slug === slug);
   return {
     intro: chrome.intro,
+    contact: chrome.contact,
     prevSlug: index > 0 ? ordered[index - 1].slug : null,
     nextSlug:
       index >= 0 && index < ordered.length - 1
@@ -199,6 +200,8 @@ export const getProjectBySlug = cache(async (slug: string) => {
     dateLabel: nbsp(project.dateLabel),
     description: nbsp(project.description),
     summary: nbsp(project.summary),
+    ndaTitle: nbsp(project.ndaTitle),
+    ndaText: nbsp(project.ndaText),
     tags: (JSON.parse(project.tags) as string[]).map((tag) => nbsp(tag)),
     sections: project.sections.map((section) => ({
       ...section,

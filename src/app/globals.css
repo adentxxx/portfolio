@@ -295,6 +295,15 @@ body {
   transform: none;
 }
 
+/* Wide NDA buttons share the header's small pixel growth, not its 9% scale. */
+.btn-fill.btn-fill-subtle:hover {
+  transform: scale(1.02);
+}
+
+.btn-fill.btn-fill-subtle:disabled:hover {
+  transform: none;
+}
+
 /* Opacity on the button itself drops backdrop-filter. Fade only the icon. */
 .btn-icon:disabled > * {
   opacity: 0.5;

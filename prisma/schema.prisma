@@ -84,6 +84,11 @@ model Project {
   bloubEmotion String
   summary      String
   heroImage    String
+  /// Public case is a teaser: one photo, a heading, ndaText, contact buttons. Not indexed.
+  nda          Boolean          @default(false)
+  /// Heading above the short NDA note. Empty hides it.
+  ndaTitle     String           @default("")
+  ndaText      String           @default("")
   published    Boolean          @default(true)
   emotion      BloubEmotion     @relation(fields: [bloubEmotion], references: [id])
   sections     ProjectSection[]

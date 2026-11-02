@@ -33,6 +33,9 @@ function present(project: {
   bloubState: string;
   bloubExpression: string | null;
   heroImage: string;
+  nda: boolean;
+  ndaTitle: string;
+  ndaText: string;
   published: boolean;
   order: number;
   sections: {
@@ -67,6 +70,9 @@ function present(project: {
     bloubShape: project.bloubShape,
     bloubState: project.bloubState,
     bloubExpression: project.bloubExpression,
+    nda: project.nda,
+    ndaTitle: project.ndaTitle,
+    ndaText: project.ndaText,
     published: project.published,
     order: project.order,
     blocks: sectionsToBlocks(project.sections, project.heroImage),
@@ -159,6 +165,9 @@ export async function POST(request: Request) {
       bloubExpression: "heureux",
       summary: "",
       heroImage: "",
+      nda: false,
+      ndaTitle: "",
+      ndaText: "",
       published: false,
     },
     include,
@@ -184,6 +193,9 @@ export async function PUT(request: Request) {
     bloubState?: unknown;
     bloubExpression?: unknown;
     published?: unknown;
+    nda?: unknown;
+    ndaTitle?: unknown;
+    ndaText?: unknown;
     blocks?: unknown;
   } | null;
   if (!body || typeof body.id !== "string") return jsonError("Некорректный запрос", 400);
@@ -199,8 +211,14 @@ export async function PUT(request: Request) {
   if (typeof body.logoSrc !== "string" || !isSafePublicPath(body.logoSrc)) {
     return jsonError("Загрузите логотип", 400);
   }
-  if (typeof body.published !== "boolean") {
+  if (typeof body.published !== "boolean" || typeof body.nda !== "boolean") {
     return jsonError("Некорректный запрос", 400);
+  }
+  if (typeof body.ndaTitle !== "string" || body.ndaTitle.length > 200) {
+    return jsonError("Заголовок слишком длинный", 400);
+  }
+  if (typeof body.ndaText !== "string" || body.ndaText.length > 4000) {
+    return jsonError("Короткое описание слишком длинное", 400);
   }
   const look = readBloubLook(body.bloubShape, body.bloubState, body.bloubExpression);
   if (!look) return jsonError("Проверьте настройку bloub", 400);
@@ -248,6 +266,9 @@ export async function PUT(request: Request) {
           bloubState: look.bloubState,
           bloubExpression: look.bloubExpression,
           heroImage,
+          nda: body.nda as boolean,
+          ndaTitle: body.ndaTitle as string,
+          ndaText: body.ndaText as string,
           published: body.published as boolean,
         },
         include,

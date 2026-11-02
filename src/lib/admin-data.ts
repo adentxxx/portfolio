@@ -56,6 +56,9 @@ export type AdminProject = {
   bloubState: string;
   bloubExpression: string | null;
   published: boolean;
+  nda: boolean;
+  ndaTitle: string;
+  ndaText: string;
   order: number;
   blocks: EditorBlock[];
 };
@@ -168,6 +171,9 @@ export async function getAdminData() {
         bloubState: project.bloubState,
         bloubExpression: project.bloubExpression,
         published: project.published,
+        nda: project.nda,
+        ndaTitle: project.ndaTitle,
+        ndaText: project.ndaText,
         order: project.order,
         blocks: sectionsToBlocks(project.sections, project.heroImage),
       } satisfies AdminProject;
