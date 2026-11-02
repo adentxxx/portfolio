@@ -50,8 +50,8 @@ type EmotionFaceProps = {
 };
 
 /**
- * Cutout portrait. Click pulses the current face to 110% and back to 100%,
- * then swaps to the next file.
+ * Cutout portrait. Click swaps to the next file on the same frame, then
+ * pulses that face to 110% and back to 100%.
  */
 export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) {
   const faces = facesProp && facesProp.length > 0 ? facesProp : DEFAULT_FACES;
@@ -82,6 +82,7 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
     for (const src of faces) {
       const img = new window.Image();
       img.src = publicPath(src);
+      img.decode?.().catch(() => {});
     }
   }, [faceKey, faces]);
 
@@ -174,24 +175,22 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
-    if (reduced) {
+    // Swap before the pulse so the next portrait is on screen in this click,
+    // not after the scale settles.
+    flushSync(() => {
       setIndex(indexRef.current);
-      return;
-    }
+    });
+    if (reduced) return;
 
     void (async () => {
       await controls.start({
         scale: 1.1,
-        transition: { duration: 0.1, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: 0.05, ease: [0.22, 1, 0.36, 1] },
       });
       if (run !== runRef.current) return;
       await controls.start({
         scale: 1,
-        transition: { duration: 0.12, ease: [0.4, 0, 0.2, 1] },
-      });
-      if (run !== runRef.current) return;
-      flushSync(() => {
-        setIndex(indexRef.current);
+        transition: { duration: 0.06, ease: [0.4, 0, 0.2, 1] },
       });
     })();
   }
@@ -296,16 +295,22 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
         initial={{ scale: 1 }}
         className="relative block size-full origin-center will-change-transform"
       >
-        <Image
-          src={publicPath(faces[safeIndex] ?? faces[0])}
-          alt=""
-          width={280}
-          height={280}
-          priority
-          unoptimized
-          draggable={false}
-          className="pointer-events-none h-full w-full object-contain select-none"
-        />
+        {faces.map((src, faceIndex) => (
+          <Image
+            key={`${faceIndex}:${src}`}
+            src={publicPath(src)}
+            alt=""
+            width={280}
+            height={280}
+            priority={faceIndex === 0}
+            loading="eager"
+            unoptimized
+            draggable={false}
+            className={`pointer-events-none absolute inset-0 h-full w-full object-contain select-none ${
+              faceIndex === safeIndex ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
       </motion.span>
     </button>
   );
