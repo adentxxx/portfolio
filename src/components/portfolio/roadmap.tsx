@@ -1161,7 +1161,10 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
               pointRefs.current[rows.length] = el;
             }}
             data-bloub={bloubAtFooter ? "true" : "false"}
-            className="absolute bottom-2 left-1/2 flex size-6 -translate-x-1/2 items-center justify-center"
+            // Centred by offset, not by a transform: a transform would make
+            // this a stacking context and trap the bloub (z 3) under the
+            // progress line (z 2), which then shows through its top.
+            className="absolute bottom-2 left-[calc(50%-12px)] flex size-6 items-center justify-center"
           >
             <TimelineMarker
               showBloub={bloubAtFooter}
