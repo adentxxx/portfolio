@@ -792,6 +792,14 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
   }, [arrivedIndex, rows.length]);
 
   const bloubAtFooter = arrivedIndex === rows.length;
+  // The mobile exit curve ends on the footer center. Wide eyes sit across
+  // that point, so the stroke shows through the eye holes. Once the bloub
+  // has arrived, clip the connector to its rim. The corner of the exit box
+  // is that center.
+  const footerBloubRadius = (phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX) / 2;
+  const footerClip = bloubAtFooter
+    ? `radial-gradient(circle at right bottom, transparent ${footerBloubRadius}px, #000 ${footerBloubRadius}px)`
+    : undefined;
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
@@ -1098,7 +1106,15 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
           <div
             ref={exitBoxRef}
             className="pointer-events-none absolute -top-6 left-[14px] h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden"
-            style={{ containerType: "inline-size" }}
+            style={{
+              containerType: "inline-size",
+              maskImage: footerClip,
+              WebkitMaskImage: footerClip,
+              maskSize: footerClip ? "100% 100%" : undefined,
+              WebkitMaskSize: footerClip ? "100% 100%" : undefined,
+              maskRepeat: footerClip ? "no-repeat" : undefined,
+              WebkitMaskRepeat: footerClip ? "no-repeat" : undefined,
+            }}
           >
             {curveWidth ? (
               <svg

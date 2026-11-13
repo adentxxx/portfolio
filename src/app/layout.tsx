@@ -22,7 +22,7 @@ const ubuntuSans = Ubuntu_Sans({
 
 const title = "Александр Проскуренко – быстро, дорого, аху...";
 const description =
-  "Портфолио продуктового дизайнера. Проекты для B2B, B2C и мобильных продуктов: как устроены экраны и почему они такие.";
+  "Продуктовый дизайнер с опытом в Fintech, B2B, B2C и мобильных продуктах.";
 
 export async function generateMetadata(): Promise<Metadata> {
   const metadataBase = await metadataBaseUrl();
