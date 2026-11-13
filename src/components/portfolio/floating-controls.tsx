@@ -1,54 +1,15 @@
 "use client";
 
+import { GlassIcon } from "@/components/portfolio/glass-icon";
 import { useTheme } from "@/hooks/use-theme";
 import { enter } from "@/lib/enter";
-import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import {
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
   type RefObject,
 } from "react";
-
-/**
- * Figma icons (Hicon / Outline) as exported: natural size and the offset
- * inside the 24px slot. Drawn as a mask so the glyph takes the text color.
- */
-const ICONS = {
-  globe: { src: "/icons/globe.svg", w: 21.5, h: 21.5, x: 1.25, y: 1.25 },
-  moon: { src: "/icons/moon.svg", w: 18.0449, h: 20.8902, x: 3.25, y: 1.25 },
-  sun: { src: "/icons/sun.svg", w: 23.5, h: 23.5, x: 0.25, y: 0.25 },
-  settings: {
-    src: "/icons/settings.svg",
-    w: 20.6327,
-    h: 22.6885,
-    x: 1.68,
-    y: 0.655,
-  },
-} as const;
-
-function GlassIcon({ name }: { name: keyof typeof ICONS }) {
-  const icon = ICONS[name];
-  const image = `url("${publicPath(icon.src)}")`;
-  const size = `${icon.w}px ${icon.h}px`;
-  const position = `${icon.x}px ${icon.y}px`;
-  return (
-    <span
-      aria-hidden
-      className="glass-icon"
-      style={{
-        maskImage: image,
-        WebkitMaskImage: image,
-        maskSize: size,
-        WebkitMaskSize: size,
-        maskPosition: position,
-        WebkitMaskPosition: position,
-      }}
-    />
-  );
-}
 
 const THEME_OPTIONS = [
   { theme: "dark", icon: "moon", label: "Тёмная тема" },
@@ -65,7 +26,6 @@ function ThemeSwitch({
   // Counts user switches. Zero means first paint: the thumb must not slide
   // from the server-rendered slot to the stored theme.
   const [moves, setMoves] = useState(0);
-  const index = theme === "dark" ? 0 : 1;
 
   return (
     <div
@@ -75,7 +35,6 @@ function ThemeSwitch({
         "glass glass-switch",
         orientation === "vertical" ? "glass-switch-v" : "glass-switch-h",
       )}
-      style={{ "--i": index } as CSSProperties}
     >
       <span
         aria-hidden
@@ -97,6 +56,9 @@ function ThemeSwitch({
             role="radio"
             aria-checked={active}
             aria-label={option.label}
+            // Thumb slot and icon colors come from CSS theme tokens, not from
+            // this state: the server cannot know the theme, CSS does.
+            data-option={option.theme}
             className="glass-seg"
             // The slot that is already on stays silent.
             data-sound={active ? "none" : "theme"}
@@ -263,7 +225,7 @@ export function FloatingControls({
     // gap 16, 40 from the corner (405:13070). Below 768: one settings button,
     // 12 from the corner (405:14319). Embedded: the parent owns the offset.
     <div
-      {...enter(7)}
+      {...enter(7, "pop")}
       className={cn(
         !embedded && "fixed bottom-3 right-3 z-50 md:bottom-10 md:right-10",
         className,

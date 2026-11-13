@@ -1,11 +1,10 @@
-import {
-  CaseHomeIcon,
-  CaseNextIcon,
-  CasePrevIcon,
-} from "@/components/portfolio/decor-icons";
 import { CaseImage } from "@/components/portfolio/case-image";
 import { CaseVideo } from "@/components/portfolio/case-video";
 import { FloatingControls } from "@/components/portfolio/floating-controls";
+import {
+  GlassIcon,
+  type GlassIconName,
+} from "@/components/portfolio/glass-icon";
 import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
 import { getProjectBySlug, getProjectNav, type ContactLink } from "@/lib/content";
@@ -16,7 +15,6 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -171,69 +169,51 @@ function textChunks(items: TextAtom[]) {
 function CaseNavLink({
   href,
   label,
-  className,
-  children,
+  icon,
 }: {
   href: string | null;
   label: string;
-  className?: string;
-  children: ReactNode;
+  icon: GlassIconName;
 }) {
-  const buttonClass = cn("pointer-events-auto", className);
+  // Liquid glass round button 64, as in the Button Bar (SDD §7.5).
+  const className = "glass glass-button pointer-events-auto";
   if (!href) {
     return (
-      <Button mode="icon" disabled aria-label={label} className={buttonClass}>
-        {children}
-      </Button>
+      <button type="button" disabled aria-label={label} className={className}>
+        <GlassIcon name={icon} />
+      </button>
     );
   }
   return (
-    <Button asChild mode="icon" className={buttonClass}>
-      <Link href={pagePath(href)} aria-label={label}>
-        {children}
-      </Link>
-    </Button>
+    <Link href={pagePath(href)} aria-label={label} className={className}>
+      <GlassIcon name={icon} />
+    </Link>
   );
 }
 
 function CaseNav({
   prevHref,
   nextHref,
-  stretch,
+  inline,
 }: {
   prevHref: string | null;
   nextHref: string | null;
-  stretch?: boolean;
+  /** In document flow, so the phone bottom bar can place it. */
+  inline?: boolean;
 }) {
-  const sideClass = stretch ? "w-auto min-w-px flex-[1_0_0]" : "w-20";
-
   return (
     <nav
-      {...enter(6)}
+      {...enter(6, "pop")}
       aria-label="Другие кейсы"
       className={
-        stretch
-          ? "pointer-events-auto flex w-full items-center gap-3"
+        inline
+          ? "pointer-events-auto flex items-center gap-3"
           : "pointer-events-none fixed inset-x-0 bottom-10 z-40 hidden items-center justify-center gap-3 md:flex"
       }
     >
-      <CaseNavLink
-        href={prevHref}
-        label="Предыдущий кейс"
-        className={sideClass}
-      >
-        <CasePrevIcon />
-      </CaseNavLink>
-      <CaseNavLink href="/" label="На главную">
-        <CaseHomeIcon />
-      </CaseNavLink>
-      <CaseNavLink
-        href={nextHref}
-        label="Следующий кейс"
-        className={sideClass}
-      >
-        <CaseNextIcon />
-      </CaseNavLink>
+      <CaseNavLink href={prevHref} label="Предыдущий кейс" icon="left" />
+      <CaseNavLink href="/" label="На главную" icon="home" />
+      <CaseNavLink href={nextHref} label="Следующий кейс" icon="right" />
     </nav>
   );
 }
@@ -483,14 +463,14 @@ export default async function ProjectPage({ params }: PageProps) {
 
       </div>
 
-      {/* Figma Bottom Bar 209:1225: phone stacks Button Bar above a full-width case row. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-end gap-4 px-3 pb-10 md:hidden">
-        <FloatingControls embedded className="pointer-events-auto" />
+      {/* Figma Bottom Bar 412:15833: phone, one row. Case buttons left, settings right. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex items-center justify-between px-3 pb-3 md:hidden">
         <CaseNav
           prevHref={prevSlug ? `/projects/${prevSlug}` : null}
           nextHref={nextSlug ? `/projects/${nextSlug}` : null}
-          stretch
+          inline
         />
+        <FloatingControls embedded className="pointer-events-auto" />
       </div>
       <CaseNav
         prevHref={prevSlug ? `/projects/${prevSlug}` : null}

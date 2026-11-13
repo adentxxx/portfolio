@@ -34,6 +34,12 @@
   --glass-shine: rgba(255, 255, 255, 0.95);
   --glass-shadow: rgba(0, 0, 0, 0.02);
   --glass-solid: #f2f1ed;
+  /* Theme switch state lives in CSS, next to the theme itself: the thumb
+     slot (0 moon, 1 sun) and the two icon colors. The switch is then right
+     on the first paint, before React knows the theme. */
+  --switch-slot: 1;
+  --switch-moon-ink: var(--icon-primary);
+  --switch-sun-ink: var(--text-on-inverse);
   /* Bloub inner glow (405:13014): inset 0 4 8, white 60%. Same in both themes. */
   --bloub-glow: #ffffff;
 
@@ -93,6 +99,9 @@
     --glass-shine: rgba(255, 255, 255, 0.22);
     --glass-shadow: rgba(0, 0, 0, 0.24);
     --glass-solid: #323232;
+    --switch-slot: 0;
+    --switch-moon-ink: var(--text-on-inverse);
+    --switch-sun-ink: var(--icon-primary);
   }
 }
 
@@ -124,6 +133,9 @@
   --glass-shine: rgba(255, 255, 255, 0.22);
   --glass-shadow: rgba(0, 0, 0, 0.24);
   --glass-solid: #323232;
+  --switch-slot: 0;
+  --switch-moon-ink: var(--text-on-inverse);
+  --switch-sun-ink: var(--icon-primary);
 }
 
 @theme inline {
@@ -414,6 +426,15 @@ body {
   transition-duration: 120ms;
 }
 
+.glass-button:disabled {
+  cursor: default;
+  scale: 1;
+}
+
+.glass-button:disabled .glass-icon {
+  opacity: 0.35;
+}
+
 /* Theme switch: two 52px slots, gap 4, padding 6 (405:13077, 405:14427). */
 .glass-switch {
   display: flex;
@@ -451,8 +472,12 @@ body {
   width: 52px;
 }
 
-.glass-seg[aria-checked="true"] {
-  color: var(--text-on-inverse);
+.glass-seg[data-option="dark"] {
+  color: var(--switch-moon-ink);
+}
+
+.glass-seg[data-option="light"] {
+  color: var(--switch-sun-ink);
 }
 
 .glass-seg[aria-checked="false"]:active {
@@ -472,11 +497,11 @@ body {
 
 .glass-switch-h .glass-thumb {
   width: calc((100% - 16px) / 2);
-  translate: calc(var(--i) * (100% + 4px)) 0;
+  translate: calc(var(--switch-slot) * (100% + 4px)) 0;
 }
 
 .glass-switch-v .glass-thumb {
-  translate: 0 calc(var(--i) * (100% + 4px));
+  translate: 0 calc(var(--switch-slot) * (100% + 4px));
 }
 
 .glass-thumb[data-moved] {
@@ -662,9 +687,8 @@ body {
 /* Both panels grow from the centre of the settings button below them. */
 .glass-settings-panel > * {
   transform-origin: calc(100% - 32px) calc(100% + 44px);
-  transition:
-    opacity 220ms ease,
-    scale 460ms var(--ease-liquid);
+  /* Scale only: opacity on glass drops its blur until the fade ends. */
+  transition: scale 460ms var(--ease-liquid);
 }
 
 .glass-settings-panel > :first-child {
@@ -676,9 +700,8 @@ body {
 }
 
 .glass-settings:not([data-open]) .glass-settings-panel > * {
-  opacity: 0;
-  scale: 0.3;
-  transition-duration: 160ms, 220ms;
+  scale: 0;
+  transition-duration: 220ms;
   transition-timing-function: ease-in;
 }
 
@@ -928,6 +951,26 @@ body {
 
 [data-enter="lift"] {
   animation-name: enter-lift;
+}
+
+/*
+  Glass grows from nothing instead of fading in. Opacity or filter on a
+  parent turns backdrop-filter off until the animation ends, and the glass
+  then snaps in. A transform does not, so the blur is there from frame one.
+*/
+@keyframes enter-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+[data-enter="pop"] {
+  animation-name: enter-pop;
+  animation-duration: 620ms;
+  animation-timing-function: cubic-bezier(0.3, 1.35, 0.5, 1);
 }
 
 [data-enter="fade"] {
