@@ -229,7 +229,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 ### 4.5 Motion (уровень правил)
 
-- Reveal карточек: opacity + лёгкий translate; без bounce-спама.
+- Reveal карточек: содержимое по очереди выезжает снизу с opacity + blur, рамка неподвижна (§5.1, п. 1); без scale и bounce.
 - Hover/Pressed кнопок — variants Figma.
 - **Bloub lifecycle** — обязательно по §5.1 (не декоративный «вечный» blob).
 - Morph bloub↔dot (реализовано): 220ms `cubic-bezier(0.22, 1, 0.36, 1)`; bloub 44px сжимается в точку **4px** и переезжает к первому Point Container; подсказка «начинай скроллить» + стрелка гаснут за 300ms. Travel-точка **4px** (без обводки, только свечение) едет на конце оранжевой линии прогресса. Обратим: у верха страницы bloub возвращается в header. Arrive и уход: bloub появляется из `decor/timeline-dot` и исчезает обратно за **200ms** `ease-in-out` (scale от диаметра точки — 20px у работы и footer, 10px у проекта — до 44px, opacity кроссфейдом с точкой) и **держится** на ней до следующей точки (§5.1).
@@ -253,7 +253,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 
 Дополнительно:
 
-1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)` через bounce-scale (`card-reveal`: 0.88 → 1.04 → 0.985 → 1, 640ms). Не сдвиг снизу. После анимации `transform` не остаётся, чтобы не глушить tilt.
+1. Карточки: load → `Default` (skeleton); на Arrive соответствующего ряда → `Active (Work)` / `Active (Project)` без движения рамки: карточка не сдвигается и не масштабируется. Skeleton-плашки гаснут за **320ms** (`card-plates-out`), а содержимое выезжает снизу по очереди: логотип, дата, название, роль или теги (каждый тег отдельно), описание. Каждый элемент поднимается на **14px**, проявляется (`opacity 0 → 1`) и выходит из размытия (`blur 6px → 0`) за **560ms**, `cubic-bezier(0.22, 1, 0.36, 1)` (`card-rise-in`); шаг очереди — **70ms**, между тегами — около **40ms**. **MUST:** анимируются только `opacity`, `transform` и `filter` на самих элементах содержимого, не на рамке; без изменения размеров и без blur больше 8px. После анимации `filter` и `transform` на элементах не остаются, лишние слои не держатся. При `prefers-reduced-motion` содержимое появляется сразу.
 2. У **каждой** карточки свой bloub. И компания, и проект хранят форму, выражение и анимацию отдельно (`bloubShape`, `bloubExpression`, `bloubState`) и настраиваются в админке — см. §8. `bloubEmotion` остаётся устаревшим FK справочника: таймлайн его не читает.
 3. Если у карточки эмоция не задана — fallback-дефолт из дизайн-системы / сида.
 4. Hint «начинай скроллить» скрывается или ослабевает после первого scroll (**SHOULD**).
@@ -331,7 +331,7 @@ CSS: `--surface-page` или `--surface/page` — единый стиль в п�
 **Active (Project):** logo, date, title, tags, description, **форма / выражение / анимация bloub**, link → project page.  
 **Size:** desktop и tablet (`≥ 768`) — `XL`: padding **24**; дата и теги `caption1`; title `title2`; role `title3`; description `subheadline`; тег padding 8×4, radius **8**. Телефон (`< 768`, Figma `Size=L`) — padding **20**; дата и теги `caption2` (medium, как `caption1`); title `title3`; role `title4`; description `footnote`; тег padding 6×2, radius **8**; skeleton-плашки title и role **20** высотой. Лого **52** radius **16** в обоих размерах. Картинка логотипа на всю плашку **52**, рамка `border/subtle`, фон `surface/page` — и у места работы, и у проекта. Карточка radius **32**, gap 16. Skeleton-плашки: дата radius **8** и высота **15**, заголовок и роль radius **12**, описание **16**. На `XL` плашка заголовка **28** (строка `title2`).  
 **Заголовок, телефон (`< 768`):** одна строка. Если название не помещается в колонку рядом с логотипом, конец обрезается многоточием. От `768` заголовок переносится целиком.  
-**Hover (Active), desktop (`≥ 1160`):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация не задаёт `transform` на том же слое (иначе она перебивает наклон). Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.  
+**Hover (Active), desktop (`≥ 1160`):** tilt как [Tilted Card](https://reactbits.dev/components/tilted-card) через `motion` — `perspective: 800px`, `rotateX/Y` до ±12°, `scale(1.1)`, пружина stiffness 100 / damping 30 / mass 2. Reveal-анимация двигает только элементы внутри карточки, не слой наклона, поэтому наклон не перебивает. Место в потоке не меняется. При `prefers-reduced-motion` эффекта нет.  
 **Press, mobile и tablet (`< 1160`):** tilt нет. Пока кнопка мыши или палец зажаты, карточка `transform: scale(0.95)` (на 5% меньше), `transform-origin: center`, 150ms `ease-out`. Место в потоке не меняется.
 
 ### 7.3 Button
