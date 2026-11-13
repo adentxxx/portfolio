@@ -1,5 +1,6 @@
 import { ButtonHomeIcon } from "@/components/portfolio/decor-icons";
 import { Button } from "@/components/ui/button";
+import { enter } from "@/lib/enter";
 import { pagePath, publicPath } from "@/lib/public-path";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -39,6 +40,7 @@ export default function NotFound() {
       <h1 className="sr-only">404. Куда-то не туда попал</h1>
       <div
         aria-hidden
+        {...enter(0)}
         className="flex items-end justify-center md:gap-2"
       >
         <Digit />
@@ -74,7 +76,7 @@ export default function NotFound() {
         </span>
         <Digit />
       </div>
-      <Button asChild mode="accent">
+      <Button asChild mode="accent" {...enter(2)}>
         <Link href={pagePath("/")}>
           <ButtonHomeIcon />
           На главную

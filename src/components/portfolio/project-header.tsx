@@ -3,6 +3,7 @@
 import { EmotionFace } from "@/components/portfolio/emotion-face";
 import { Button } from "@/components/ui/button";
 import type { IntroLink } from "@/lib/content";
+import { enter } from "@/lib/enter";
 import { cn } from "@/lib/utils";
 import { useLayoutEffect, useRef, useState } from "react";
 
@@ -51,7 +52,7 @@ export function ProjectHeader({ links, faces }: ProjectHeaderProps) {
         wrapped ? "justify-center" : "justify-between",
       )}
     >
-      <div data-project-face className="shrink-0">
+      <div data-project-face {...enter(0)} className="shrink-0">
         <EmotionFace size={80} faces={faces} />
       </div>
       <div
@@ -61,8 +62,13 @@ export function ProjectHeader({ links, faces }: ProjectHeaderProps) {
           wrapped ? "justify-center" : "justify-end",
         )}
       >
-        {links.map((link) => (
-          <Button key={link.label} asChild mode="fill">
+        {links.map((link, index) => (
+          <Button
+            key={link.label}
+            asChild
+            mode="fill"
+            {...enter(0.5 + index * 0.5)}
+          >
             <a href={link.href} target="_blank" rel="noreferrer">
               {link.label}
             </a>

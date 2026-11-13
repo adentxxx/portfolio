@@ -10,6 +10,7 @@ import { ProjectHeader } from "@/components/portfolio/project-header";
 import { Button } from "@/components/ui/button";
 import { getProjectBySlug, getProjectNav, type ContactLink } from "@/lib/content";
 import { isSafePublicPath } from "@/lib/content-format";
+import { enter } from "@/lib/enter";
 import { pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -208,6 +209,7 @@ function CaseNav({
 
   return (
     <nav
+      {...enter(6)}
       aria-label="Другие кейсы"
       className={
         stretch
@@ -351,7 +353,7 @@ export default async function ProjectPage({ params }: PageProps) {
     <main className="min-h-screen bg-surface-page">
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 min-[1192px]:px-0",
+          "case-enter mx-auto flex w-full max-w-[1160px] flex-col gap-10 px-4 pt-10 min-[1192px]:px-0",
           // The NDA page is short, so the last buttons need room above the fixed bars.
           project.nda ? "pb-64" : "pb-32 md:pb-10",
         )}
@@ -359,17 +361,23 @@ export default async function ProjectPage({ params }: PageProps) {
         <ProjectHeader links={nav.intro.links} faces={nav.intro.faces} />
 
         <div className="home-phone-type flex flex-col items-center gap-2 text-center">
-          <h1 className="text-largeTitle text-text-primary">{project.title}</h1>
+          <h1 {...enter(2)} className="text-largeTitle text-text-primary">
+            {project.title}
+          </h1>
           {project.summary ? (
-            <p className="max-w-[1160px] whitespace-pre-line text-body text-text-secondary">
+            <p
+              {...enter(3)}
+              className="max-w-[1160px] whitespace-pre-line text-body text-text-secondary"
+            >
               {project.summary}
             </p>
           ) : null}
           {!project.nda && project.tags.length > 0 ? (
             <div className="flex flex-wrap justify-center gap-2 text-caption1">
-              {project.tags.map((tag) => (
+              {project.tags.map((tag, index) => (
                 <span
                   key={tag}
+                  {...enter(3.5 + Math.min(index, 5) * 0.5)}
                   className="card-tag flex items-center gap-1 rounded-lg bg-surface-inverse px-2 py-1"
                 >
                   <span className="text-accent-primary">#</span>

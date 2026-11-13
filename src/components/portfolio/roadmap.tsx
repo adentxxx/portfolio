@@ -13,6 +13,7 @@ import {
   type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
 import { WorkModal } from "@/components/portfolio/work-modal";
+import { enter } from "@/lib/enter";
 import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -807,6 +808,9 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
   return (
     <section
+      // Fade only: the connector and the dots are measured on mount, and a
+      // shifted box would be read as their geometry.
+      {...enter(5, "fade")}
       className="relative mx-auto mt-12 w-full max-w-[1160px] px-4 min-[1160px]:mt-20"
       aria-label="Roadmap"
     >

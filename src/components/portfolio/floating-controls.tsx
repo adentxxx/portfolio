@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/hooks/use-theme";
+import { enter } from "@/lib/enter";
 import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import {
@@ -262,6 +263,7 @@ export function FloatingControls({
     // gap 16, 40 from the corner (405:13070). Below 768: one settings button,
     // 12 from the corner (405:14319). Embedded: the parent owns the offset.
     <div
+      {...enter(7)}
       className={cn(
         !embedded && "fixed bottom-3 right-3 z-50 md:bottom-10 md:right-10",
         className,
