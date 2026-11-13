@@ -27,6 +27,16 @@
   --accent-primary-hover: #d87216;
   --accent-information: #1968e5;
 
+  /* Liquid glass, Figma Iteration 2 (405:13070). Values of the iOS glass BG. */
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-ring: #e8e8e8;
+  --glass-edge: #d0d0d0;
+  --glass-shine: rgba(255, 255, 255, 0.95);
+  --glass-shadow: rgba(0, 0, 0, 0.02);
+  --glass-solid: #f2f1ed;
+  /* Bloub inner glow (405:13014): inset 0 4 8, white 60%. Same in both themes. */
+  --bloub-glow: #ffffff;
+
   /* Type scale */
   --size-largeTitle: 34px;
   --lh-largeTitle: 40px;
@@ -77,6 +87,12 @@
     --accent-primary: #f7aa55;
     --accent-primary-hover: #ffc98f;
     --accent-information: #79aafa;
+    --glass-fill: rgba(255, 255, 255, 0.07);
+    --glass-ring: rgba(255, 255, 255, 0.12);
+    --glass-edge: rgba(255, 255, 255, 0.2);
+    --glass-shine: rgba(255, 255, 255, 0.22);
+    --glass-shadow: rgba(0, 0, 0, 0.24);
+    --glass-solid: #323232;
   }
 }
 
@@ -102,6 +118,12 @@
   --accent-primary: #f7aa55;
   --accent-primary-hover: #ffc98f;
   --accent-information: #79aafa;
+  --glass-fill: rgba(255, 255, 255, 0.07);
+  --glass-ring: rgba(255, 255, 255, 0.12);
+  --glass-edge: rgba(255, 255, 255, 0.2);
+  --glass-shine: rgba(255, 255, 255, 0.22);
+  --glass-shadow: rgba(0, 0, 0, 0.24);
+  --glass-solid: #323232;
 }
 
 @theme inline {
@@ -302,6 +324,378 @@ body {
 
 .btn-fill.btn-fill-subtle:disabled:hover {
   transform: none;
+}
+
+/*
+  Liquid glass (Figma Iteration 2, Button Bar 405:13070 and Menu 405:14426).
+  One backdrop blur per surface, no SVG filters: the rim light and the glint
+  are box-shadows and a static gradient. Motion runs on transform, opacity,
+  and the size of one small fixed box, so nothing on the page re-lays out.
+*/
+.glass {
+  --ease-liquid: cubic-bezier(0.3, 1.35, 0.5, 1);
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(12px) saturate(1.8);
+  backdrop-filter: blur(12px) saturate(1.8);
+  box-shadow:
+    1.25px 0 0 -0.75px var(--glass-edge),
+    -1.25px 0 0 -0.75px var(--glass-edge),
+    0 0 0 0.5px var(--glass-ring),
+    0 8px 15px 0 var(--glass-shadow),
+    inset 0 1px 0.5px 0 var(--glass-shine),
+    inset 0 -1px 0.5px 0 color-mix(in srgb, var(--glass-shine) 35%, transparent);
+}
+
+/* Glint: light caught on the upper left of the glass, a weaker echo below. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 18% 0%,
+      color-mix(in srgb, var(--glass-shine) 55%, transparent) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      90% 70% at 85% 100%,
+      color-mix(in srgb, var(--glass-shine) 22%, transparent) 0%,
+      transparent 60%
+    );
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-solid);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Figma icon in its 24px slot, tinted by the text color. */
+.glass-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* Round glass button 64, icon slot 52 (405:14320). */
+.glass-button {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  color: var(--icon-primary);
+  transition: scale 420ms var(--ease-liquid);
+}
+
+.glass-button:hover {
+  scale: 1.05;
+}
+
+.glass-button:active {
+  scale: 0.94;
+  transition-duration: 120ms;
+}
+
+/* Theme switch: two 52px slots, gap 4, padding 6 (405:13077, 405:14427). */
+.glass-switch {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 32px;
+}
+
+.glass-switch-v {
+  flex-direction: column;
+  width: 64px;
+}
+
+.glass-switch-h {
+  width: 100%;
+}
+
+.glass-seg {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: 52px;
+  flex: 1 0 0;
+  min-width: 0;
+  border-radius: 26px;
+  color: var(--icon-primary);
+  transition:
+    color 320ms ease,
+    scale 420ms var(--ease-liquid);
+}
+
+.glass-switch-v .glass-seg {
+  flex: none;
+  width: 52px;
+}
+
+.glass-seg[aria-checked="true"] {
+  color: var(--text-on-inverse);
+}
+
+.glass-seg[aria-checked="false"]:active {
+  scale: 0.9;
+  transition-duration: 120ms;
+}
+
+/* The thumb sits on the first slot and slides by one slot plus the gap. */
+.glass-thumb {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  height: 52px;
+  width: 52px;
+  pointer-events: none;
+}
+
+.glass-switch-h .glass-thumb {
+  width: calc((100% - 16px) / 2);
+  translate: calc(var(--i) * (100% + 4px)) 0;
+}
+
+.glass-switch-v .glass-thumb {
+  translate: 0 calc(var(--i) * (100% + 4px));
+}
+
+.glass-thumb[data-moved] {
+  transition: translate 520ms var(--ease-liquid);
+}
+
+.glass-thumb-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 26px;
+  background: var(--surface-inverse);
+}
+
+/* A drop in motion: long along the way, thin across, then it settles. */
+@keyframes glass-stretch-v {
+  0% {
+    scale: 1 1;
+  }
+  35% {
+    scale: 0.86 1.24;
+  }
+  70% {
+    scale: 1.05 0.95;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+@keyframes glass-stretch-h {
+  0% {
+    scale: 1 1;
+  }
+  35% {
+    scale: 1.16 0.84;
+  }
+  70% {
+    scale: 0.97 1.05;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+.glass-switch-v .glass-thumb-fill[data-stretch] {
+  animation: glass-stretch-v 520ms ease-out;
+}
+
+.glass-switch-h .glass-thumb-fill[data-stretch] {
+  animation: glass-stretch-h 520ms ease-out;
+}
+
+/* Language, desktop: the 64px button itself grows into the menu (212×100). */
+.glass-lang {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.glass-lang-surface {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 32px;
+  transition:
+    width 480ms var(--ease-liquid),
+    height 480ms var(--ease-liquid),
+    scale 420ms var(--ease-liquid);
+}
+
+.glass-lang:not([data-open]) .glass-lang-surface:hover {
+  scale: 1.05;
+}
+
+.glass-lang:not([data-open]) .glass-lang-surface:active {
+  scale: 0.94;
+  transition-duration: 120ms;
+}
+
+.glass-lang[data-open] .glass-lang-surface {
+  width: 212px;
+  height: 100px;
+}
+
+.glass-lang-trigger {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  color: var(--icon-primary);
+  transition:
+    opacity 180ms ease,
+    scale 320ms ease;
+}
+
+.glass-lang[data-open] .glass-lang-trigger {
+  opacity: 0;
+  scale: 0.5;
+  pointer-events: none;
+}
+
+.glass-lang-items {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 212px;
+}
+
+/* Menu rows: 40 high, check slot 24, label 17 (405:14334). */
+.glass-items {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px;
+}
+
+.glass-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 40px;
+  padding: 0 8px 0 6px;
+  border-radius: 12px;
+  color: var(--text-primary);
+  text-align: left;
+  transition:
+    opacity 240ms ease,
+    translate 480ms var(--ease-liquid);
+}
+
+.glass-item:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.glass-item-check {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 22px;
+  flex: none;
+}
+
+.glass-lang:not([data-open]) .glass-item {
+  opacity: 0;
+  translate: 16px 0;
+  transition-duration: 120ms;
+}
+
+.glass-lang[data-open] .glass-item:nth-child(1) {
+  transition-delay: 110ms;
+}
+
+.glass-lang[data-open] .glass-item:nth-child(2) {
+  transition-delay: 160ms;
+}
+
+/* Phone: one settings button, the menu flows out of it (405:14426). */
+.glass-settings {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+
+.glass-settings-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 212px;
+}
+
+/* Both panels grow from the centre of the settings button below them. */
+.glass-settings-panel > * {
+  transform-origin: calc(100% - 32px) calc(100% + 44px);
+  transition:
+    opacity 220ms ease,
+    scale 460ms var(--ease-liquid);
+}
+
+.glass-settings-panel > :first-child {
+  transform-origin: calc(100% - 32px) calc(100% + 152px);
+}
+
+.glass-settings:not([data-open]) .glass-settings-panel {
+  pointer-events: none;
+}
+
+.glass-settings:not([data-open]) .glass-settings-panel > * {
+  opacity: 0;
+  scale: 0.3;
+  transition-duration: 160ms, 220ms;
+  transition-timing-function: ease-in;
+}
+
+.glass-settings[data-open] .glass-settings-panel > :first-child {
+  transition-delay: 60ms;
+}
+
+.glass-menu {
+  border-radius: 32px;
+}
+
+.glass-settings .glass-button .glass-icon {
+  transition: rotate 520ms var(--ease-liquid);
+}
+
+.glass-settings[data-open] .glass-button .glass-icon {
+  rotate: 60deg;
 }
 
 /* Opacity on the button itself drops backdrop-filter. Fade only the icon. */

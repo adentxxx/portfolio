@@ -131,10 +131,12 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const decodingRef = useRef<Partial<Record<SoundKind, Promise<void>>>>({});
 
   useEffect(() => {
-    const stored = localStorage.getItem("portfolio-muted");
-    if (stored === "1") {
-      mutedRef.current = true;
-      setMutedState(true);
+    // The Button Bar has no mute since Iteration 2. A choice saved by the old
+    // button would leave the site silent with no way back, so drop it.
+    try {
+      localStorage.removeItem("portfolio-muted");
+    } catch {
+      /* private mode */
     }
   }, []);
 
@@ -175,7 +177,6 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const setMuted = useCallback((value: boolean) => {
     mutedRef.current = value;
     setMutedState(value);
-    localStorage.setItem("portfolio-muted", value ? "1" : "0");
   }, []);
 
   const context = useCallback(() => {

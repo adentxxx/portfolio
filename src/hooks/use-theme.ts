@@ -19,12 +19,14 @@ type Theme = "light" | "dark";
 type ThemeContextValue = {
   theme: Theme;
   toggleTheme: (origin?: { x: number; y: number }) => void;
-  setTheme: (theme: Theme) => void;
+  /** With an origin the new theme opens as a circle from that point. */
+  setTheme: (theme: Theme, origin?: { x: number; y: number }) => void;
 };
 
 type ViewTransitionHandle = {
   ready: Promise<void>;
   finished: Promise<void>;
+  skipTransition?: () => void;
 };
 
 function startCircularTransition(update: () => void): ViewTransitionHandle | null {
@@ -106,69 +108,121 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => media.removeEventListener("change", sync);
   }, []);
 
-  const setTheme = applyTheme;
   // A second startViewTransition while the circle is still running crashes
-  // Chrome (STATUS_BREAKPOINT). Ignore toggles until this one finishes.
-  const themeAnimating = useRef(false);
+  // Chrome (STATUS_BREAKPOINT). A press during the circle must still answer
+  // at once: cut the running circle short and start the next one as soon as
+  // the browser reports the first as finished.
+  const running = useRef<ViewTransitionHandle | null>(null);
+  const queued = useRef(false);
 
-  const toggleTheme = useCallback(
-    (origin?: { x: number; y: number }) => {
-      if (themeAnimating.current) return;
+  // The theme the last press asked for. A press names its theme, so two
+  // quick presses never cancel out or get lost while a circle is drawing.
+  const wanted = useRef<Theme | null>(null);
 
-      const next: Theme = currentTheme() === "light" ? "dark" : "light";
+  const goTo = useCallback(
+    (target: Theme, origin?: { x: number; y: number }) => {
+      const busy = running.current !== null || queued.current;
+      // The same theme asked again while its circle is still drawing.
+      if (busy && wanted.current === target) return;
+      wanted.current = target;
+
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (reduced || !origin) {
-        applyTheme(next);
+        applyTheme(target);
         return;
       }
 
       const { x, y } = origin;
-      const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y),
-      );
 
-      themeAnimating.current = true;
-      const release = () => {
-        themeAnimating.current = false;
+      const run = () => {
+        // Read both here, not at the press: the cut-short circle has painted
+        // its theme by now, and a later press may have changed the goal.
+        const next = wanted.current;
+        if (!next || next === currentTheme()) return;
+        const endRadius = Math.hypot(
+          Math.max(x, window.innerWidth - x),
+          Math.max(y, window.innerHeight - y),
+        );
+
+        const transition = startCircularTransition(() => {
+          // The browser calls this a frame or more later. Paint the goal as
+          // it stands then, so a press made in between is not overwritten.
+          flushSync(() => {
+            applyTheme(wanted.current ?? next);
+          });
+        });
+
+        if (!transition) {
+          applyTheme(next);
+          return;
+        }
+
+        running.current = transition;
+        const release = () => {
+          if (running.current === transition) running.current = null;
+        };
+
+        transition.finished.then(release, release);
+        transition.ready.then(() => {
+          try {
+            document.documentElement.animate(
+              {
+                clipPath: [
+                  `circle(0px at ${x}px ${y}px)`,
+                  `circle(${endRadius}px at ${x}px ${y}px)`,
+                ],
+              },
+              {
+                duration: 700,
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                pseudoElement: "::view-transition-new(root)",
+              },
+            );
+          } catch {
+            release();
+          }
+        }, release);
       };
 
-      const transition = startCircularTransition(() => {
-        flushSync(() => {
-          applyTheme(next);
-        });
-      });
-
-      if (!transition) {
-        release();
-        applyTheme(next);
+      const current = running.current;
+      if (!current) {
+        run();
         return;
       }
 
-      transition.finished.then(release, release);
-      window.setTimeout(release, 1200);
-      transition.ready.then(() => {
-        try {
-          document.documentElement.animate(
-            {
-              clipPath: [
-                `circle(0px at ${x}px ${y}px)`,
-                `circle(${endRadius}px at ${x}px ${y}px)`,
-              ],
-            },
-            {
-              duration: 700,
-              easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-              pseudoElement: "::view-transition-new(root)",
-            },
-          );
-        } catch {
-          release();
-        }
-      }, release);
+      // One press is already waiting for the circle to end.
+      if (queued.current) return;
+      queued.current = true;
+      let started = false;
+      const go = () => {
+        if (started) return;
+        started = true;
+        queued.current = false;
+        if (running.current === current) running.current = null;
+        run();
+      };
+      current.finished.then(go, go);
+      // If the browser never settles `finished`, do not swallow the press.
+      window.setTimeout(go, 1000);
+      try {
+        current.skipTransition?.();
+      } catch {
+        /* older engines: wait for the circle to end */
+      }
     },
     [applyTheme],
+  );
+
+  const setTheme = goTo;
+
+  const toggleTheme = useCallback(
+    (origin?: { x: number; y: number }) => {
+      const busy = running.current !== null || queued.current;
+      const base = busy && wanted.current ? wanted.current : currentTheme();
+      goTo(base === "light" ? "dark" : "light", origin);
+    },
+    [goTo],
   );
 
   const value = useMemo(
