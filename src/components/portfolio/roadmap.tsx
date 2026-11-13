@@ -13,6 +13,7 @@ import {
   type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
 import { WorkModal } from "@/components/portfolio/work-modal";
+import { useUi } from "@/hooks/use-locale";
 import { enter } from "@/lib/enter";
 import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
@@ -306,6 +307,7 @@ function ColumnLabel({
 }
 
 export function Roadmap({ companies, projects }: RoadmapProps) {
+  const ui = useUi();
   const avatarSrcs = useMemo(
     () => cardAvatarSrcs([...companies, ...projects]),
     [companies, projects],
@@ -839,7 +841,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
       {/* Header RoadMap: 480 | 80 | 480, gap 48 (desktop). Mobile: centered bloub, no column labels. */}
       <header className="relative flex flex-col items-center pb-16 min-[1160px]:grid min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:items-start min-[1160px]:gap-6 min-[1160px]:pb-0">
         <div className="hidden min-[1160px]:block">
-          <ColumnLabel label="опыт работы" align="left" />
+          <ColumnLabel label={ui.work} align="left" />
         </div>
 
         <div className="flex w-20 flex-col items-center gap-3">
@@ -911,7 +913,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
             aria-hidden={hasScrolled}
           >
             <p className="whitespace-nowrap text-center text-caption1 text-accent-primary">
-              начинай скроллить
+              {ui.startScrolling}
             </p>
             <ScrollArrow className="hidden text-accent-primary min-[1160px]:block" />
           </div>
@@ -919,7 +921,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
         <div className="hidden min-[1160px]:block">
           {casesLabelInHeader ? (
-            <ColumnLabel label="кейсы" align="right" />
+            <ColumnLabel label={ui.cases} align="right" />
           ) : null}
         </div>
       </header>
@@ -1097,7 +1099,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
                 {index === 0 && !casesLabelInHeader ? (
                   <div className="hidden min-[1160px]:col-start-3 min-[1160px]:row-start-1 min-[1160px]:block">
-                    <ColumnLabel label="кейсы" align="right" />
+                    <ColumnLabel label={ui.cases} align="right" />
                   </div>
                 ) : null}
               </div>
@@ -1179,7 +1181,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
               lit={passedIndex >= rows.length}
             />
           </span>
-          <p className="sr-only">Конец roadmap</p>
+          <p className="sr-only">{ui.roadmapEnd}</p>
         </footer>
       </div>
       {openWork ? (

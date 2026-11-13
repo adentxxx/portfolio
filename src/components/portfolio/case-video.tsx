@@ -1,5 +1,6 @@
 "use client";
 
+import { useUi } from "@/hooks/use-locale";
 import { publicPath } from "@/lib/public-path";
 import { useEffect, useRef, useState } from "react";
 
@@ -18,6 +19,7 @@ export function CaseVideo({
   loop: boolean;
   controls: boolean;
 }) {
+  const ui = useUi();
   const [motionReady, setMotionReady] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -107,7 +109,7 @@ export function CaseVideo({
           : "video-clean absolute inset-0 size-full cursor-pointer object-contain"
       }
       tabIndex={controls ? undefined : 0}
-      aria-label={controls ? undefined : playing ? "Пауза" : "Воспроизвести видео"}
+      aria-label={controls ? undefined : playing ? ui.videoPause : ui.videoPlay}
       onPlay={() => setPlaying(true)}
       onPause={() => setPlaying(false)}
       onClick={controls ? undefined : (event) => toggle(event.currentTarget)}

@@ -1,10 +1,14 @@
 import { ButtonHomeIcon } from "@/components/portfolio/decor-icons";
+import {
+  NotFoundBubble,
+  NotFoundHomeLink,
+  NotFoundTitle,
+} from "@/components/portfolio/not-found-copy";
 import { Button } from "@/components/ui/button";
 import { enter } from "@/lib/enter";
-import { pagePath, publicPath } from "@/lib/public-path";
+import { publicPath } from "@/lib/public-path";
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: { absolute: "404" },
@@ -37,7 +41,7 @@ function dotMask(src: string, width: number) {
 export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-12 bg-surface-page py-12 md:gap-[60px] md:py-0">
-      <h1 className="sr-only">404. Куда-то не туда попал</h1>
+      <NotFoundTitle />
       <div
         aria-hidden
         {...enter(0)}
@@ -70,17 +74,14 @@ export default function NotFound() {
               className="flex items-center justify-center rounded-[24px] bg-surface-inverse px-3 py-1.5 text-center text-caption2 whitespace-nowrap text-text-on-inverse"
               style={{ fontWeight: 500 }}
             >
-              куда-то не туда попал...
+              <NotFoundBubble />
             </span>
           </span>
         </span>
         <Digit />
       </div>
       <Button asChild mode="accent" {...enter(2)}>
-        <Link href={pagePath("/")}>
-          <ButtonHomeIcon />
-          На главную
-        </Link>
+        <NotFoundHomeLink icon={<ButtonHomeIcon />} />
       </Button>
     </main>
   );

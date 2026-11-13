@@ -14,9 +14,11 @@ import {
   CheckField,
   Field,
   FileButton,
+  LangField,
   Status,
   TrashButton,
   inputClass,
+  type EditLang,
 } from "@/components/portfolio/admin/fields";
 import { BloubSettings } from "@/components/portfolio/admin/bloub-picker";
 import { Button } from "@/components/ui/button";
@@ -165,11 +167,13 @@ export function ContentTab({
   companies: initialCompanies,
   projects: initialProjects,
   clock,
+  lang,
   onUnauthorized,
 }: {
   companies: AdminCompany[];
   projects: AdminProject[];
   clock: RankClock;
+  lang: EditLang;
   onUnauthorized: () => void;
 }) {
   const [companies, setCompanies] = useState(initialCompanies);
@@ -377,6 +381,7 @@ export function ContentTab({
           <CompanyEditor
             key={company.id}
             company={company}
+            lang={lang}
             open={openId === company.id}
             saving={savingId === company.id}
             dragging={dragId === company.id}
@@ -428,6 +433,7 @@ export function ContentTab({
           <ProjectEditor
             key={project.id}
             project={project}
+            lang={lang}
             open={openId === project.id}
             saving={savingId === project.id}
             onToggle={() =>
@@ -531,6 +537,7 @@ function CardShell({
 
 function CompanyEditor({
   company,
+  lang,
   open,
   saving,
   dragging,
@@ -547,6 +554,7 @@ function CompanyEditor({
   onDrop,
 }: {
   company: AdminCompany;
+  lang: EditLang;
   open: boolean;
   saving: boolean;
   dragging: boolean;
@@ -599,13 +607,14 @@ function CompanyEditor({
             onChange={(logoSrc) => onChange({ logoSrc })}
             onError={onError}
           />
-          <Field label="Заголовок">
-            <input
-              value={company.name}
-              onChange={(event) => onChange({ name: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
+          <LangField
+            label="Заголовок"
+            lang={lang}
+            ru={company.name}
+            en={company.nameEn}
+            onRu={(name) => onChange({ name })}
+            onEn={(nameEn) => onChange({ nameEn })}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Начало, месяц">
               <MonthSelect
@@ -657,21 +666,23 @@ function CompanyEditor({
               </>
             ) : null}
           </p>
-          <Field label="Роль в компании">
-            <input
-              value={company.role}
-              onChange={(event) => onChange({ role: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Описание для карточки">
-            <textarea
-              value={company.description}
-              rows={4}
-              onChange={(event) => onChange({ description: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
+          <LangField
+            label="Роль в компании"
+            lang={lang}
+            ru={company.role}
+            en={company.roleEn}
+            onRu={(role) => onChange({ role })}
+            onEn={(roleEn) => onChange({ roleEn })}
+          />
+          <LangField
+            label="Описание для карточки"
+            lang={lang}
+            rows={4}
+            ru={company.description}
+            en={company.descriptionEn}
+            onRu={(description) => onChange({ description })}
+            onEn={(descriptionEn) => onChange({ descriptionEn })}
+          />
           <BloubSettings
             shape={company.bloubShape}
             state={company.bloubState}
@@ -688,6 +699,7 @@ function CompanyEditor({
           </p>
           <BlockEditor
             ref={blocksRef}
+            lang={lang}
             blocks={company.blocks}
             onChange={(blocks: EditorBlock[]) => onChange({ blocks })}
             onError={onError}
@@ -712,6 +724,7 @@ function CompanyEditor({
 
 function ProjectEditor({
   project,
+  lang,
   open,
   saving,
   onToggle,
@@ -721,6 +734,7 @@ function ProjectEditor({
   onDelete,
 }: {
   project: AdminProject;
+  lang: EditLang;
   open: boolean;
   saving: boolean;
   onToggle: () => void;
@@ -775,13 +789,14 @@ function ProjectEditor({
             onChange={(logoSrc) => onChange({ logoSrc })}
             onError={onError}
           />
-          <Field label="Заголовок">
-            <input
-              value={project.title}
-              onChange={(event) => onChange({ title: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
+          <LangField
+            label="Заголовок"
+            lang={lang}
+            ru={project.title}
+            en={project.titleEn}
+            onRu={(title) => onChange({ title })}
+            onEn={(titleEn) => onChange({ titleEn })}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Месяц создания">
               <MonthSelect
@@ -833,14 +848,15 @@ function ProjectEditor({
               />
             </div>
           </Field>
-          <Field label="Описание для карточки">
-            <textarea
-              value={project.description}
-              rows={4}
-              onChange={(event) => onChange({ description: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
+          <LangField
+            label="Описание для карточки"
+            lang={lang}
+            rows={4}
+            ru={project.description}
+            en={project.descriptionEn}
+            onRu={(description) => onChange({ description })}
+            onEn={(descriptionEn) => onChange({ descriptionEn })}
+          />
           <BloubSettings
             shape={project.bloubShape}
             state={project.bloubState}
@@ -861,14 +877,15 @@ function ProjectEditor({
               className={inputClass}
             />
           </Field>
-          <Field label="Текст под заголовком">
-            <textarea
-              value={project.summary}
-              rows={3}
-              onChange={(event) => onChange({ summary: event.target.value })}
-              className={inputClass}
-            />
-          </Field>
+          <LangField
+            label="Текст под заголовком"
+            lang={lang}
+            rows={3}
+            ru={project.summary}
+            en={project.summaryEn}
+            onRu={(summary) => onChange({ summary })}
+            onEn={(summaryEn) => onChange({ summaryEn })}
+          />
           <CheckField
             checked={project.nda}
             label="Проект под NDA"
@@ -887,25 +904,28 @@ function ProjectEditor({
                 фотография, короткое описание и кнопки из блока «Обратная связь».
                 Остальные блоки сохраняются и появятся, если снять NDA.
               </p>
-              <Field label="Заголовок">
-                <input
-                  value={project.ndaTitle}
-                  onChange={(event) => onChange({ ndaTitle: event.target.value })}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Короткое описание">
-                <textarea
-                  value={project.ndaText}
-                  rows={5}
-                  onChange={(event) => onChange({ ndaText: event.target.value })}
-                  className={inputClass}
-                />
-              </Field>
+              <LangField
+                label="Заголовок"
+                lang={lang}
+                ru={project.ndaTitle}
+                en={project.ndaTitleEn}
+                onRu={(ndaTitle) => onChange({ ndaTitle })}
+                onEn={(ndaTitleEn) => onChange({ ndaTitleEn })}
+              />
+              <LangField
+                label="Короткое описание"
+                lang={lang}
+                rows={5}
+                ru={project.ndaText}
+                en={project.ndaTextEn}
+                onRu={(ndaText) => onChange({ ndaText })}
+                onEn={(ndaTextEn) => onChange({ ndaTextEn })}
+              />
             </>
           ) : null}
           <BlockEditor
             ref={blocksRef}
+            lang={lang}
             blocks={project.blocks}
             allowImages
             onChange={(blocks) => onChange({ blocks })}

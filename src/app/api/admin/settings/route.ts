@@ -7,46 +7,60 @@ function jsonError(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
-type IntroLink = { label: string; href: string; icon?: string };
-type ContactLink = { label: string; href: string };
+type StoredLink = {
+  label: string;
+  href: string;
+  icon?: string;
+  /** English label and address. Left out when empty. */
+  labelEn?: string;
+  hrefEn?: string;
+};
 
-function readIntroLinks(raw: unknown): IntroLink[] | null {
+/** Buttons under the intro and in the contact block. Icons belong to the intro. */
+function readLinks(raw: unknown, withIcon: boolean): StoredLink[] | null {
   if (!Array.isArray(raw) || raw.length > 12) return null;
-  const links: IntroLink[] = [];
+  const links: StoredLink[] = [];
   for (const item of raw) {
     if (!item || typeof item !== "object") return null;
-    const label = (item as { label?: unknown }).label;
-    const href = (item as { href?: unknown }).href;
-    const icon = (item as { icon?: unknown }).icon;
-    if (typeof label !== "string" || typeof href !== "string") return null;
-    const trimmedLabel = label.trim();
-    const trimmedHref = href.trim();
-    if (!trimmedLabel || trimmedLabel.length > 80 || !isSafeHref(trimmedHref)) {
+    const record = item as {
+      label?: unknown;
+      href?: unknown;
+      icon?: unknown;
+      labelEn?: unknown;
+      hrefEn?: unknown;
+    };
+    if (typeof record.label !== "string" || typeof record.href !== "string") {
       return null;
     }
-    const link: IntroLink = { label: trimmedLabel, href: trimmedHref };
-    if (typeof icon === "string" && icon.length <= 40) link.icon = icon;
+    const label = record.label.trim();
+    const href = record.href.trim();
+    if (!label || label.length > 80 || !isSafeHref(href)) return null;
+    const link: StoredLink = { label, href };
+    if (withIcon && typeof record.icon === "string" && record.icon.length <= 40) {
+      link.icon = record.icon;
+    }
+    if (record.labelEn !== undefined && record.labelEn !== null) {
+      if (typeof record.labelEn !== "string") return null;
+      const labelEn = record.labelEn.trim();
+      if (labelEn.length > 80) return null;
+      if (labelEn) link.labelEn = labelEn;
+    }
+    if (record.hrefEn !== undefined && record.hrefEn !== null) {
+      if (typeof record.hrefEn !== "string") return null;
+      const hrefEn = record.hrefEn.trim();
+      if (hrefEn && !isSafeHref(hrefEn)) return null;
+      if (hrefEn) link.hrefEn = hrefEn;
+    }
     links.push(link);
   }
   return links;
 }
 
-function readContactLinks(raw: unknown): ContactLink[] | null {
-  if (!Array.isArray(raw) || raw.length > 12) return null;
-  const links: ContactLink[] = [];
-  for (const item of raw) {
-    if (!item || typeof item !== "object") return null;
-    const label = (item as { label?: unknown }).label;
-    const href = (item as { href?: unknown }).href;
-    if (typeof label !== "string" || typeof href !== "string") return null;
-    const trimmedLabel = label.trim();
-    const trimmedHref = href.trim();
-    if (!trimmedLabel || trimmedLabel.length > 80 || !isSafeHref(trimmedHref)) {
-      return null;
-    }
-    links.push({ label: trimmedLabel, href: trimmedHref });
-  }
-  return links;
+/** English copy: optional, a string within the limit. Missing reads as empty. */
+function readEn(value: unknown, max: number): string | null {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string" || value.length > max) return null;
+  return value;
 }
 
 export async function PUT(request: Request) {
@@ -58,6 +72,10 @@ export async function PUT(request: Request) {
     introBio?: unknown;
     contactHeadline?: unknown;
     contactSubline?: unknown;
+    introHeadlineEn?: unknown;
+    introBioEn?: unknown;
+    contactHeadlineEn?: unknown;
+    contactSublineEn?: unknown;
     introLinks?: unknown;
     contactLinks?: unknown;
     faces?: unknown;
@@ -84,8 +102,20 @@ export async function PUT(request: Request) {
   ) {
     return jsonError("Проверьте текст обратной связи", 400);
   }
-  const introLinks = readIntroLinks(body.introLinks);
-  const contactLinks = readContactLinks(body.contactLinks);
+  const introHeadlineEn = readEn(body.introHeadlineEn, 2000);
+  const introBioEn = readEn(body.introBioEn, 4000);
+  const contactHeadlineEn = readEn(body.contactHeadlineEn, 200);
+  const contactSublineEn = readEn(body.contactSublineEn, 2000);
+  if (
+    introHeadlineEn === null ||
+    introBioEn === null ||
+    contactHeadlineEn === null ||
+    contactSublineEn === null
+  ) {
+    return jsonError("Проверьте английский текст: он слишком длинный", 400);
+  }
+  const introLinks = readLinks(body.introLinks, true);
+  const contactLinks = readLinks(body.contactLinks, false);
   if (!introLinks || !contactLinks) {
     return jsonError(
       "Проверьте кнопки: у каждой нужны подпись и ссылка http, https, mailto или путь на сайте",
@@ -109,6 +139,10 @@ export async function PUT(request: Request) {
       introBio: body.introBio,
       contactHeadline: body.contactHeadline,
       contactSubline: body.contactSubline,
+      introHeadlineEn,
+      introBioEn,
+      contactHeadlineEn,
+      contactSublineEn,
       introLinksJson: JSON.stringify(introLinks),
       contactLinksJson: JSON.stringify(contactLinks),
       avatarFacesJson: JSON.stringify(faces),
@@ -118,9 +152,13 @@ export async function PUT(request: Request) {
 
   return NextResponse.json({
     introHeadline: updated.introHeadline,
+    introHeadlineEn: updated.introHeadlineEn,
     introBio: updated.introBio,
+    introBioEn: updated.introBioEn,
     contactHeadline: updated.contactHeadline,
+    contactHeadlineEn: updated.contactHeadlineEn,
     contactSubline: updated.contactSubline,
+    contactSublineEn: updated.contactSublineEn,
     introLinks,
     contactLinks,
     faces: parseFaces(updated.avatarFacesJson),

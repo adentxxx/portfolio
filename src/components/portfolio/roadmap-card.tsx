@@ -1,6 +1,8 @@
 "use client";
 
 import { TiltedSurface } from "@/components/portfolio/tilted-surface";
+import { useLocale } from "@/hooks/use-locale";
+import { localizePath } from "@/lib/i18n";
 import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -128,6 +130,7 @@ export function RoadmapCard({
   concealed = false,
   onOpenWork,
 }: RoadmapCardProps) {
+  const locale = useLocale();
   const tiltEnabled = active && !reducedMotion;
 
   // Figma `Cards`: 440 wide, radius 32, gap 16, surface/card + border/subtle.
@@ -259,7 +262,7 @@ export function RoadmapCard({
   if (tiltEnabled && data.kind === "project") {
     return (
       <a
-        href={pagePath(`/projects/${data.slug}`)}
+        href={pagePath(localizePath(`/projects/${data.slug}`, locale))}
         className={cn("block w-full max-w-[440px]", align)}
         data-state="active-project"
       >
@@ -303,7 +306,7 @@ export function RoadmapCard({
   if (data.kind === "project") {
     return (
       <a
-        href={pagePath(`/projects/${data.slug}`)}
+        href={pagePath(localizePath(`/projects/${data.slug}`, locale))}
         className={className}
         data-state="active-project"
       >

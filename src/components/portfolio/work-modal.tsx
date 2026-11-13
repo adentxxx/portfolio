@@ -3,6 +3,7 @@
 import { CloseIcon } from "@/components/portfolio/decor-icons";
 import type { CompanyCardData, WorkOrigin } from "@/components/portfolio/roadmap-card";
 import { Button } from "@/components/ui/button";
+import { useUi } from "@/hooks/use-locale";
 import { publicPath } from "@/lib/public-path";
 import { motion } from "motion/react";
 import Image from "next/image";
@@ -100,6 +101,7 @@ export function WorkModal({
   onClose: () => void;
 }) {
   const titleId = useId();
+  const ui = useUi();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -383,7 +385,7 @@ export function WorkModal({
         >
           <Button ref={closeRef} type="button" mode="accent" onClick={requestClose}>
             <CloseIcon />
-            закрыть
+            {ui.close}
           </Button>
         </motion.div>
 

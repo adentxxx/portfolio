@@ -1,9 +1,19 @@
 "use client";
 
 import { GlassIcon } from "@/components/portfolio/glass-icon";
+import { useLocale, useUi } from "@/hooks/use-locale";
 import { useTheme } from "@/hooks/use-theme";
 import { enter } from "@/lib/enter";
+import {
+  LOCALES,
+  isTranslatedPath,
+  localizePath,
+  stripLocale,
+} from "@/lib/i18n";
+import { pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   useEffect,
   useRef,
@@ -12,8 +22,8 @@ import {
 } from "react";
 
 const THEME_OPTIONS = [
-  { theme: "dark", icon: "moon", label: "Тёмная тема" },
-  { theme: "light", icon: "sun", label: "Светлая тема" },
+  { theme: "dark", icon: "moon", label: "themeDark" },
+  { theme: "light", icon: "sun", label: "themeLight" },
 ] as const;
 
 /** Segmented theme switch. The thumb marks the theme that is on. */
@@ -23,6 +33,7 @@ function ThemeSwitch({
   orientation: "vertical" | "horizontal";
 }) {
   const { theme, setTheme } = useTheme();
+  const ui = useUi();
   // Counts user switches. Zero means first paint: the thumb must not slide
   // from the server-rendered slot to the stored theme.
   const [moves, setMoves] = useState(0);
@@ -30,7 +41,7 @@ function ThemeSwitch({
   return (
     <div
       role="radiogroup"
-      aria-label="Тема"
+      aria-label={ui.theme}
       className={cn(
         "glass glass-switch",
         orientation === "vertical" ? "glass-switch-v" : "glass-switch-h",
@@ -55,7 +66,7 @@ function ThemeSwitch({
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={option.label}
+            aria-label={ui[option.label]}
             // Thumb slot and icon colors come from CSS theme tokens, not from
             // this state: the server cannot know the theme, CSS does.
             data-option={option.theme}
@@ -98,32 +109,65 @@ function CheckIcon() {
   );
 }
 
-/** Language rows. English is listed but off until the translation exists. */
+/** Each language under its own name, so it reads the same on both versions. */
+const LANGUAGE_NAMES = { ru: "Русский", en: "English" } as const;
+
+/**
+ * Language rows. Each row is a link to the same page in that language
+ * (`/projects/x` and `/en/projects/x`), so it works without script and a
+ * static host needs nothing extra. Pages with one language keep the other
+ * row off.
+ */
 function LanguageItems({ onPick }: { onPick: () => void }) {
+  const ui = useUi();
+  const locale = useLocale();
+  const pathname = usePathname() ?? "/";
+  const translated = isTranslatedPath(pathname);
+  const path = stripLocale(pathname);
+
   return (
-    <div role="menu" aria-label="Язык" className="glass-items">
-      <button
-        type="button"
-        role="menuitemradio"
-        aria-checked
-        className="glass-item text-body"
-        onClick={onPick}
-      >
-        <span className="glass-item-check">
-          <CheckIcon />
-        </span>
-        Русский
-      </button>
-      <button
-        type="button"
-        role="menuitemradio"
-        aria-checked={false}
-        className="glass-item text-body"
-        disabled
-      >
-        <span className="glass-item-check" />
-        English
-      </button>
+    <div role="menu" aria-label={ui.language} className="glass-items">
+      {LOCALES.map((option) => {
+        const active = option === locale;
+        const content = (
+          <>
+            <span className="glass-item-check">
+              {active ? <CheckIcon /> : null}
+            </span>
+            {LANGUAGE_NAMES[option]}
+          </>
+        );
+        if (active || !translated) {
+          return (
+            <button
+              key={option}
+              type="button"
+              role="menuitemradio"
+              aria-checked={active}
+              lang={option}
+              className="glass-item text-body"
+              disabled={!active}
+              onClick={onPick}
+            >
+              {content}
+            </button>
+          );
+        }
+        return (
+          <Link
+            key={option}
+            href={pagePath(localizePath(path, option))}
+            hrefLang={option}
+            lang={option}
+            role="menuitemradio"
+            aria-checked={false}
+            className="glass-item text-body"
+            onClick={onPick}
+          >
+            {content}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -159,6 +203,7 @@ function LanguageMorph() {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const close = useRef(() => setOpen(false)).current;
+  const ui = useUi();
   useDismiss(ref, open, close);
 
   return (
@@ -169,7 +214,7 @@ function LanguageMorph() {
         </div>
         <button
           type="button"
-          aria-label="Язык"
+          aria-label={ui.language}
           aria-haspopup="menu"
           aria-expanded={open}
           tabIndex={open ? -1 : 0}
@@ -188,6 +233,7 @@ function SettingsMenu() {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const close = useRef(() => setOpen(false)).current;
+  const ui = useUi();
   useDismiss(ref, open, close);
 
   return (
@@ -200,7 +246,7 @@ function SettingsMenu() {
       </div>
       <button
         type="button"
-        aria-label="Настройки"
+        aria-label={ui.settings}
         aria-haspopup="menu"
         aria-expanded={open}
         className="glass glass-button"

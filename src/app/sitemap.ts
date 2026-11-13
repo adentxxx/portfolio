@@ -1,3 +1,4 @@
+import { localizePath } from "@/lib/i18n";
 import { absolutePageUrl } from "@/lib/site-url";
 import { prisma } from "@/lib/prisma";
 import type { MetadataRoute } from "next";
@@ -11,28 +12,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     orderBy: [{ createdYear: "desc" }, { createdMonth: "desc" }, { order: "asc" }],
   });
 
-  const cases: MetadataRoute.Sitemap = await Promise.all(
-    projects.map(async (project) => {
-      const entry: MetadataRoute.Sitemap[number] = {
-        url: await absolutePageUrl(`/projects/${project.slug}`),
-        changeFrequency: "monthly",
-        priority: 0.8,
-      };
-      if (project.createdYear) {
-        entry.lastModified = new Date(
-          Date.UTC(project.createdYear, (project.createdMonth ?? 1) - 1, 1),
-        );
-      }
-      return entry;
-    }),
-  );
+  // One entry per language, each naming both versions of the page.
+  const entries = async (
+    path: string,
+    rest: Omit<MetadataRoute.Sitemap[number], "url">,
+  ): Promise<MetadataRoute.Sitemap> => {
+    const ru = await absolutePageUrl(path);
+    const en = await absolutePageUrl(localizePath(path, "en"));
+    const alternates = { languages: { ru, en } };
+    return [
+      { url: ru, ...rest, alternates },
+      { url: en, ...rest, alternates },
+    ];
+  };
+
+  const cases = (
+    await Promise.all(
+      projects.map((project) =>
+        entries(`/projects/${project.slug}`, {
+          changeFrequency: "monthly",
+          priority: 0.8,
+          ...(project.createdYear
+            ? {
+                lastModified: new Date(
+                  Date.UTC(
+                    project.createdYear,
+                    (project.createdMonth ?? 1) - 1,
+                    1,
+                  ),
+                ),
+              }
+            : {}),
+        }),
+      ),
+    )
+  ).flat();
 
   return [
-    {
-      url: await absolutePageUrl("/"),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
+    ...(await entries("/", { changeFrequency: "weekly", priority: 1 })),
     ...cases,
   ];
 }

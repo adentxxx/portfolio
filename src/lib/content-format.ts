@@ -1,4 +1,5 @@
 import { DEFAULT_FACES } from "@/lib/faces";
+import type { Locale } from "@/lib/i18n";
 
 export const MONTH_OPTIONS = [
   "Январь",
@@ -28,6 +29,21 @@ const MONTH_SHORT = [
   "окт",
   "ноя",
   "дек",
+] as const;
+
+const MONTH_SHORT_EN = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ] as const;
 
 const MONTH_ALIASES = [
@@ -87,6 +103,8 @@ export type EditorBlock = {
   id: string;
   kind: BlockKind;
   text: string;
+  /** English copy of `text`. Empty shows `text` on /en. */
+  textEn?: string;
   imageSrc: string | null;
   /** Video block. Autoplay is only kept together with muted. */
   autoplay?: boolean;
@@ -100,6 +118,7 @@ export type EditorBlock = {
 export type StoredBlock = {
   kind: BlockKind;
   text: string;
+  textEn: string;
   imageSrc: string | null;
   autoplay: boolean;
   muted: boolean;
@@ -161,17 +180,24 @@ export function parseFaces(raw: string | null | undefined) {
   }
 }
 
-export function formatPoint(month: number | null, year: number | null) {
+export function formatPoint(
+  month: number | null,
+  year: number | null,
+  locale: Locale = "ru",
+) {
   if (!year) return "";
   if (!month || month < 1 || month > 12) return String(year);
-  return `${MONTH_SHORT[month - 1]} ${year}`;
+  const names = locale === "en" ? MONTH_SHORT_EN : MONTH_SHORT;
+  return `${names[month - 1]} ${year}`;
 }
 
-export function formatPeriod(period: PeriodFields) {
-  const start = formatPoint(period.startMonth, period.startYear);
+export function formatPeriod(period: PeriodFields, locale: Locale = "ru") {
+  const start = formatPoint(period.startMonth, period.startYear, locale);
   if (!start) return "";
-  if (period.ongoing) return `${start} — н.в.`;
-  const end = formatPoint(period.endMonth, period.endYear);
+  if (period.ongoing) {
+    return `${start} — ${locale === "en" ? "Present" : "н.в."}`;
+  }
+  const end = formatPoint(period.endMonth, period.endYear, locale);
   return end ? `${start} — ${end}` : start;
 }
 
@@ -273,6 +299,7 @@ type SectionLike = {
   heading: string;
   body: string;
   text: string;
+  textEn?: string;
   imageSrc: string | null;
   videoAutoplay?: boolean;
   videoMuted?: boolean;
@@ -304,6 +331,7 @@ export function sectionsToBlocks(
         id: section.id,
         kind: section.kind,
         text: section.text || section.heading,
+        textEn: section.textEn ?? "",
         imageSrc: null,
       });
       continue;
@@ -313,6 +341,7 @@ export function sectionsToBlocks(
         id: section.id,
         kind: "paragraph",
         text: section.text || section.body,
+        textEn: section.textEn ?? "",
         imageSrc: null,
       });
       continue;
@@ -381,6 +410,7 @@ export function parseEditorBlocks(
     const record = item as {
       kind?: unknown;
       text?: unknown;
+      textEn?: unknown;
       imageSrc?: unknown;
       autoplay?: unknown;
       muted?: unknown;
@@ -391,11 +421,14 @@ export function parseEditorBlocks(
     const kind = record.kind;
     const text = record.text ?? "";
     const imageSrc = record.imageSrc ?? null;
+    const textEn = record.textEn ?? "";
     if (typeof text !== "string" || text.length > 20000) return null;
+    if (typeof textEn !== "string" || textEn.length > 20000) return null;
     if (kind === "heading" || kind === "subheading" || kind === "paragraph") {
       blocks.push({
         kind,
         text,
+        textEn,
         imageSrc: null,
         autoplay: false,
         muted: false,
@@ -429,6 +462,7 @@ export function parseEditorBlocks(
       blocks.push({
         kind,
         text: "",
+        textEn: "",
         imageSrc,
         autoplay: video && autoplay,
         muted: video && (autoplay || muted),

@@ -34,6 +34,10 @@ model Company {
   /// «по настоящее время» — end month/year are ignored.
   ongoing      Boolean        @default(false)
   description  String
+  /// English copy. Empty shows the Russian text on /en.
+  nameEn        String        @default("")
+  roleEn        String        @default("")
+  descriptionEn String        @default("")
   logoSrc      String
   url          String?
   order        Int
@@ -59,6 +63,8 @@ model CompanyBlock {
   /// heading | subheading | paragraph
   kind      String
   text      String  @default("")
+  /// English copy. Empty shows `text` on /en.
+  textEn    String  @default("")
   sortOrder Int
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
@@ -89,6 +95,12 @@ model Project {
   /// Heading above the short NDA note. Empty hides it.
   ndaTitle     String           @default("")
   ndaText      String           @default("")
+  /// English copy. Empty shows the Russian text on /en. Tags are not translated.
+  titleEn       String          @default("")
+  descriptionEn String          @default("")
+  summaryEn     String          @default("")
+  ndaTitleEn    String          @default("")
+  ndaTextEn     String          @default("")
   published    Boolean          @default(true)
   emotion      BloubEmotion     @relation(fields: [bloubEmotion], references: [id])
   sections     ProjectSection[]
@@ -103,6 +115,8 @@ model ProjectSection {
   body      String
   /// Text of heading / subheading / paragraph. Legacy rows keep heading + body.
   text      String  @default("")
+  /// English copy of `text`. Empty shows `text` on /en.
+  textEn    String  @default("")
   /// Public path of a photo (`image`) or a video file (`video`).
   imageSrc      String?
   /// Video only. Autoplay is always stored together with videoMuted.
@@ -128,4 +142,10 @@ model SiteSettings {
   contactHeadline  String
   contactSubline   String
   contactLinksJson String
+  /// English copy. Empty shows the Russian text on /en. A link keeps its
+  /// English label and address inside the JSON (`labelEn`, `hrefEn`).
+  introHeadlineEn   String @default("")
+  introBioEn        String @default("")
+  contactHeadlineEn String @default("")
+  contactSublineEn  String @default("")
 }
