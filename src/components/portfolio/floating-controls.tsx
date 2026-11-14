@@ -26,6 +26,30 @@ const THEME_OPTIONS = [
   { theme: "light", icon: "sun", label: "themeLight" },
 ] as const;
 
+/** True when the point is inside the element's box. Hidden boxes are empty. */
+function boxHas(el: Element, x: number, y: number) {
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.width > 0 &&
+    rect.height > 0 &&
+    x >= rect.left &&
+    x <= rect.right &&
+    y >= rect.top &&
+    y <= rect.bottom
+  );
+}
+
+/**
+ * While a View Transition runs, its snapshot takes the hit test and a press
+ * reports <html> or <body> as the target, wherever the finger is. Such a
+ * press says nothing about where it landed; only its coordinates do.
+ */
+function isStolenPress(event: PointerEvent) {
+  return (
+    event.target === document.documentElement || event.target === document.body
+  );
+}
+
 /** Segmented theme switch. The thumb marks the theme that is on. */
 function ThemeSwitch({
   orientation,
@@ -37,9 +61,36 @@ function ThemeSwitch({
   // Counts user switches. Zero means first paint: the thumb must not slide
   // from the server-rendered slot to the stored theme.
   const [moves, setMoves] = useState(0);
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  // A press made while the theme circle is drawing never reaches the slot
+  // (see isStolenPress), so the second quick press was lost. Find the slot
+  // under the finger by its box and switch from here.
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (!isStolenPress(event) || event.button !== 0) return;
+      const group = groupRef.current;
+      if (!group) return;
+      for (const slot of group.querySelectorAll<HTMLElement>(".glass-seg")) {
+        if (!boxHas(slot, event.clientX, event.clientY)) continue;
+        const option = slot.dataset.option;
+        if (option !== "light" && option !== "dark") return;
+        const rect = slot.getBoundingClientRect();
+        setMoves((count) => count + 1);
+        setTheme(option, {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        });
+        return;
+      }
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    return () => window.removeEventListener("pointerdown", onPointerDown, true);
+  }, [setTheme]);
 
   return (
     <div
+      ref={groupRef}
       role="radiogroup"
       aria-label={ui.theme}
       className={cn(
@@ -181,8 +232,17 @@ function useDismiss(
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Node && ref.current?.contains(event.target)) {
+      const root = ref.current;
+      if (event.target instanceof Node && root?.contains(event.target)) {
         return;
+      }
+      // During the theme circle the target is <html> even for a press on
+      // the menu. Closing on it folded the menu under the finger; look at
+      // where the press is instead.
+      if (root && isStolenPress(event)) {
+        for (const el of root.querySelectorAll(".glass")) {
+          if (boxHas(el, event.clientX, event.clientY)) return;
+        }
       }
       close();
     };

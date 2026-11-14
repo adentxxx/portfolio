@@ -43,6 +43,69 @@ function startCircularTransition(update: () => void): ViewTransitionHandle | nul
   }
 }
 
+/**
+ * iPhone and iPad. Their View Transition snapshot drops backdrop-filter, so
+ * the glass buttons lose their blur while the circle runs, and the snapshot
+ * also swallows taps. They get the plain wipe below instead.
+ */
+function isIOS() {
+  return (
+    typeof CSS !== "undefined" &&
+    typeof CSS.supports === "function" &&
+    CSS.supports("-webkit-touch-callout", "none")
+  );
+}
+
+let wipe: { el: HTMLElement; raf: number } | null = null;
+
+function clearWipe() {
+  if (!wipe) return;
+  cancelAnimationFrame(wipe.raf);
+  wipe.el.remove();
+  wipe = null;
+}
+
+/**
+ * The same circle without a View Transition. The theme changes at once; a
+ * sheet in the old page color covers the content (it sits under the Button
+ * Bar, which stays live and keeps its blur) and a round hole grows in it from
+ * the pressed point, showing the new theme. The page stays interactive.
+ */
+function holeWipe(x: number, y: number, endRadius: number, apply: () => void) {
+  clearWipe();
+  const oldColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--surface-page")
+    .trim();
+  apply();
+  if (!oldColor) return;
+
+  const el = document.createElement("div");
+  el.className = "theme-wipe";
+  el.setAttribute("aria-hidden", "true");
+  el.style.background = oldColor;
+  document.body.appendChild(el);
+  const width = el.clientWidth || window.innerWidth;
+  const height = el.clientHeight || window.innerHeight;
+  const start = performance.now();
+  const duration = 620;
+
+  const frame = (now: number) => {
+    const t = Math.min(1, (now - start) / duration);
+    // Same curve as the View Transition circle: fast out, soft landing.
+    const eased = 1 - Math.pow(1 - t, 3);
+    const r = Math.max(0.01, eased * endRadius);
+    const hole = `path(evenodd, "M0 0H${width}V${height}H0Z M${x - r} ${y}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z")`;
+    el.style.setProperty("-webkit-clip-path", hole);
+    el.style.clipPath = hole;
+    if (t < 1 && wipe) {
+      wipe.raf = requestAnimationFrame(frame);
+    } else {
+      clearWipe();
+    }
+  };
+  wipe = { el, raf: requestAnimationFrame(frame) };
+}
+
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function systemTheme(): Theme {
@@ -145,6 +208,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           Math.max(y, window.innerHeight - y),
         );
 
+        if (isIOS()) {
+          holeWipe(x, y, endRadius, () => applyTheme(next));
+          return;
+        }
+
         const transition = startCircularTransition(() => {
           // The browser calls this a frame or more later. Paint the goal as
           // it stands then, so a press made in between is not overwritten.
@@ -154,7 +222,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         });
 
         if (!transition) {
-          applyTheme(next);
+          // No View Transitions in this browser: same circle, plain wipe.
+          holeWipe(x, y, endRadius, () => applyTheme(next));
           return;
         }
 

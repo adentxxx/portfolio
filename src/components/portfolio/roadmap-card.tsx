@@ -6,7 +6,7 @@ import { localizePath } from "@/lib/i18n";
 import { publicPath, pagePath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 export type WorkBlock = {
   id: string;
@@ -115,7 +115,13 @@ export function readWorkOrigin(button: HTMLElement): WorkOrigin {
 
 type RoadmapCardProps = {
   data: RoadmapCardData;
+  /** The card has been reached at least once: its content is in the page. */
   active: boolean;
+  /**
+   * The timeline is on or past the card right now. Scrolling back turns it
+   * off and the card returns to its plates.
+   */
+  live?: boolean;
   side: "left" | "right";
   reducedMotion?: boolean;
   concealed?: boolean;
@@ -125,6 +131,7 @@ type RoadmapCardProps = {
 export function RoadmapCard({
   data,
   active,
+  live = active,
   side,
   reducedMotion = false,
   concealed = false,
@@ -132,6 +139,21 @@ export function RoadmapCard({
 }: RoadmapCardProps) {
   const locale = useLocale();
   const tiltEnabled = active && !reducedMotion;
+  // `data-live` goes on one frame after the content mounts, so the first
+  // reveal transitions from the hidden state like every later one.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (!active) return;
+    const id = requestAnimationFrame(() => setShown(live));
+    return () => cancelAnimationFrame(id);
+  }, [active, live]);
+  // What the root carries in either state. A card that is back on its plates
+  // is the Default card again: not focusable, not pressable, hidden from
+  // screen readers.
+  const liveProps = shown
+    ? ({ "data-live": "" } as const)
+    : ({ "aria-hidden": true, tabIndex: -1 } as const);
+  const idle = !shown && "pointer-events-none";
 
   // Figma `Cards`: 440 wide, radius 32, gap 16, surface/card + border/subtle.
   // Size=XL padding 24. Phone Size=L (189:744) padding 20 — see .roadmap-card.
@@ -167,9 +189,11 @@ export function RoadmapCard({
     </>
   );
 
-  if (!active) {
+  // Reduced motion has no transitions, so a card that is not live is just
+  // the skeleton.
+  if (!active || (reducedMotion && !live)) {
     return (
-      <div className={shell} aria-hidden data-state="default">
+      <div className={shell} aria-hidden data-state="default" data-roll>
         {plates}
       </div>
     );
@@ -263,8 +287,10 @@ export function RoadmapCard({
     return (
       <a
         href={pagePath(localizePath(`/projects/${data.slug}`, locale))}
-        className={cn("block w-full max-w-[440px]", align)}
-        data-state="active-project"
+        className={cn("block w-full max-w-[440px]", align, idle)}
+        data-state={shown ? "active-project" : "default"}
+        data-roll
+        {...liveProps}
       >
         <TiltedSurface>{card}</TiltedSurface>
       </a>
@@ -281,14 +307,17 @@ export function RoadmapCard({
       <button
         type="button"
         data-company-id={data.id}
-        data-state="active-work"
-        aria-hidden={concealed || undefined}
+        data-state={shown ? "active-work" : "default"}
+        data-roll
+        {...liveProps}
+        aria-hidden={concealed || !shown || undefined}
         onClick={(event) => {
           onOpenWork?.(data, readWorkOrigin(event.currentTarget));
         }}
         className={cn(
           "block w-full max-w-[440px] cursor-pointer rounded-[32px] border-0 bg-transparent p-0 text-left",
           align,
+          idle,
           concealed && "invisible",
         )}
       >
@@ -301,6 +330,7 @@ export function RoadmapCard({
     shell,
     "roadmap-card-press",
     "cursor-pointer",
+    idle,
   );
 
   if (data.kind === "project") {
@@ -308,7 +338,9 @@ export function RoadmapCard({
       <a
         href={pagePath(localizePath(`/projects/${data.slug}`, locale))}
         className={className}
-        data-state="active-project"
+        data-state={shown ? "active-project" : "default"}
+        data-roll
+        {...liveProps}
       >
         {inner}
       </a>

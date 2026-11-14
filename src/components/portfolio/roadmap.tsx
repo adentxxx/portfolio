@@ -1032,6 +1032,8 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
         <div className="flex flex-col gap-8 pt-[28px] min-[1160px]:gap-0 min-[1160px]:pt-0">
           {rows.map((row, index) => {
             const active = index <= revealedIndex;
+            // Follows the scroll both ways; `active` only ever grows.
+            const live = arrivedIndex >= 0 && index <= arrivedIndex;
             const showBloubHere = arrivedIndex === index;
 
             return (
@@ -1085,6 +1087,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
                   <RoadmapCard
                     data={row.card}
                     active={active}
+                      live={live}
                     side={row.side}
                     reducedMotion={reducedMotion}
                     concealed={

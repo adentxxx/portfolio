@@ -245,7 +245,10 @@ function NdaNote({
   links: ContactLink[];
 }) {
   return (
-    <section className="mx-auto flex w-full max-w-[800px] flex-col gap-8 text-left">
+    <section
+      data-roll
+      className="mx-auto flex w-full max-w-[800px] flex-col gap-8 text-left"
+    >
       <div className="flex flex-col gap-3">
         {title ? (
           <h2 className="text-title3 text-text-primary">{title}</h2>
@@ -356,7 +359,10 @@ export async function ProjectView({
       >
         <ProjectHeader links={nav.intro.links} faces={nav.intro.faces} />
 
-        <div className="home-phone-type flex flex-col items-center gap-2 text-center">
+        <div
+          data-roll
+          className="home-phone-type flex flex-col items-center gap-2 text-center"
+        >
           <h1 {...enter(2)} className="text-largeTitle text-text-primary">
             {project.title}
           </h1>
@@ -414,6 +420,7 @@ export async function ProjectView({
           return (
             <div
               key={block.key}
+              data-roll
               className="mx-auto flex w-full max-w-[800px] flex-col gap-10 text-left"
             >
               {textChunks(block.items).map((chunk) => (

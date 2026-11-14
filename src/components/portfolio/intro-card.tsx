@@ -25,7 +25,10 @@ export function IntroCard({ headline, bio, links, faces }: IntroCardProps) {
         the block and the page below does not jump. Photo 140, title1,
         subheadline, gap 24 / 4. From md: largeTitle, body.
       */}
-      <div className="flex h-[352px] w-full flex-col items-center gap-6 md:h-auto">
+      <div
+        data-roll
+        className="flex h-[352px] w-full flex-col items-center gap-6 md:h-auto"
+      >
         <div {...enter(0)} className="shrink-0">
           <EmotionFace faces={faces} />
         </div>

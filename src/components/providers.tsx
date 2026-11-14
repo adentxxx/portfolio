@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrollRoll } from "@/components/scroll-roll";
 import { useLocale } from "@/hooks/use-locale";
 import { SoundProvider } from "@/hooks/use-sound";
 import { ThemeProvider } from "@/hooks/use-theme";
@@ -19,6 +20,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider>
       <SoundProvider>
         <LangSync />
+        <ScrollRoll />
         {children}
       </SoundProvider>
     </ThemeProvider>

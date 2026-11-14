@@ -85,6 +85,7 @@ export function CaseVideo({
 
   return (
     <div
+      data-roll="media"
       className="relative w-full overflow-hidden rounded-[24px] bg-surface-control"
       style={{ aspectRatio: ratio ? String(ratio) : "116 / 50" }}
     >

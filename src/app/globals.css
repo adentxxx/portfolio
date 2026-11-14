@@ -177,6 +177,15 @@ html {
   pointer-events: none;
 }
 
+/* Fallback circle (use-theme.ts): above the content and the case
+   navigation, under the Button Bar, so the glass keeps its blur. */
+.theme-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+
 ::view-transition-group(root),
 ::view-transition-image-pair(root),
 ::view-transition-old(root),
@@ -891,19 +900,6 @@ body {
   `backwards` fill drops the filter and the transform when a piece lands,
   so a revealed card keeps no extra layer and the hover tilt is untouched.
 */
-@keyframes card-rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-    filter: blur(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
 /*
   Page-load entrance (see src/lib/enter.ts). Pieces come in one after
   another, 80ms apart. Plain CSS: it starts with the first paint, before any
@@ -982,7 +978,7 @@ body {
    first screen and would only cost layers. */
 .case-enter > :nth-child(3),
 .case-enter > :nth-child(4) {
-  animation: enter-lift 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: enter-fade 700ms ease-out backwards;
   animation-delay: 320ms;
 }
 
@@ -990,18 +986,100 @@ body {
   animation-delay: 400ms;
 }
 
-@keyframes card-plates-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
+/*
+  Scroll roll (src/components/scroll-roll.tsx). `--roll` is 0 for a block on
+  screen. It rises to 1 only while the block's top edge is in the narrow band
+  at the bottom of the screen, and falls to -1 while its bottom edge is in the
+  band at the top. There the block tips a few degrees around its inner edge,
+  stretches a little, and sits slightly further out, so it seems to roll onto
+  the screen. The rule exists only while a block is tipped: a flat block has
+  no transform and no layer of its own.
+*/
+[data-rolling] {
+  transform: perspective(1000px) translateY(calc(var(--roll) * 24px))
+    rotateX(calc(var(--roll) * var(--roll-tilt, -22deg)))
+    scaleY(calc(1 + var(--roll-abs) * var(--roll-stretch, 0.09)));
+  transform-origin: 50% calc(50% - var(--roll) * 50%);
+  will-change: transform;
+}
+
+/* Photos and video: a tilt bends straight lines in a screenshot, so they
+   only stretch slightly and slide. */
+[data-roll="media"] {
+  --roll-tilt: -8deg;
+  --roll-stretch: 0.045;
+}
+
+/*
+  Edge fades: the page color over the two bands, strongest at the screen
+  edge. Content comes out of the page instead of being cut by the edge.
+  Above the content, under the case navigation, the Button Bar, and the
+  modal. `--edge-top` and `--edge-bottom` (0..1) switch them off at the very
+  top and bottom of the page.
+*/
+.edge-fade {
+  position: fixed;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  height: 72px;
+  pointer-events: none;
+}
+
+.edge-fade-top {
+  top: 0;
+  opacity: var(--edge-top, 0);
+  background: linear-gradient(
+    to bottom,
+    var(--surface-page) 0%,
+    color-mix(in srgb, var(--surface-page) 62%, transparent) 38%,
+    color-mix(in srgb, var(--surface-page) 0%, transparent) 100%
+  );
+}
+
+.edge-fade-bottom {
+  bottom: 0;
+  opacity: var(--edge-bottom, 1);
+  background: linear-gradient(
+    to top,
+    var(--surface-page) 0%,
+    color-mix(in srgb, var(--surface-page) 62%, transparent) 38%,
+    color-mix(in srgb, var(--surface-page) 0%, transparent) 100%
+  );
+}
+
+@media (min-width: 768px) {
+  .edge-fade {
+    height: 104px;
   }
 }
 
+/*
+  The two states of a card. Not live: the plates show and each piece of
+  content waits 14px lower, transparent and blurred. Live (`data-live` on the
+  card): the plates fade out and the pieces rise into focus one after
+  another. Scrolling back takes `data-live` away and the same transitions run
+  the other way, all pieces at once, so the card returns to its plates.
+*/
 [data-rise] {
-  animation: card-rise-in 560ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(var(--rise, 0) * 70ms);
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  transition:
+    opacity 300ms ease-in,
+    transform 300ms ease-in,
+    filter 300ms ease-in;
+}
+
+[data-live] [data-rise] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--rise, 0) * 70ms);
 }
 
 /* Same padding and gap as the card, so the plates sit where they were. */
@@ -1013,8 +1091,15 @@ body {
   gap: 16px;
   padding: inherit;
   pointer-events: none;
-  animation: card-plates-out 320ms ease-out forwards;
+  /* Coming back: wait for the content to start leaving. */
+  transition: opacity 320ms ease-out 120ms;
 }
+
+[data-live] .card-plates {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
 
 @keyframes caret-blink {
   0%,
@@ -1077,10 +1162,14 @@ body {
     animation: none;
   }
 
-  [data-rise],
   [data-enter],
   .case-enter > * {
     animation: none;
+  }
+
+  [data-rise],
+  .card-plates {
+    transition: none;
   }
 
   .card-plates {
