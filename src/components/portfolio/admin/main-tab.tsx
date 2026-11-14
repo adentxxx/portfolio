@@ -6,12 +6,13 @@ import {
   uploadAdminFile,
 } from "@/components/portfolio/admin/api";
 import {
-  Field,
   FileButton,
+  LangField,
   MoveButton,
   Status,
   TrashButton,
   inputClass,
+  type EditLang,
 } from "@/components/portfolio/admin/fields";
 import { Button } from "@/components/ui/button";
 import type { AdminLink, AdminSettings } from "@/lib/admin-data";
@@ -29,9 +30,11 @@ function move<T>(items: T[], index: number, direction: -1 | 1) {
 
 export function MainTab({
   settings: initial,
+  lang,
   onUnauthorized,
 }: {
   settings: AdminSettings;
+  lang: EditLang;
   onUnauthorized: () => void;
 }) {
   const [settings, setSettings] = useState(initial);
@@ -154,31 +157,30 @@ export function MainTab({
 
       <section className="space-y-3 rounded-[24px] border border-border-subtle bg-surface-card p-5">
         <h2 className="text-title3 text-text-primary">Заголовок и описание</h2>
-        <Field
+        <LangField
           label="Заголовок"
-          hint="Одна фраза на строку. Фразы сменяются каждые 7 секунд."
-        >
-          <textarea
-            value={settings.introHeadline}
-            rows={4}
-            onChange={(event) =>
-              setSettings({ ...settings, introHeadline: event.target.value })
-            }
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Описание">
-          <textarea
-            value={settings.introBio}
-            rows={4}
-            onChange={(event) =>
-              setSettings({ ...settings, introBio: event.target.value })
-            }
-            className={inputClass}
-          />
-        </Field>
+          hint="Одна фраза на строку. Фразы сменяются каждые 7 секунд."
+          lang={lang}
+          rows={4}
+          ru={settings.introHeadline}
+          en={settings.introHeadlineEn}
+          onRu={(introHeadline) => setSettings({ ...settings, introHeadline })}
+          onEn={(introHeadlineEn) =>
+            setSettings({ ...settings, introHeadlineEn })
+          }
+        />
+        <LangField
+          label="Описание"
+          lang={lang}
+          rows={4}
+          ru={settings.introBio}
+          en={settings.introBioEn}
+          onRu={(introBio) => setSettings({ ...settings, introBio })}
+          onEn={(introBioEn) => setSettings({ ...settings, introBioEn })}
+        />
         <LinkEditor
-          label="Кнопки под описанием"
+          label="Кнопки под описанием"
+          lang={lang}
           links={settings.introLinks}
           onChange={(introLinks) => setSettings({ ...settings, introLinks })}
         />
@@ -186,27 +188,34 @@ export function MainTab({
 
       <section className="space-y-3 rounded-[24px] border border-border-subtle bg-surface-card p-5">
         <h2 className="text-title3 text-text-primary">Обратная связь</h2>
-        <Field label="Заголовок">
-          <input
-            value={settings.contactHeadline}
-            onChange={(event) =>
-              setSettings({ ...settings, contactHeadline: event.target.value })
-            }
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Текст">
-          <textarea
-            value={settings.contactSubline}
-            rows={3}
-            onChange={(event) =>
-              setSettings({ ...settings, contactSubline: event.target.value })
-            }
-            className={inputClass}
-          />
-        </Field>
+        <LangField
+          label="Заголовок"
+          lang={lang}
+          ru={settings.contactHeadline}
+          en={settings.contactHeadlineEn}
+          onRu={(contactHeadline) =>
+            setSettings({ ...settings, contactHeadline })
+          }
+          onEn={(contactHeadlineEn) =>
+            setSettings({ ...settings, contactHeadlineEn })
+          }
+        />
+        <LangField
+          label="Текст"
+          lang={lang}
+          rows={3}
+          ru={settings.contactSubline}
+          en={settings.contactSublineEn}
+          onRu={(contactSubline) =>
+            setSettings({ ...settings, contactSubline })
+          }
+          onEn={(contactSublineEn) =>
+            setSettings({ ...settings, contactSublineEn })
+          }
+        />
         <LinkEditor
           label="Кнопки"
+          lang={lang}
           links={settings.contactLinks}
           onChange={(contactLinks) => setSettings({ ...settings, contactLinks })}
         />
@@ -221,38 +230,60 @@ export function MainTab({
 
 function LinkEditor({
   label,
+  lang,
   links,
   onChange,
 }: {
   label: string;
+  lang: EditLang;
   links: AdminLink[];
   onChange: (links: AdminLink[]) => void;
 }) {
+  const english = lang === "en";
+  const patch = (index: number, change: Partial<AdminLink>) =>
+    onChange(
+      links.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...change } : item,
+      ),
+    );
+
   return (
     <div className="space-y-2">
-      <span className="text-caption1 text-text-muted">{label}</span>
+      <span className="text-caption1 text-text-muted">
+        {english ? `${label} · English` : label}
+      </span>
+      {english ? (
+        <p className="text-caption2 text-text-muted">
+          Пустая подпись или ссылка берётся из русской версии. Свою ссылку
+          стоит задать, если она ведёт на английский файл, например CV.
+        </p>
+      ) : null}
       {links.map((link, index) => (
         <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
           <input
-            value={link.label}
+            value={english ? (link.labelEn ?? "") : link.label}
+            placeholder={english ? link.label : undefined}
             aria-label={`${label}, подпись ${index + 1}`}
             onChange={(event) =>
-              onChange(
-                links.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, label: event.target.value } : item,
-                ),
+              patch(
+                index,
+                english
+                  ? { labelEn: event.target.value }
+                  : { label: event.target.value },
               )
             }
             className={inputClass}
           />
           <input
-            value={link.href}
+            value={english ? (link.hrefEn ?? "") : link.href}
+            placeholder={english ? link.href : undefined}
             aria-label={`${label}, ссылка ${index + 1}`}
             onChange={(event) =>
-              onChange(
-                links.map((item, itemIndex) =>
-                  itemIndex === index ? { ...item, href: event.target.value } : item,
-                ),
+              patch(
+                index,
+                english
+                  ? { hrefEn: event.target.value }
+                  : { href: event.target.value },
               )
             }
             className={inputClass}

@@ -7,7 +7,10 @@ export function CaseImage({ src }: { src: string }) {
   const [ready, setReady] = useState(false);
 
   return (
-    <div className="relative aspect-[116/50] w-full overflow-hidden rounded-[24px] bg-surface-control">
+    <div
+      data-roll="media"
+      className="relative aspect-[116/50] w-full overflow-hidden rounded-[24px] bg-surface-control"
+    >
       {ready ? null : <div className="media-skeleton absolute inset-0" aria-hidden />}
       {/* Unoptimized case photos. A native img reports load even when the
           file is already in cache; next/image can leave the skeleton up. */}

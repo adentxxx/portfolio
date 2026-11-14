@@ -27,6 +27,61 @@ export function Field({
   );
 }
 
+/** Which copy the admin is editing: the Russian original or its English version. */
+export type EditLang = "ru" | "en";
+
+/**
+ * A text field with two copies. In English mode it edits the English copy
+ * and shows the Russian original as the placeholder, so an empty field reads
+ * as "the site will show this Russian text".
+ */
+export function LangField({
+  label,
+  hint,
+  lang,
+  ru,
+  en,
+  onRu,
+  onEn,
+  rows,
+}: {
+  label: string;
+  hint?: string;
+  lang: EditLang;
+  ru: string;
+  en: string;
+  onRu: (value: string) => void;
+  onEn: (value: string) => void;
+  /** Set for a multi-line field. */
+  rows?: number;
+}) {
+  const english = lang === "en";
+  const value = english ? en : ru;
+  const change = english ? onEn : onRu;
+  return (
+    <Field label={english ? `${label} · English` : label} hint={hint}>
+      {rows ? (
+        <textarea
+          value={value}
+          rows={rows}
+          lang={lang}
+          placeholder={english ? ru : undefined}
+          onChange={(event) => change(event.target.value)}
+          className={inputClass}
+        />
+      ) : (
+        <input
+          value={value}
+          lang={lang}
+          placeholder={english ? ru : undefined}
+          onChange={(event) => change(event.target.value)}
+          className={inputClass}
+        />
+      )}
+    </Field>
+  );
+}
+
 export function Status({
   message,
   error,

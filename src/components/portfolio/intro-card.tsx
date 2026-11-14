@@ -4,6 +4,7 @@ import { EmotionFace } from "@/components/portfolio/emotion-face";
 import { Typewriter, parsePhrases } from "@/components/portfolio/typewriter";
 import { Button } from "@/components/ui/button";
 import type { IntroLink } from "@/lib/content";
+import { enter } from "@/lib/enter";
 
 type IntroCardProps = {
   headline: string;
@@ -24,17 +25,29 @@ export function IntroCard({ headline, bio, links, faces }: IntroCardProps) {
         the block and the page below does not jump. Photo 140, title1,
         subheadline, gap 24 / 4. From md: largeTitle, body.
       */}
-      <div className="flex h-[352px] w-full flex-col items-center gap-6 md:h-auto">
-        <EmotionFace faces={faces} />
+      <div
+        data-roll
+        className="flex h-[352px] w-full flex-col items-center gap-6 md:h-auto"
+      >
+        <div {...enter(0)} className="shrink-0">
+          <EmotionFace faces={faces} />
+        </div>
         <div className="flex w-full flex-col items-center gap-1 md:gap-2">
-          <h1 className="min-h-[1lh] text-largeTitle text-text-primary">
+          <h1 {...enter(1)} className="min-h-[1lh] text-largeTitle text-text-primary">
             <Typewriter phrases={phrases} periodMs={7000} />
           </h1>
-          <p className="w-full text-body text-text-secondary">{bio}</p>
+          <p {...enter(2)} className="w-full text-body text-text-secondary">
+            {bio}
+          </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {links.map((link) => (
-            <Button key={link.label} asChild mode="fill">
+          {links.map((link, index) => (
+            <Button
+              key={link.label}
+              asChild
+              mode="fill"
+              {...enter(3 + index * 0.5)}
+            >
               <a href={link.href} target="_blank" rel="noreferrer">
                 {link.label}
               </a>

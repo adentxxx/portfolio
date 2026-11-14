@@ -16,11 +16,21 @@ function jsonError(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
+/** English copy: optional, a string within the limit. Missing reads as empty. */
+function readEn(value: unknown, max: number): string | null {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string" || value.length > max) return null;
+  return value;
+}
+
 function present(company: {
   id: string;
   name: string;
+  nameEn: string;
   role: string;
+  roleEn: string;
   description: string;
+  descriptionEn: string;
   logoSrc: string;
   startMonth: number | null;
   startYear: number | null;
@@ -34,13 +44,16 @@ function present(company: {
   published: boolean;
   order: number;
   manualRank: number | null;
-  blocks: { id: string; kind: string; text: string }[];
+  blocks: { id: string; kind: string; text: string; textEn: string }[];
 }) {
   return {
     id: company.id,
     name: company.name,
+    nameEn: company.nameEn,
     role: company.role,
+    roleEn: company.roleEn,
     description: company.description,
+    descriptionEn: company.descriptionEn,
     logoSrc: company.logoSrc,
     startMonth: company.startMonth,
     startYear: company.startYear,
@@ -65,6 +78,7 @@ function present(company: {
         id: block.id,
         kind: block.kind,
         text: block.text,
+        textEn: block.textEn,
         imageSrc: null,
       })),
   };
@@ -126,8 +140,17 @@ export async function PUT(request: Request) {
     bloubExpression?: unknown;
     published?: unknown;
     blocks?: unknown;
+    nameEn?: unknown;
+    roleEn?: unknown;
+    descriptionEn?: unknown;
   } | null;
   if (!body || typeof body.id !== "string") return jsonError("Некорректный запрос", 400);
+  const nameEn = readEn(body.nameEn, 200);
+  const roleEn = readEn(body.roleEn, 200);
+  const descriptionEn = readEn(body.descriptionEn, 4000);
+  if (nameEn === null || roleEn === null || descriptionEn === null) {
+    return jsonError("Проверьте английский текст: он слишком длинный", 400);
+  }
   if (typeof body.name !== "string" || !body.name.trim() || body.name.length > 200) {
     return jsonError("Нужен заголовок", 400);
   }
@@ -189,6 +212,7 @@ export async function PUT(request: Request) {
             companyId: body.id as string,
             kind: block.kind,
             text: block.text,
+            textEn: block.textEn,
             sortOrder: index,
           })),
         });
@@ -199,6 +223,9 @@ export async function PUT(request: Request) {
           name: body.name as string,
           role: body.role as string,
           description: body.description as string,
+          nameEn,
+          roleEn,
+          descriptionEn,
           logoSrc: body.logoSrc as string,
           ...period,
           dateLabel: formatPeriod(period),

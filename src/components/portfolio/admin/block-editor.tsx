@@ -1,7 +1,11 @@
 "use client";
 
 import { uploadAdminFile } from "@/components/portfolio/admin/api";
-import { CheckField, inputClass } from "@/components/portfolio/admin/fields";
+import {
+  CheckField,
+  inputClass,
+  type EditLang,
+} from "@/components/portfolio/admin/fields";
 import type { EditorBlock } from "@/lib/content-format";
 import { classifyUpload, IMAGE_ACCEPT, VIDEO_ACCEPT } from "@/lib/upload-rules";
 import { MoveButton, TrashButton } from "@/components/portfolio/admin/fields";
@@ -103,13 +107,15 @@ export const BlockEditor = forwardRef<
   BlockEditorHandle,
   {
     blocks: EditorBlock[];
+    /** Which copy the text areas edit. Media and order are shared. */
+    lang?: EditLang;
     onChange: (blocks: EditorBlock[]) => void;
     allowImages?: boolean;
     onError: (error: unknown) => void;
     onBusyChange?: (busy: boolean) => void;
   }
 >(function BlockEditor(
-  { blocks, onChange, allowImages = false, onError, onBusyChange },
+  { blocks, lang = "ru", onChange, allowImages = false, onError, onBusyChange },
   ref,
 ) {
   const [uploading, setUploading] = useState(false);
@@ -425,20 +431,34 @@ export const BlockEditor = forwardRef<
               />
             </div>
           ) : (
-            <textarea
-              value={block.text}
-              rows={block.kind === "paragraph" ? 5 : 2}
-              onChange={(event) =>
-                onChange(
-                  blocks.map((item) =>
-                    item.id === block.id
-                      ? { ...item, text: event.target.value }
-                      : item,
-                  ),
-                )
-              }
-              className={inputClass}
-            />
+            <>
+              {lang === "en" && block.text.trim() ? (
+                // The original stays in view while its translation is edited.
+                <p className="whitespace-pre-line text-caption1 text-text-muted">
+                  {block.text}
+                </p>
+              ) : null}
+              <textarea
+                value={lang === "en" ? (block.textEn ?? "") : block.text}
+                rows={block.kind === "paragraph" ? 5 : 2}
+                lang={lang}
+                placeholder={
+                  lang === "en" ? "English. Пусто — покажется русский текст" : undefined
+                }
+                onChange={(event) =>
+                  onChange(
+                    blocks.map((item) =>
+                      item.id === block.id
+                        ? lang === "en"
+                          ? { ...item, textEn: event.target.value }
+                          : { ...item, text: event.target.value }
+                        : item,
+                    ),
+                  )
+                }
+                className={inputClass}
+              />
+            </>
           )}
         </div>
       ))}

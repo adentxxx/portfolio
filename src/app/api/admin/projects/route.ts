@@ -18,12 +18,24 @@ function jsonError(error: string, status: number) {
   return NextResponse.json({ error }, { status });
 }
 
+/** English copy: optional, a string within the limit. Missing reads as empty. */
+function readEn(value: unknown, max: number): string | null {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "string" || value.length > max) return null;
+  return value;
+}
+
 function present(project: {
   id: string;
   slug: string;
   title: string;
+  titleEn: string;
   description: string;
+  descriptionEn: string;
   summary: string;
+  summaryEn: string;
+  ndaTitleEn: string;
+  ndaTextEn: string;
   tags: string;
   logoSrc: string;
   createdMonth: number | null;
@@ -44,6 +56,7 @@ function present(project: {
     heading: string;
     body: string;
     text: string;
+    textEn: string;
     imageSrc: string | null;
   }[];
 }) {
@@ -60,8 +73,11 @@ function present(project: {
     id: project.id,
     slug: project.slug,
     title: project.title,
+    titleEn: project.titleEn,
     description: project.description,
+    descriptionEn: project.descriptionEn,
     summary: project.summary,
+    summaryEn: project.summaryEn,
     tags,
     logoSrc: project.logoSrc,
     createdMonth: project.createdMonth,
@@ -72,7 +88,9 @@ function present(project: {
     bloubExpression: project.bloubExpression,
     nda: project.nda,
     ndaTitle: project.ndaTitle,
+    ndaTitleEn: project.ndaTitleEn,
     ndaText: project.ndaText,
+    ndaTextEn: project.ndaTextEn,
     published: project.published,
     order: project.order,
     blocks: sectionsToBlocks(project.sections, project.heroImage),
@@ -88,6 +106,7 @@ function sectionRows(projectId: string, blocks: StoredBlock[]) {
       projectId,
       kind: block.kind,
       text: media ? "" : block.text,
+      textEn: media ? "" : block.textEn,
       heading:
         block.kind === "heading" || block.kind === "subheading" ? block.text : "",
       body: block.kind === "paragraph" ? block.text : "",
@@ -197,8 +216,27 @@ export async function PUT(request: Request) {
     ndaTitle?: unknown;
     ndaText?: unknown;
     blocks?: unknown;
+    titleEn?: unknown;
+    descriptionEn?: unknown;
+    summaryEn?: unknown;
+    ndaTitleEn?: unknown;
+    ndaTextEn?: unknown;
   } | null;
   if (!body || typeof body.id !== "string") return jsonError("Некорректный запрос", 400);
+  const titleEn = readEn(body.titleEn, 200);
+  const descriptionEn = readEn(body.descriptionEn, 4000);
+  const summaryEn = readEn(body.summaryEn, 4000);
+  const ndaTitleEn = readEn(body.ndaTitleEn, 200);
+  const ndaTextEn = readEn(body.ndaTextEn, 4000);
+  if (
+    titleEn === null ||
+    descriptionEn === null ||
+    summaryEn === null ||
+    ndaTitleEn === null ||
+    ndaTextEn === null
+  ) {
+    return jsonError("Проверьте английский текст: он слишком длинный", 400);
+  }
   if (typeof body.title !== "string" || !body.title.trim() || body.title.length > 200) {
     return jsonError("Нужен заголовок", 400);
   }
@@ -269,6 +307,11 @@ export async function PUT(request: Request) {
           nda: body.nda as boolean,
           ndaTitle: body.ndaTitle as string,
           ndaText: body.ndaText as string,
+          titleEn,
+          descriptionEn,
+          summaryEn,
+          ndaTitleEn,
+          ndaTextEn,
           published: body.published as boolean,
         },
         include,

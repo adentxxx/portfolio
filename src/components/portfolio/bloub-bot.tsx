@@ -39,6 +39,27 @@ type BloubBotProps = {
 /** Longest frame step the scene clock accepts (background tab → no jump). */
 const MAX_DT = 0.064;
 
+/** Engine units per design pixel: Figma draws the ball 44px wide. */
+const GLOW_PX = RAYON / 22;
+const GLOW_OFFSET = 4 * GLOW_PX;
+const GLOW_RADIUS = 30 * GLOW_PX;
+/**
+ * [offset, alpha] along that radius: white 60% under a blur of 8px (sigma 4)
+ * across the rim, which sits 22px from the centre of the gradient.
+ */
+const GLOW_STOPS: ReadonlyArray<readonly [number, number]> = [
+  [0.4, 0],
+  [0.467, 0.014],
+  [0.533, 0.04],
+  [0.6, 0.095],
+  [0.667, 0.185],
+  [0.733, 0.3],
+  [0.8, 0.415],
+  [0.867, 0.505],
+  [0.933, 0.56],
+  [1, 0.586],
+];
+
 /**
  * SVG renderer for `BotEngine` — a React port of the upstream `BloubBot.vue`.
  *
@@ -67,6 +88,7 @@ export function BloubBot({
   const uid = useId();
   const maskId = `bloub-mask-${uid}`;
   const gradId = `bloub-grad-${uid}`;
+  const glowId = `bloub-glow-${uid}`;
 
   const engineRef = useRef<BotEngine | null>(null);
   const clockRef = useRef(0);
@@ -248,6 +270,28 @@ export function BloubBot({
             style={{ stopColor: "var(--accent-primary-hover)" }}
           />
         </linearGradient>
+        {/*
+          Inner glow, Figma 405:13014: inset 0 4px 8px, white 60%, on a 44px
+          ball. An inset shadow is the outside of the shape, moved down and
+          blurred; for a ball that is a ring centred 4px lower. A gradient
+          draws it with no filter, so it costs nothing per frame.
+        */}
+        <radialGradient
+          id={glowId}
+          gradientUnits="userSpaceOnUse"
+          cx={0}
+          cy={GLOW_OFFSET}
+          r={GLOW_RADIUS}
+        >
+          {GLOW_STOPS.map(([offset, alpha]) => (
+            <stop
+              key={offset}
+              offset={offset}
+              stopOpacity={alpha}
+              style={{ stopColor: "var(--bloub-glow)" }}
+            />
+          ))}
+        </radialGradient>
       </defs>
 
       {/* back half of the orbits: drawn before the body, so occluded by it */}
@@ -264,6 +308,13 @@ export function BloubBot({
         <path d={frame.bodyPath} fill={paper} />
         <g mask={`url(#${maskId})`}>
           <rect x={-VB} y={-VB} width={VB * 2} height={VB * 2} fill={ink} />
+          <rect
+            x={-VB}
+            y={-VB}
+            width={VB * 2}
+            height={VB * 2}
+            fill={`url(#${glowId})`}
+          />
         </g>
       </g>
 

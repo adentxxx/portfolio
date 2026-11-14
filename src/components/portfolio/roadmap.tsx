@@ -13,6 +13,8 @@ import {
   type WorkOrigin,
 } from "@/components/portfolio/roadmap-card";
 import { WorkModal } from "@/components/portfolio/work-modal";
+import { useUi } from "@/hooks/use-locale";
+import { enter } from "@/lib/enter";
 import { publicPath } from "@/lib/public-path";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -305,6 +307,7 @@ function ColumnLabel({
 }
 
 export function Roadmap({ companies, projects }: RoadmapProps) {
+  const ui = useUi();
   const avatarSrcs = useMemo(
     () => cardAvatarSrcs([...companies, ...projects]),
     [companies, projects],
@@ -792,6 +795,14 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
   }, [arrivedIndex, rows.length]);
 
   const bloubAtFooter = arrivedIndex === rows.length;
+  // The mobile exit curve ends on the footer center. Wide eyes sit across
+  // that point, so the stroke shows through the eye holes. Once the bloub
+  // has arrived, clip the connector to its rim. The corner of the exit box
+  // is that center.
+  const footerBloubRadius = (phone ? PHONE_BLOUB_PX : BLOUB_ON_DOT_PX) / 2;
+  const footerClip = bloubAtFooter
+    ? `radial-gradient(circle at right bottom, transparent ${footerBloubRadius}px, #000 ${footerBloubRadius}px)`
+    : undefined;
 
   // Figma: «кейсы» sits in the right cell of the first content row
   // (next to the first company card). Fall back to the header if row 0 is a project.
@@ -799,6 +810,9 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
   return (
     <section
+      // Fade only: the connector and the dots are measured on mount, and a
+      // shifted box would be read as their geometry.
+      {...enter(5, "fade")}
       className="relative mx-auto mt-12 w-full max-w-[1160px] px-4 min-[1160px]:mt-20"
       aria-label="Roadmap"
     >
@@ -827,7 +841,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
       {/* Header RoadMap: 480 | 80 | 480, gap 48 (desktop). Mobile: centered bloub, no column labels. */}
       <header className="relative flex flex-col items-center pb-16 min-[1160px]:grid min-[1160px]:grid-cols-[minmax(0,1fr)_80px_minmax(0,1fr)] min-[1160px]:items-start min-[1160px]:gap-6 min-[1160px]:pb-0">
         <div className="hidden min-[1160px]:block">
-          <ColumnLabel label="опыт работы" align="left" />
+          <ColumnLabel label={ui.work} align="left" />
         </div>
 
         <div className="flex w-20 flex-col items-center gap-3">
@@ -899,7 +913,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
             aria-hidden={hasScrolled}
           >
             <p className="whitespace-nowrap text-center text-caption1 text-accent-primary">
-              начинай скроллить
+              {ui.startScrolling}
             </p>
             <ScrollArrow className="hidden text-accent-primary min-[1160px]:block" />
           </div>
@@ -907,7 +921,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
         <div className="hidden min-[1160px]:block">
           {casesLabelInHeader ? (
-            <ColumnLabel label="кейсы" align="right" />
+            <ColumnLabel label={ui.cases} align="right" />
           ) : null}
         </div>
       </header>
@@ -1018,6 +1032,8 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
         <div className="flex flex-col gap-8 pt-[28px] min-[1160px]:gap-0 min-[1160px]:pt-0">
           {rows.map((row, index) => {
             const active = index <= revealedIndex;
+            // Follows the scroll both ways; `active` only ever grows.
+            const live = arrivedIndex >= 0 && index <= arrivedIndex;
             const showBloubHere = arrivedIndex === index;
 
             return (
@@ -1071,6 +1087,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
                   <RoadmapCard
                     data={row.card}
                     active={active}
+                      live={live}
                     side={row.side}
                     reducedMotion={reducedMotion}
                     concealed={
@@ -1085,7 +1102,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
 
                 {index === 0 && !casesLabelInHeader ? (
                   <div className="hidden min-[1160px]:col-start-3 min-[1160px]:row-start-1 min-[1160px]:block">
-                    <ColumnLabel label="кейсы" align="right" />
+                    <ColumnLabel label={ui.cases} align="right" />
                   </div>
                 ) : null}
               </div>
@@ -1098,7 +1115,15 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
           <div
             ref={exitBoxRef}
             className="pointer-events-none absolute -top-6 left-[14px] h-[112px] w-[calc(50%-14px)] min-[1160px]:hidden"
-            style={{ containerType: "inline-size" }}
+            style={{
+              containerType: "inline-size",
+              maskImage: footerClip,
+              WebkitMaskImage: footerClip,
+              maskSize: footerClip ? "100% 100%" : undefined,
+              WebkitMaskSize: footerClip ? "100% 100%" : undefined,
+              maskRepeat: footerClip ? "no-repeat" : undefined,
+              WebkitMaskRepeat: footerClip ? "no-repeat" : undefined,
+            }}
           >
             {curveWidth ? (
               <svg
@@ -1145,7 +1170,10 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
               pointRefs.current[rows.length] = el;
             }}
             data-bloub={bloubAtFooter ? "true" : "false"}
-            className="absolute bottom-2 left-1/2 flex size-6 -translate-x-1/2 items-center justify-center"
+            // Centred by offset, not by a transform: a transform would make
+            // this a stacking context and trap the bloub (z 3) under the
+            // progress line (z 2), which then shows through its top.
+            className="absolute bottom-2 left-[calc(50%-12px)] flex size-6 items-center justify-center"
           >
             <TimelineMarker
               showBloub={bloubAtFooter}
@@ -1156,7 +1184,7 @@ export function Roadmap({ companies, projects }: RoadmapProps) {
               lit={passedIndex >= rows.length}
             />
           </span>
-          <p className="sr-only">Конец roadmap</p>
+          <p className="sr-only">{ui.roadmapEnd}</p>
         </footer>
       </div>
       {openWork ? (

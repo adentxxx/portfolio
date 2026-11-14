@@ -112,47 +112,98 @@ function isTextEntry(target: Element) {
   );
 }
 
-function startBuffer(ctx: AudioContext, buffer: AudioBuffer) {
+/** A decoded sound and where its audible part begins, in seconds. */
+type Clip = { buffer: AudioBuffer; offset: number };
+
+/**
+ * Encoders pad the start of a file with silence (an mp3 always has some).
+ * Playing from the first audible sample takes that delay off every sound.
+ */
+function leadingSilence(buffer: AudioBuffer) {
+  const data = buffer.getChannelData(0);
+  const limit = Math.min(data.length, Math.floor(buffer.sampleRate * 0.25));
+  for (let index = 0; index < limit; index += 1) {
+    if (Math.abs(data[index]) > 0.004) {
+      // Step back 1ms so the attack is not clipped.
+      return Math.max(0, index / buffer.sampleRate - 0.001);
+    }
+  }
+  return 0;
+}
+
+function startClip(ctx: AudioContext, clip: Clip) {
   const source = ctx.createBufferSource();
-  source.buffer = buffer;
+  source.buffer = clip.buffer;
   const gain = ctx.createGain();
   gain.gain.value = VOLUME;
   source.connect(gain);
   gain.connect(ctx.destination);
-  source.start();
+  source.start(0, clip.offset);
 }
+
+type AudioWindow = Window & {
+  webkitAudioContext?: typeof AudioContext;
+  webkitOfflineAudioContext?: typeof OfflineAudioContext;
+};
 
 export function SoundProvider({ children }: { children: ReactNode }) {
   const [muted, setMutedState] = useState(false);
   const mutedRef = useRef(false);
   const ctxRef = useRef<AudioContext | null>(null);
-  const buffersRef = useRef<Partial<Record<SoundKind, AudioBuffer>>>({});
-  const rawRef = useRef<Partial<Record<SoundKind, ArrayBuffer>>>({});
-  const decodingRef = useRef<Partial<Record<SoundKind, Promise<void>>>>({});
+  const clipsRef = useRef<Partial<Record<SoundKind, Clip>>>({});
+  // Fallback for a format the browser cannot decode: one preloaded element
+  // per sound, reused, instead of a new download on every press.
+  const elementsRef = useRef<Partial<Record<SoundKind, HTMLAudioElement>>>({});
 
   useEffect(() => {
-    const stored = localStorage.getItem("portfolio-muted");
-    if (stored === "1") {
-      mutedRef.current = true;
-      setMutedState(true);
+    // The Button Bar has no mute since Iteration 2. A choice saved by the old
+    // button would leave the site silent with no way back, so drop it.
+    try {
+      localStorage.removeItem("portfolio-muted");
+    } catch {
+      /* private mode */
     }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
+    // Fetch and decode while the page is idle, so the first press already
+    // has a ready buffer. An offline context decodes without a gesture and
+    // without waking the audio device.
     const load = () => {
+      const audioWindow = window as AudioWindow;
+      const Offline =
+        window.OfflineAudioContext ?? audioWindow.webkitOfflineAudioContext;
+      let decoder: OfflineAudioContext | null = null;
+      try {
+        decoder = Offline ? new Offline(1, 1, 44100) : null;
+      } catch {
+        decoder = null;
+      }
       for (const kind of Object.keys(SOUND_SRC) as SoundKind[]) {
+        const fallback = () => {
+          if (cancelled || elementsRef.current[kind]) return;
+          const audio = new Audio(SOUND_SRC[kind]);
+          audio.preload = "auto";
+          audio.volume = VOLUME;
+          elementsRef.current[kind] = audio;
+        };
+        if (!decoder) {
+          fallback();
+          continue;
+        }
+        const target = decoder;
         void fetch(SOUND_SRC[kind])
           .then((response) => {
             if (!response.ok) throw new Error(String(response.status));
             return response.arrayBuffer();
           })
+          .then((raw) => target.decodeAudioData(raw))
           .then((buffer) => {
-            if (!cancelled) rawRef.current[kind] = buffer;
+            if (cancelled) return;
+            clipsRef.current[kind] = { buffer, offset: leadingSilence(buffer) };
           })
-          .catch(() => {
-            /* HTMLAudio still tries the same URL on play */
-          });
+          .catch(fallback);
       }
     };
     const idleWindow = window as Window & {
@@ -162,7 +213,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       ) => number;
       cancelIdleCallback?: (id: number) => void;
     };
-    const idleId = idleWindow.requestIdleCallback?.(load, { timeout: 2000 });
+    const idleId = idleWindow.requestIdleCallback?.(load, { timeout: 1500 });
     const timeoutId =
       idleId === undefined ? window.setTimeout(load, 200) : 0;
     return () => {
@@ -175,81 +226,64 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const setMuted = useCallback((value: boolean) => {
     mutedRef.current = value;
     setMutedState(value);
-    localStorage.setItem("portfolio-muted", value ? "1" : "0");
   }, []);
 
   const context = useCallback(() => {
-    if (!ctxRef.current) ctxRef.current = new AudioContext();
+    if (!ctxRef.current) {
+      const audioWindow = window as AudioWindow;
+      const Ctor = window.AudioContext ?? audioWindow.webkitAudioContext;
+      // "interactive" asks for the smallest output buffer the device allows.
+      ctxRef.current = new Ctor({ latencyHint: "interactive" });
+    }
     return ctxRef.current;
   }, []);
 
-  const decode = useCallback((kind: SoundKind, ctx: AudioContext) => {
-    if (buffersRef.current[kind]) return;
-    const raw = rawRef.current[kind];
-    if (!raw || decodingRef.current[kind]) return;
-    decodingRef.current[kind] = ctx
-      .decodeAudioData(raw.slice(0))
-      .then((buffer) => {
-        buffersRef.current[kind] = buffer;
-      })
-      .catch(() => {
-        /* keep the HTMLAudio fallback */
-      });
-  }, []);
+  /** Kept for the unlock path below; decoding now happens on load. */
+  const decode = useCallback((_kind: SoundKind, _ctx: AudioContext) => {}, []);
 
   const playWithElement = useCallback((kind: SoundKind) => {
-    const audio = new Audio(SOUND_SRC[kind]);
+    const audio = elementsRef.current[kind] ?? new Audio(SOUND_SRC[kind]);
+    elementsRef.current[kind] = audio;
     audio.volume = VOLUME;
-    return audio.play().then(
-      () => true,
-      () => false,
-    );
+    try {
+      audio.currentTime = 0;
+    } catch {
+      /* not seekable yet */
+    }
+    void audio.play().catch(() => {});
   }, []);
 
   const play = useCallback(
     (kind: SoundKind) => {
       if (mutedRef.current && kind !== "mute") return;
+      const clip = clipsRef.current[kind];
+      if (!clip) {
+        playWithElement(kind);
+        return;
+      }
       let ctx: AudioContext;
       try {
         ctx = context();
       } catch {
-        void playWithElement(kind);
+        playWithElement(kind);
         return;
       }
-      // One shot per call. A suspended context's resume() can resolve much
-      // later, on the next gesture; that must not replay this sound.
+      if (ctx.state === "running") {
+        startClip(ctx, clip);
+        return;
+      }
+      // Suspended (first press, or back from another tab). Resuming takes a
+      // few milliseconds; a sound that would come later than that is stale
+      // and is dropped instead of playing late.
       const at = performance.now();
-      let played: "none" | "buffer" | "element" = "none";
-      const startIfRunning = () => {
-        if (played !== "none") return false;
-        const buffer = buffersRef.current[kind];
-        if (!buffer || ctx.state !== "running") return false;
-        startBuffer(ctx, buffer);
-        played = "buffer";
-        return true;
-      };
-      const attempt = () => {
-        if (startIfRunning()) return;
-        if (played !== "none") return;
-        played = "element";
-        void playWithElement(kind).then((ok) => {
-          if (!ok && played === "element") {
-            played = "none";
-            startIfRunning();
-          }
-        });
-      };
-      void ctx.resume().then(() => {
-        if (performance.now() - at > 500) return;
-        void decode(kind, ctx);
-        startIfRunning();
-      });
-      decode(kind, ctx);
-      const pending = decodingRef.current[kind];
-      if (buffersRef.current[kind] || !pending) attempt();
-      else void pending.then(attempt);
+      void ctx.resume().then(
+        () => {
+          if (performance.now() - at < 250) startClip(ctx, clip);
+        },
+        () => {},
+      );
     },
-    [context, decode, playWithElement],
+    [context, playWithElement],
   );
 
   useEffect(() => {

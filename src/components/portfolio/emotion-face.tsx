@@ -1,5 +1,6 @@
 "use client";
 
+import { useUi } from "@/hooks/use-locale";
 import { useSound } from "@/hooks/use-sound";
 import { DEFAULT_FACES } from "@/lib/faces";
 import { publicPath } from "@/lib/public-path";
@@ -7,9 +8,6 @@ import { motion, useAnimation } from "motion/react";
 import Image from "next/image";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-
-const TIP_ASK = "хочешь меня потрогать?";
-const TIP_EW = "эу....";
 
 type TipPhase = "ask" | "ew" | "gone";
 
@@ -57,6 +55,7 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
   const faces = facesProp && facesProp.length > 0 ? facesProp : DEFAULT_FACES;
   const faceKey = faces.join("|");
   const { play } = useSound();
+  const ui = useUi();
   const tipId = useId();
   const tipRef = useRef<HTMLSpanElement>(null);
   const bubbleRef = useRef<HTMLSpanElement>(null);
@@ -207,7 +206,7 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
       }}
       onMouseLeave={() => setOver(false)}
       data-sound="none"
-      aria-label={`Эмоция ${safeIndex + 1} из ${faces.length}. Сменить`}
+      aria-label={ui.faceLabel(safeIndex + 1, faces.length)}
       aria-describedby={tipVisible ? tipId : undefined}
       className={`relative grid shrink-0 cursor-pointer touch-manipulation place-items-center overflow-visible border-0 bg-transparent p-0 ${size === 80 ? "size-20" : "size-[140px]"}`}
     >
@@ -279,7 +278,7 @@ export function EmotionFace({ size = 140, faces: facesProp }: EmotionFaceProps) 
                 }
           }
         >
-          {tip === "ask" ? TIP_ASK : TIP_EW}
+          {tip === "ask" ? ui.tipAsk : ui.tipEw}
         </motion.span>
       </span>
       {size === 140 ? (
