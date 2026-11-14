@@ -29,6 +29,16 @@ npm run dev
 - Кейс: `/projects/[slug]` (например `/projects/aurora-dashboard`)
 - Админка: `/admin` (логин и пароль из `ADMIN_LOGIN` и `ADMIN_PASSWORD`, по умолчанию `admin` / `demo-admin`)
 
+## Публикация на GitHub Pages
+
+Сайт на [hereisalex.art](https://hereisalex.art) — статический снимок из репозитория [adentxxx/adentxxx.github.io](https://github.com/adentxxx/adentxxx.github.io). Админка, API и база туда не попадают.
+
+```bash
+npm run build:pages
+```
+
+Перед сборкой остановите `npm run dev`. Результат — папка `out` с контентом из локальной базы, обе языковые версии, `CNAME` и `.nojekyll` уже внутри. Дальше содержимое `out` заменяет содержимое репозитория Pages (кроме `.git`), затем коммит и пуш в `main`.
+
 ## Языки
 
 - Русская версия в корне, английская под `/en` (`/en`, `/en/projects/[slug]`).
